@@ -1,0 +1,25 @@
+{
+     "flutter": {
+          "platforms": {
+               "android": {
+                    "default": {
+                         "projectId": "finmate-project",
+                         "appId": "1:661262855692:android:4da34c250ad26934dac829",
+                         "fileOutput": "android/app/google-services.json"
+                    }
+               },
+               "dart": {
+                    "lib/firebase_options.dart": {
+                         "projectId": "finmate-project",
+                         "configurations": {
+                              "android": "1:661262855692:android:4da34c250ad26934dac829",
+                              "ios": "1:661262855692:ios:21a67ddd1d3c01fedac829",
+                              "macos": "1:661262855692:ios:21a67ddd1d3c01fedac829",
+                              "web": "1:661262855692:web:08e25f267926b4a3dac829",
+                              "windows": "1:661262855692:web:04a819b67b46ef1adac829"
+                         }
+                    }
+               }
+          }
+     }
+}

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "661262855692",
+    "project_id": "finmate-project",
+    "storage_bucket": "finmate-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661262855692:android:4da34c250ad26934dac829",
+        "android_client_info": {
+          "package_name": "com.example.finmate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "661262855692-j7bqo75k04j5v9cncost865h3i4npkud.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.finmate",
+            "certificate_hash": "22010115a334562cc0c02e42ca1e2d1c145385a4"
+          }
+        },
+        {
+          "client_id": "661262855692-ouhvoom4s2vo3nnbmbk8m0pios1uah83.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMYoYxGbFibCgB9IDH7A93cEqtvHZgklE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "661262855692-ouhvoom4s2vo3nnbmbk8m0pios1uah83.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "661262855692-6jse3e4q35b8j59v795se1hphlk5evmb.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.finmate"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
