@@ -1,7 +1,7 @@
 import 'package:finmate/Models/user.dart';
 import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
-import 'package:finmate/screens/home/home_page.dart';
+import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/widgets/loader.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,7 +48,7 @@ class AuthService {
             loggerNoStack.i(
                 "User email: ${user?.email}\nUser is signed in: to home screen, name: ${user?.displayName}");
 
-            return const HomePage();
+            return const BnbPages();
           } else {
             loggerNoStack.i("User is not signed in: to auth screen");
             return const AuthScreen();

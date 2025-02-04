@@ -73,7 +73,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     if (await _authService.login(
         _emailController.text, _passwordController.text, ref)) {
-      Navigator.pushNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        "/home",
+        (Route<dynamic> route) => false, // This removes all the previous routes
+      );
       snackbarToast(
         context: context,
         text: "Login successful",
@@ -92,5 +96,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // }
   }
 
-  void _onTapGoogle() async {}
+  void _onTapGoogle() async {
+    setState(() {
+      isGoogleLoading = true;
+    });
+
+    _authService.handleGoogleSignIn().then(
+      (value) {
+        if (value) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            "/home",
+            (Route<dynamic> route) =>
+                false, // This removes all the previous routes
+          );
+          snackbarToast(
+            context: context,
+            text: "Login successful",
+            icon: Icons.done_all_outlined,
+          );
+        } else {
+          snackbarToast(
+            context: context,
+            text: "Error logging user",
+            icon: Icons.error_rounded,
+          );
+        }
+      },
+    );
+
+    setState(() {
+      isGoogleLoading = false;
+    });
+  }
 }

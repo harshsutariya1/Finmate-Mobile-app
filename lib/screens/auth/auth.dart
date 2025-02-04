@@ -15,6 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
         title: const Text('Auth'),
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         spacing: 10,
         children: [
           Center(

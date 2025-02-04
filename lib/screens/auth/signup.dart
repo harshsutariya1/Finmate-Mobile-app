@@ -16,13 +16,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController =
-      TextEditingController(text: "admin@gmail.com");
+      TextEditingController(text: "harsh@gmail.com");
   final TextEditingController _passwordController =
       TextEditingController(text: "password");
   final TextEditingController _confirmPasswordController =
       TextEditingController(text: "password");
   final TextEditingController _nameController =
-      TextEditingController(text: "Admin");
+      TextEditingController(text: "Harsh");
 
   bool isSignupLoading = false;
   bool isGoogleLoading = false;
@@ -79,7 +79,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final result = await _authService.signup(_nameController.text,
         _emailController.text, _passwordController.text, ref);
     if (result == "Success") {
-      Navigator.pushNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        "/home",
+        (Route<dynamic> route) => false, // This removes all the previous routes
+      );
       snackbarToast(
         context: context,
         text: "Signin successful",
@@ -103,5 +107,33 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     });
   }
 
-  void _onTapGoogle() async {}
+  void _onTapGoogle() async {
+    setState(() {
+      isGoogleLoading = true;
+    });
+    _authService.handleGoogleSignIn().then((value) {
+      if (value) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/home",
+          (Route<dynamic> route) =>
+              false, // This removes all the previous routes
+        );
+        snackbarToast(
+            context: context,
+            text: "Signin Successfully",
+            icon: Icons.done_all_outlined,
+          );
+      } else {
+        snackbarToast(
+          context: context,
+          text: "Error Signing User",
+          icon: Icons.error_rounded,
+        );
+      }
+    });
+    setState(() {
+      isGoogleLoading = false;
+    });
+  }
 }
