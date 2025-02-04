@@ -13,6 +13,23 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late AuthService _authService;
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _emailController =
+      TextEditingController(text: "admin@gmail.com");
+  final TextEditingController _passwordController =
+      TextEditingController(text: "password");
+
+  bool isLoginLoading = false;
+  bool isGoogleLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     _authService = GetIt.instance.get<AuthService>();
@@ -25,27 +42,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(
         title: const Text('Login'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            if (await _authService.login("admin@gmail.com", "password", ref)) {
-              Navigator.pushNamed(context, '/home');
-              snackbarToast(
-                context: context,
-                text: "Login successful",
-                icon: Icons.done_all_outlined,
-              );
-            } else {
-              snackbarToast(
-                context: context,
-                text: "Error logging user",
-                icon: Icons.error_rounded,
-              );
-            }
-          },
-          child: const Text('Login'),
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        spacing: 20,
+        children: [
+          Center(
+            child: ElevatedButton(
+              onPressed: _onTapLogin,
+              child: (isLoginLoading)
+                  ? const CircularProgressIndicator()
+                  : const Text('Login'),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _onTapGoogle,
+            child: (isGoogleLoading)
+                ? const CircularProgressIndicator()
+                : Text("Login With Google"),
+          ),
+        ],
       ),
     );
   }
+
+  void _onTapLogin() async {
+    // if (_formKey.currentState!.validate()) {
+    setState(() {
+      isLoginLoading = true;
+    });
+    if (await _authService.login(
+        _emailController.text, _passwordController.text, ref)) {
+      Navigator.pushNamed(context, '/home');
+      snackbarToast(
+        context: context,
+        text: "Login successful",
+        icon: Icons.done_all_outlined,
+      );
+    } else {
+      snackbarToast(
+        context: context,
+        text: "Error logging user",
+        icon: Icons.error_rounded,
+      );
+    }
+    setState(() {
+      isLoginLoading = false;
+    });
+    // }
+  }
+
+  void _onTapGoogle() async {}
 }

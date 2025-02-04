@@ -13,6 +13,29 @@ class SignUpScreen extends ConsumerStatefulWidget {
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   late AuthService _authService;
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _emailController =
+      TextEditingController(text: "admin@gmail.com");
+  final TextEditingController _passwordController =
+      TextEditingController(text: "password");
+  final TextEditingController _confirmPasswordController =
+      TextEditingController(text: "password");
+  final TextEditingController _nameController =
+      TextEditingController(text: "Admin");
+
+  bool isSignupLoading = false;
+  bool isGoogleLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     _authService = GetIt.instance.get<AuthService>();
@@ -25,35 +48,60 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       appBar: AppBar(
         title: const Text('SignUp'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            final result = await _authService.signup(
-                "Admin", "admin@gmail.com", "password", ref);
-            if (result == "Success") {
-              Navigator.pushNamed(context, '/home');
-              snackbarToast(
-                context: context,
-                text: "Signin successful",
-                icon: Icons.done_all_outlined,
-              );
-            } else if (result == "Error") {
-              snackbarToast(
-                context: context,
-                text: "Error signing user",
-                icon: Icons.error_rounded,
-              );
-            } else if (result == "Email already in use") {
-              snackbarToast(
-                context: context,
-                text: "Email already in use, Please Login",
-                icon: Icons.error_rounded,
-              );
-            }
-          },
-          child: const Text('SignUp'),
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        spacing: 20,
+        children: [
+          Center(
+            child: ElevatedButton(
+              onPressed: _onTapSignin,
+              child: (isSignupLoading)
+                  ? const CircularProgressIndicator()
+                  : const Text('SignUp'),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _onTapGoogle,
+            child: (isGoogleLoading)
+                ? const CircularProgressIndicator()
+                : Text("SignIn With Google"),
+          ),
+        ],
       ),
     );
   }
+
+  void _onTapSignin() async {
+    setState(() {
+      isSignupLoading = true;
+    });
+    final result = await _authService.signup(_nameController.text,
+        _emailController.text, _passwordController.text, ref);
+    if (result == "Success") {
+      Navigator.pushNamed(context, '/home');
+      snackbarToast(
+        context: context,
+        text: "Signin successful",
+        icon: Icons.done_all_outlined,
+      );
+    } else if (result == "Error") {
+      snackbarToast(
+        context: context,
+        text: "Error signing user",
+        icon: Icons.error_rounded,
+      );
+    } else if (result == "Email already in use") {
+      snackbarToast(
+        context: context,
+        text: "Email already in use, Please Login",
+        icon: Icons.error_rounded,
+      );
+    }
+    setState(() {
+      isSignupLoading = false;
+    });
+  }
+
+  void _onTapGoogle() async {}
 }

@@ -1,22 +1,29 @@
+import 'package:finmate/Models/user.dart';
 import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/home_page.dart';
+import 'package:finmate/services/database_services.dart';
 import 'package:finmate/widgets/loader.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:finmate/Models/user.dart';
-import 'package:finmate/services/database_services.dart';
+import 'package:logger/logger.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  var logger = Logger(
+    printer: PrettyPrinter(),
+  );
+  var loggerNoStack = Logger(
+    printer: PrettyPrinter(methodCount: 0),
+  );
 
   User? user;
 
   Widget checkLogin() {
-    print("checkingLogin function called");
+    loggerNoStack.i("Login checking...");
     return Consumer(builder: (context, ref, child) {
       return StreamBuilder<User?>(
         stream: _firebaseAuth.authStateChanges(),
@@ -33,16 +40,17 @@ class AuthService {
                   .read(userDataNotifierProvider.notifier)
                   .fetchCurrentUserData(uid);
             } else {
-              print("Error: UID is null or empty: retuning to signup screen");
+              logger
+                  .e("Error: UID is null or empty: retuning to signup screen");
               return const AuthScreen();
             }
 
-            print('User Firebase: ${user?.email}');
-            print("User is signed in: to home screen : ${user?.displayName}");
+            loggerNoStack.i(
+                "User email: ${user?.email}\nUser is signed in: to home screen, name: ${user?.displayName}");
 
             return const HomePage();
           } else {
-            print("User is not signed in: to auth screen");
+            loggerNoStack.i("User is not signed in: to auth screen");
             return const AuthScreen();
           }
         },
@@ -63,15 +71,19 @@ class AuthService {
         return true;
       }
     } catch (e) {
-      print("Error: $e");
-      print("login failed");
+      loggerNoStack.w("Login failed");
+      logger.w("Error: $e");
       return false;
     }
     return false;
   }
 
   Future<String> signup(
-      String name, String email, String password, WidgetRef ref,) async {
+    String name,
+    String email,
+    String password,
+    WidgetRef ref,
+  ) async {
     print("signup function called");
     try {
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -184,8 +196,7 @@ class AuthService {
               ?.read(userDataNotifierProvider.notifier)
               .fetchCurrentUserData(user.uid)
               .then((value) {
-            ref
-                .read(userDataNotifierProvider.notifier);
+            ref.read(userDataNotifierProvider.notifier);
           });
           return true;
         } else {
@@ -312,5 +323,4 @@ class AuthService {
           );
         });
   }
-
 }
