@@ -1,6 +1,8 @@
 import 'package:finmate/Models/user.dart';
+import 'package:finmate/screens/auth/notifications_screen.dart';
+import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/services/auth_services.dart';
-import 'package:finmate/widgets/snackbar.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,19 +23,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
-        // leading: IconButton(
-        //   onPressed: _onTapLogout,
-        //   icon: Icon(Icons.logout_outlined),
-        // ),
+        title: Text(
+          (widget.userData.name == "")
+              ? "Home"
+              : widget.userData.name ?? "Home",
+        ),
         actions: [
           IconButton(
-            onPressed: _onTapLogout,
-            icon: Icon(Icons.logout_outlined),
+            onPressed: () {
+              Navigate().push(NotificationScreen());
+            },
+            icon: Icon(Icons.notifications_none_rounded),
           ),
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/settings');
+              Navigate().push(SettingsScreen(authService: widget.authService));
             },
             icon: Icon(Icons.settings),
           ),
@@ -44,31 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(widget.userData.name ?? "No Name found"),
-          Text(widget.userData.email ?? "No Email found"),
-          Divider(),
           Center(
             child: Text("FinMate App Home"),
           ),
         ],
       ),
     );
-  }
-
-  void _onTapLogout() async {
-    if (await widget.authService.logout()) {
-      Navigator.pushNamed(context, '/auth');
-      snackbarToast(
-        context: context,
-        text: "Logout successful",
-        icon: Icons.done_all_outlined,
-      );
-    } else {
-      snackbarToast(
-        context: context,
-        text: "Error logging out",
-        icon: Icons.error_rounded,
-      );
-    }
   }
 }

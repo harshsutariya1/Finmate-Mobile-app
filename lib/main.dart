@@ -1,4 +1,5 @@
 import 'package:finmate/services/auth_services.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/utils/routes.dart';
 import 'package:finmate/utils/utils.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +20,13 @@ Future<void> setup() async {
 }
 
 class MyApp extends StatelessWidget {
-   MyApp({super.key});
- final AuthService _authService = GetIt.instance.get<AuthService>();
+  MyApp({super.key});
+  final AuthService _authService = GetIt.instance.get<AuthService>();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: Navigate().navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
