@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:finmate/models/transaction.dart' as transaction_model;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
@@ -14,6 +15,17 @@ CollectionReference<UserData> userCollection =
           fromFirestore: (snapshots, _) => UserData.fromJson(snapshots.data()!),
           toFirestore: (userData, _) => userData.toJson(),
         );
+
+CollectionReference<transaction_model.Transaction> userTransactionsCollection(String uid) {
+  return userCollection
+      .doc(uid)
+      .collection('user_transactions')
+      .withConverter<transaction_model.Transaction>(
+        fromFirestore: (snapshots, _) =>
+            transaction_model.Transaction.fromJson(snapshots.data()!),
+        toFirestore: (transaction, _) => transaction.toJson(),
+      );
+}
 
 Future<void> createUserProfile({required UserData userProfile}) async {
   try {

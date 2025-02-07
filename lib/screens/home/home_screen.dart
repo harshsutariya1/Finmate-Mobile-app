@@ -1,4 +1,5 @@
 import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/services/auth_services.dart';
@@ -9,9 +10,11 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.userData,
+    required this.userFinanceData,
     required this.authService,
   });
   final UserData userData;
+  final UserFinanceData userFinanceData;
   final AuthService authService;
 
   @override
@@ -45,12 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         spacing: 15,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center(
-            child: Text("FinMate App Home"),
-          ),
+          Center(child: Text("FinMate App Home")),
+          Divider(),
+          ...widget.userFinanceData.listOfTransactions
+                  ?.map((transaction) => Text("Transaction Id: ${transaction.tid}"))
+                  .toList() ??
+              [],
         ],
       ),
     );

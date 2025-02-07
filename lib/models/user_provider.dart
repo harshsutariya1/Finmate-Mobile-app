@@ -32,12 +32,8 @@ class UserDataNotifier extends _$UserDataNotifier {
       if (docSnapshot.exists) {
         state = docSnapshot.data()!;
         logger.i(
-            "User with uid $uid found. \nemail: ${state.email} \nphoneNum: ${state.phoneNumber} \nname: ${state.name} \nimage: ${state.pfpURL}");
-        // print("User with uid $uid found.");
-        // print("email: ${state.email}");
-        // print("phoneNum: ${state.phoneNumber}");
-        // print("name: ${state.name}");
-        // print("image: ${state.pfpURL}");
+            "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
+        
         return true;
       } else {
         logger.w("User with uid $uid not found.");

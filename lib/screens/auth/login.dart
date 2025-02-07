@@ -16,7 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController =
-      TextEditingController(text: "admin@gmail.com");
+      TextEditingController(text: "harsh@gmail.com");
   final TextEditingController _passwordController =
       TextEditingController(text: "password");
 

@@ -1,3 +1,4 @@
+import 'package:finmate/models/user_finance_data_provider.dart';
 import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
 import 'package:finmate/screens/home/groups_screen.dart';
@@ -20,17 +21,10 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
   late AuthService _authService;
   var currentIndex = 0;
 
-  // List<String> listOfIcons = [
-  //   homeIcon,
-  //   analyticsIcon,
-  //   scanIcon,
-  //   investmentsIcon,
-  //   groupsIcon,
-  // ];
   List<IconData> listOfIcons = [
     Icons.home,
     Icons.analytics,
-    Icons.qr_code_scanner,
+    Icons.add,
     Icons.attach_money_rounded,
     Icons.group,
   ];
@@ -38,7 +32,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
   List<String> listOfTitles = [
     'Home',
     'Analytics',
-    'Scan',
+    'Add',
     'Investments',
     'Groups',
   ];
@@ -52,8 +46,13 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
   @override
   Widget build(BuildContext context) {
     final userData = ref.watch(userDataNotifierProvider);
+    final userFinanceData = ref.watch(userFinanceDataNotifierProvider);
     final List<Widget> screens = [
-      HomeScreen(userData: userData, authService: _authService),
+      HomeScreen(
+        userData: userData,
+        userFinanceData: userFinanceData,
+        authService: _authService,
+      ),
       AnalyticsScreen(),
       ScaningScreen(),
       InvestmentsScreen(),
@@ -74,11 +73,6 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         items: List.generate(
           screens.length,
           (index) => BottomNavigationBarItem(
-            // icon: Image.asset(
-            //   listOfIcons[index],
-            //   width: 30,
-            //   height: 30,
-            // ),
             icon: Icon(
               listOfIcons[index],
               color: Colors.black,

@@ -1,4 +1,5 @@
 import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user_finance_data_provider.dart';
 import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
@@ -38,7 +39,11 @@ class AuthService {
             if (uid != null && uid.isNotEmpty) {
               ref
                   .read(userDataNotifierProvider.notifier)
-                  .fetchCurrentUserData(uid);
+                  .fetchCurrentUserData(uid).then((value){
+                    ref
+                        .read(userFinanceDataNotifierProvider.notifier)
+                        .fetchUserFinanceData(uid);
+                  });
             } else {
               logger
                   .e("Error: UID is null or empty: retuning to signup screen");
@@ -114,111 +119,6 @@ class AuthService {
     } catch (e) {
       print("Error: $e");
       return "Error";
-    }
-  }
-
-  Future<void> verifyPhoneNumber(
-    String phoneNumber,
-    BuildContext context,
-    Function(String) onCodeSent,
-    Function(UserCredential) onVerificationCompleted,
-    Function(FirebaseAuthException) onVerificationFailed,
-  ) async {
-    try {
-      print("verifying phone number $phoneNumber");
-      await _firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        timeout: const Duration(seconds: 60),
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Automatically signs in the user if verification is successful
-          // final UserCredential userCredential =
-          await _firebaseAuth.signInWithCredential(credential).then((value) {
-            onVerificationCompleted(value);
-          });
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          onVerificationFailed(e);
-          if (e.code == 'invalid-phone-number') {
-            print('The provided phone number is not valid.');
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          // You need to ask the user to input the OTP here.
-          onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          print("Code auto-retrieval timeout.");
-        },
-      );
-    } catch (e) {
-      print("error verifying phoneNumber: $e");
-    }
-  }
-
-  Future<bool> verifyOTP(
-      String verificationId, String smsCode, BuildContext context,
-      {String? name = ""}) async {
-    try {
-      // Create a PhoneAuthCredential with the code
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-          verificationId: verificationId, smsCode: smsCode);
-
-      // Sign in the user with the credential
-      UserCredential userCredential =
-          await _firebaseAuth.signInWithCredential(credential);
-
-      print("Phone number successfully verified");
-      return createOrLoginUserAfterPhoneVerification(userCredential,
-          name: name);
-      // Handle successful sign-in here (e.g., navigate to the home page)
-    } catch (e) {
-      print("Failed to verify OTP: $e");
-      return false;
-    }
-  }
-
-  Future<bool> createOrLoginUserAfterPhoneVerification(
-      UserCredential userCredential,
-      {String? name = "",
-      WidgetRef? ref}) async {
-    try {
-      final user = userCredential.user;
-
-      if (user != null) {
-        final uid = user.uid;
-        final phoneNumber = user.phoneNumber;
-
-        bool userExists = await checkExistingUser(uid);
-
-        if (userExists) {
-          print("User already exists with UID: $uid");
-          ref
-              ?.read(userDataNotifierProvider.notifier)
-              .fetchCurrentUserData(user.uid)
-              .then((value) {
-            ref.read(userDataNotifierProvider.notifier);
-          });
-          return true;
-        } else {
-          UserData newUser = UserData(
-            uid: uid,
-            name: name,
-            phoneNumber: phoneNumber,
-            isOnline: true,
-          );
-
-          await createUserProfile(userProfile: newUser);
-
-          print("New user created with UID: $uid");
-          return true;
-        }
-      } else {
-        print("No user found in the UserCredential");
-        return false;
-      }
-    } catch (e) {
-      print("Error in createOrLoginUserAfterPhoneVerification: $e");
-      return false;
     }
   }
 
