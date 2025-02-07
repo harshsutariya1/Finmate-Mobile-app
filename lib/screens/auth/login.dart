@@ -1,4 +1,6 @@
+import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/auth_services.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,7 +58,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: _onTapGoogle,
+            onPressed: () {
+              _onTapGoogle(ref);
+            },
             child: (isGoogleLoading)
                 ? const CircularProgressIndicator()
                 : Text("Login With Google"),
@@ -73,11 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     if (await _authService.login(
         _emailController.text, _passwordController.text, ref)) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        "/home",
-        (Route<dynamic> route) => false, // This removes all the previous routes
-      );
+      Navigate().toAndRemoveUntil(BnbPages());
       snackbarToast(
         context: context,
         text: "Login successful",
@@ -96,20 +96,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // }
   }
 
-  void _onTapGoogle() async {
+  void _onTapGoogle(WidgetRef ref) async {
     setState(() {
       isGoogleLoading = true;
     });
 
-    _authService.handleGoogleSignIn().then(
+    _authService.handleGoogleSignIn(ref).then(
       (value) {
         if (value) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            "/home",
-            (Route<dynamic> route) =>
-                false, // This removes all the previous routes
-          );
+          Navigate().toAndRemoveUntil(BnbPages());
           snackbarToast(
             context: context,
             text: "Login successful",

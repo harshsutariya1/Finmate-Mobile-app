@@ -30,11 +30,11 @@ class UserDataNotifier extends _$UserDataNotifier {
       final docSnapshot = await userCollection.doc(uid).get();
 
       if (docSnapshot.exists) {
-        state = docSnapshot.data()!;
-        logger.i(
-            "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
-        
-        return true;
+      state = docSnapshot.data()!;
+      logger.i(
+          "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
+
+      return true;
       } else {
         logger.w("User with uid $uid not found.");
         await FirebaseAuth.instance.signOut();
@@ -46,54 +46,46 @@ class UserDataNotifier extends _$UserDataNotifier {
     }
   }
 
-  // void updateCurrentUserData({
-  //   String? uid,
-  //   String? name,
-  //   String? email,
-  //   bool? isOnline,
-  //   String? phoneNumber,
-  //   String? profilePicUrl,
-  //   int? noOfGroups,
-  //   List<String>? groupIds,
-  //   int? noOfChats,
-  //   List<String>? chatIds,
-  //   // String? dateOfBirth,
-  //   String? gender,
-  // }) async {
-  //   try {
-  //     final userRef = userCollection.doc(state.uid!.isEmpty ? uid : state.uid);
+  void updateCurrentUserData({
+    // required String uid,
+    String? name,
+    String? pfpURL,
+    String? email,
+    String? gender,
+    int? cash,
+    DateTime? dob,
+    List<String>? transactionIds,
+    List<String>? groupIds,
+  }) async {
+    try {
+      final userRef = userCollection.doc(state.uid);
 
-  //     Map<String, dynamic> updatedData = {
-  //       'name': name ?? state.name,
-  //       'email': email ?? state.email,
-  //       'isOnline': isOnline ?? state.isOnline,
-  //       'phoneNumber': phoneNumber ?? state.phoneNumber,
-  //       'pfpURL': profilePicUrl ?? state.pfpURL,
-  //       'noOfGroups': noOfGroups ?? state.noOfGroups,
-  //       'groupIds': groupIds ?? state.groupIds,
-  //       'noOfChats': noOfChats ?? state.noOfChats,
-  //       'chatIds': chatIds ?? state.chatIds,
-  //       // 'dateOfBirth': dateOfBirth ?? state.chatIds,
-  //       'gender': gender ?? state.gender,
-  //     };
-  //     await userRef.update(updatedData);
-  //     state = UserData(
-  //       uid: state.uid!.isEmpty ? uid : state.uid,
-  //       name: name ?? state.name,
-  //       email: email ?? state.email,
-  //       isOnline: isOnline ?? state.isOnline,
-  //       phoneNumber: phoneNumber ?? state.phoneNumber,
-  //       pfpURL: profilePicUrl ?? state.pfpURL,
-  //       noOfGroups: noOfGroups ?? state.noOfGroups,
-  //       groupIds: groupIds ?? state.groupIds,
-  //       noOfChats: noOfChats ?? state.noOfChats,
-  //       chatIds: chatIds ?? state.chatIds,
-  //       // dateOfBirth: dateOfBirth ?? state.dateOfBirth,
-  //       gender: gender ?? state.gender,
-  //     );
-  //     print('Document updated successfully!');
-  //   } catch (e) {
-  //     print('Error updating document: $e');
-  //   }
-  // }
+      Map<String, dynamic> updatedData = {
+        'name': name ?? state.name,
+        'pfpURL': pfpURL ?? state.pfpURL,
+        'email': email ?? state.email,
+        'gender': gender ?? state.gender,
+        'cash': cash ?? state.cash,
+        'dob': dob ?? state.dob,
+        'transactionIds': transactionIds ?? state.transactionIds,
+        'groupIds': groupIds ?? state.groupIds,
+      };
+      await userRef.update(updatedData).then((value) {
+        state = UserData(
+          uid: state.uid,
+          name: name ?? state.name,
+          pfpURL: pfpURL ?? state.pfpURL,
+          email: email ?? state.email,
+          gender: gender ?? state.gender,
+          cash: cash ?? state.cash,
+          dob: dob ?? state.dob,
+          transactionIds: transactionIds ?? state.transactionIds,
+          groupIds: groupIds ?? state.groupIds,
+        );
+        logger.i('Document updated successfully!');
+      });
+    } catch (e) {
+      logger.w("Error updating document: $e");
+    }
+  }
 }

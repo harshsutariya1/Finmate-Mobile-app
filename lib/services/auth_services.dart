@@ -73,6 +73,9 @@ class AuthService {
         ref
             .read(userDataNotifierProvider.notifier)
             .fetchCurrentUserData(user?.uid);
+        ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .fetchUserFinanceData(user!.uid);
         return true;
       }
     } catch (e) {
@@ -104,6 +107,9 @@ class AuthService {
         ref
             .read(userDataNotifierProvider.notifier)
             .fetchCurrentUserData(user?.uid);
+        ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .fetchUserFinanceData(user!.uid);
         return "Success";
       } else {
         return "Error";
@@ -122,7 +128,7 @@ class AuthService {
     }
   }
 
-  Future<bool> handleGoogleSignIn() async {
+  Future<bool> handleGoogleSignIn(WidgetRef ref) async {
     print("handleGoogleSignIn function called");
     try {
       final userCredential = await signInWithGoogle();
@@ -145,6 +151,12 @@ class AuthService {
             email: email,
           ));
         }
+        await ref
+            .read(userDataNotifierProvider.notifier)
+            .fetchCurrentUserData(uid);
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .fetchUserFinanceData(uid);
 
         this.user = user;
         // go to HomeScreen

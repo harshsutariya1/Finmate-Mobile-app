@@ -41,6 +41,12 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
   @override
   void initState() {
     _authService = GetIt.instance.get<AuthService>();
+    ref
+        .read(userDataNotifierProvider.notifier)
+        .fetchCurrentUserData(_authService.user?.uid);
+    ref
+        .read(userFinanceDataNotifierProvider.notifier)
+        .fetchUserFinanceData(_authService.user!.uid);
     super.initState();
   }
 

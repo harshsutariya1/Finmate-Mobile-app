@@ -24,9 +24,7 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
   Future<bool> fetchUserFinanceData(String uid) async {
     List<Transaction> transactions = [];
     try {
-      userTransactionsCollection(uid)
-          .get()
-          .then((value) {
+      userTransactionsCollection(uid).get().then((value) {
         for (var element in value.docs) {
           transactions.add(element.data());
         }
@@ -36,12 +34,33 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
           listOfTransactions: transactions,
         );
         logger.i(
-            "User transaction data fetched successfully, \nNumber of transactions: ${transactions.length} \ntransactions: ${state.listOfTransactions}");
+            "User transaction data fetched successfully, \nNumber of transactions: ${transactions.length}");
       });
 
       return true;
     } catch (e) {
       logger.w("Failed to fetch user finance data: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateTransactionData({
+    required String uid,
+    required String tid,
+    required Transaction transaction,
+  }) async {
+    Transaction t = transaction;
+    try {
+      userTransactionsCollection(uid).doc(tid).update({
+        'tid': tid,
+      }).then((value) {
+        t.tid = tid;
+        state.listOfTransactions?.add(t);
+      });
+
+      return true;
+    } catch (e) {
+      logger.w("Error while updating transaction data: $e");
       return false;
     }
   }

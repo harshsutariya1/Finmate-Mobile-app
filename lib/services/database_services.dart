@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:finmate/Models/user.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
+import 'package:finmate/models/user_finance_data_provider.dart';
+import 'package:finmate/models/user_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:finmate/Models/user.dart';
 
 final ImagePicker _picker = ImagePicker();
 final FirebaseStorage firebaseStorage = FirebaseStorage.instance;
@@ -39,9 +42,23 @@ Future<void> createUserProfile({required UserData userProfile}) async {
 Future<bool> addTransactionToUserData({
   required String uid,
   required transaction_model.Transaction transactionData,
+  required WidgetRef ref,
 }) async {
   try {
-    await userTransactionsCollection(uid).add(transactionData);
+    final result = await userTransactionsCollection(uid).add(transactionData);
+    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionData(
+          uid: uid,
+          tid: result.id,
+          transaction: transactionData,
+        );
+
+    List<String>? currentIds =
+        ref.read(userDataNotifierProvider).transactionIds ?? [];
+    currentIds.add(result.id);
+    ref
+        .read(userDataNotifierProvider.notifier)
+        .updateCurrentUserData(transactionIds: currentIds);
+
     print("Transaction added to user");
     return true;
   } catch (e) {

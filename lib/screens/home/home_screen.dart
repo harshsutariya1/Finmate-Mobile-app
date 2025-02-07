@@ -7,8 +7,9 @@ import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
     required this.userData,
@@ -20,10 +21,10 @@ class HomeScreen extends StatefulWidget {
   final AuthService authService;
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,18 +49,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        spacing: 15,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Center(child: Text("FinMate App Home")),
-          Divider(),
-          ...widget.userFinanceData.listOfTransactions
-                  ?.map((transaction) => transactionData(transaction))
-                  .toList() ??
-              [],
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          spacing: 15,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(child: Text("FinMate App Home")),
+            Divider(),
+            ...widget.userFinanceData.listOfTransactions
+                    ?.map((transaction) => transactionData(transaction))
+                    .toList() ??
+                [],
+          ],
+        ),
       ),
     );
   }

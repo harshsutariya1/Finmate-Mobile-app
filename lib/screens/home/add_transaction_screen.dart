@@ -7,8 +7,9 @@ import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AddTransactionScreen extends StatefulWidget {
+class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
     super.key,
     required this.userData,
@@ -19,10 +20,11 @@ class AddTransactionScreen extends StatefulWidget {
   final UserFinanceData userFinanceData;
   final AuthService authService;
   @override
-  State<AddTransactionScreen> createState() => _AddTransactionScreenState();
+  ConsumerState<AddTransactionScreen> createState() =>
+      _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
+class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +39,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           onPressed: () {
             addTransaction(
               widget.userData.uid ?? "",
-              Transaction(tid: "transactionId"),
+              Transaction(
+                uid: widget.userData.uid ?? "",
+                amount: (-25.5).toString(),
+                category: "Food",
+                date: DateTime.utc(2022, 12, 25),
+                description: "Bought food",
+                methodOfPayment: "Cash",
+              ),
+              ref,
             );
           },
           child: const Text("Add Transaction"),
@@ -55,10 +65,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  void addTransaction(String uid, Transaction transactionData) async {
+  void addTransaction(
+    String uid,
+    Transaction transactionData,
+    WidgetRef ref,
+  ) async {
     // Add transaction logic here
     final result = await addTransactionToUserData(
-        uid: uid, transactionData: transactionData);
+      uid: uid,
+      transactionData: transactionData,
+      ref: ref,
+    );
     if (result) {
       snackbarToast(
         context: context,

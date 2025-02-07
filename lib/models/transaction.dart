@@ -1,5 +1,5 @@
 class Transaction {
-  final String tid;
+  String? tid;
   String? amount;
   DateTime? date;
   String? uid;
@@ -8,7 +8,7 @@ class Transaction {
   String? description;
 
   Transaction({
-    required this.tid,
+    this.tid = "",
     this.amount = "0",
     DateTime? date,
     this.uid = "",

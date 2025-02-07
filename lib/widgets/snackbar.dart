@@ -21,7 +21,7 @@ void snackbarToast({
         color: color4,
       ),
       child: Row(
-        spacing: 30,
+        spacing: 20,
         children: [
           Icon(
             icon,
@@ -29,6 +29,7 @@ void snackbarToast({
           ),
           Text(
             text,
+            softWrap: true,
             style: TextStyle(
               color: color2,
               fontWeight: FontWeight.w700,

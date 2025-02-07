@@ -1,4 +1,6 @@
+import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/auth_services.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +64,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: _onTapGoogle,
+            onPressed: () {
+              _onTapGoogle(ref);
+            },
             child: (isGoogleLoading)
                 ? const CircularProgressIndicator()
                 : Text("SignIn With Google"),
@@ -79,11 +83,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final result = await _authService.signup(_nameController.text,
         _emailController.text, _passwordController.text, ref);
     if (result == "Success") {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        "/home",
-        (Route<dynamic> route) => false, // This removes all the previous routes
-      );
+      Navigate().toAndRemoveUntil(BnbPages());
       snackbarToast(
         context: context,
         text: "Signin successful",
@@ -107,23 +107,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     });
   }
 
-  void _onTapGoogle() async {
+  void _onTapGoogle(WidgetRef ref) async {
     setState(() {
       isGoogleLoading = true;
     });
-    _authService.handleGoogleSignIn().then((value) {
+    _authService.handleGoogleSignIn(ref).then((value) {
       if (value) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          "/home",
-          (Route<dynamic> route) =>
-              false, // This removes all the previous routes
-        );
+        Navigate().toAndRemoveUntil(BnbPages());
         snackbarToast(
-            context: context,
-            text: "Signin Successfully",
-            icon: Icons.done_all_outlined,
-          );
+          context: context,
+          text: "Signin Successfully",
+          icon: Icons.done_all_outlined,
+        );
       } else {
         snackbarToast(
           context: context,
