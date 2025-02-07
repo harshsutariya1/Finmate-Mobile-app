@@ -4,6 +4,7 @@ import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/loader.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -39,11 +40,10 @@ class AuthService {
             if (uid != null && uid.isNotEmpty) {
               ref
                   .read(userDataNotifierProvider.notifier)
-                  .fetchCurrentUserData(uid).then((value){
-                    ref
-                        .read(userFinanceDataNotifierProvider.notifier)
-                        .fetchUserFinanceData(uid);
-                  });
+                  .fetchCurrentUserData(uid);
+              ref
+                  .read(userFinanceDataNotifierProvider.notifier)
+                  .fetchUserFinanceData(uid);
             } else {
               logger
                   .e("Error: UID is null or empty: retuning to signup screen");
@@ -206,12 +206,7 @@ class AuthService {
               ElevatedButton(
                   onPressed: () {
                     logout();
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      "/signup",
-                      (Route<dynamic> route) =>
-                          false, // This removes all the previous routes
-                    );
+                    Navigate().toAndRemoveUntil(AuthScreen());
                   },
                   child: const Text("Yes")),
               ElevatedButton(

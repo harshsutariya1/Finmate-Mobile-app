@@ -1,4 +1,6 @@
 import 'package:finmate/Models/user.dart';
+import 'package:finmate/constants/colors.dart';
+import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
@@ -54,9 +56,31 @@ class _HomeScreenState extends State<HomeScreen> {
           Center(child: Text("FinMate App Home")),
           Divider(),
           ...widget.userFinanceData.listOfTransactions
-                  ?.map((transaction) => Text("Transaction Id: ${transaction.tid}"))
+                  ?.map((transaction) => transactionData(transaction))
                   .toList() ??
               [],
+        ],
+      ),
+    );
+  }
+
+  Widget transactionData(Transaction transaction) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(10),
+      margin: EdgeInsets.symmetric(horizontal: 30),
+      decoration: BoxDecoration(
+        border: Border.all(color: color2),
+        color: color4,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Transaction Id: ${transaction.tid}"),
+          Text("Transaction Amount: ${transaction.amount}"),
+          Text(
+              "Transaction Date: ${transaction.date?.day}/${transaction.date?.month}/${transaction.date?.year}"),
         ],
       ),
     );

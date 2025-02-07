@@ -16,7 +16,8 @@ CollectionReference<UserData> userCollection =
           toFirestore: (userData, _) => userData.toJson(),
         );
 
-CollectionReference<transaction_model.Transaction> userTransactionsCollection(String uid) {
+CollectionReference<transaction_model.Transaction> userTransactionsCollection(
+    String uid) {
   return userCollection
       .doc(uid)
       .collection('user_transactions')
@@ -32,6 +33,20 @@ Future<void> createUserProfile({required UserData userProfile}) async {
     await userCollection.doc(userProfile.uid).set(userProfile);
   } catch (e) {
     print("Error creating user profile: $e");
+  }
+}
+
+Future<bool> addTransactionToUserData({
+  required String uid,
+  required transaction_model.Transaction transactionData,
+}) async {
+  try {
+    await userTransactionsCollection(uid).add(transactionData);
+    print("Transaction added to user");
+    return true;
+  } catch (e) {
+    print("Error adding transaction to user: $e");
+    return false;
   }
 }
 

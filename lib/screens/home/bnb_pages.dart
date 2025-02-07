@@ -1,10 +1,11 @@
+import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/user_finance_data_provider.dart';
 import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/screens/home/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
 import 'package:finmate/screens/home/groups_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/investments_screen.dart';
-import 'package:finmate/screens/home/scaning_screen.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,7 +55,11 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         authService: _authService,
       ),
       AnalyticsScreen(),
-      ScaningScreen(),
+      AddTransactionScreen(
+        userData: userData,
+        userFinanceData: userFinanceData,
+        authService: _authService,
+      ),
       InvestmentsScreen(),
       GroupsScreen(),
     ];
@@ -79,7 +84,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
             ),
             activeIcon: Icon(
               listOfIcons[index],
-              color: Colors.blue,
+              color: color3,
             ),
             label: listOfTitles[index],
           ),

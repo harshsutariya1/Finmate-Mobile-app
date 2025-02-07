@@ -9,13 +9,13 @@ class Transaction {
 
   Transaction({
     required this.tid,
-    this.amount,
-    this.date,
-    this.uid,
-    this.category,
-    this.methodOfPayment,
-    this.description,
-  });
+    this.amount = "0",
+    DateTime? date,
+    this.uid = "",
+    this.category = "",
+    this.methodOfPayment = "",
+    this.description = "",
+  }) : date = date ?? DateTime.now();
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(

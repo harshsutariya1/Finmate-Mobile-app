@@ -1,7 +1,5 @@
-import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -30,8 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Settings'),
         actions: [
           IconButton(
-            onPressed: () {
-              _onTapLogout();
+            onPressed: () async {
+              widget.authService.logoutDilog(context);
             },
             icon: const Icon(Icons.logout_rounded),
           ),
@@ -48,20 +46,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _onTapLogout() async {
-    if (await widget.authService.logout()) {
-      Navigate().push(AuthScreen());
-      snackbarToast(
-        context: context,
-        text: "Logout successful",
-        icon: Icons.done_all_outlined,
-      );
-    } else {
-      snackbarToast(
-        context: context,
-        text: "Error logging out",
-        icon: Icons.error_rounded,
-      );
-    }
-  }
+  // void _onTapLogout(BuildContext context) async {
+  //   if (await widget.authService.logoutDilog(context)) {
+  //     Navigate().push(AuthScreen());
+  //     snackbarToast(
+  //       context: context,
+  //       text: "Logout successful",
+  //       icon: Icons.done_all_outlined,
+  //     );
+  //   } else {
+  //     snackbarToast(
+  //       context: context,
+  //       text: "Error logging out",
+  //       icon: Icons.error_rounded,
+  //     );
+  //   }
+  // }
 }
