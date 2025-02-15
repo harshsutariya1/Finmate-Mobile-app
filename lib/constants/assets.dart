@@ -7,6 +7,7 @@ const String groupsIcon = 'assets/images/groups.png';
 // _____________________________________________________________________________
 // _____________ Image assets __________________________________________________
 const String backgroundImage = "assets/images/Background.png";
+const String authImage = "assets/images/authImage.png";
 // _____________________________________________________________________________
 // _____________ Icon assets ___________________________________________________
 const String appLogo = "assets/icons/LOGO.png";

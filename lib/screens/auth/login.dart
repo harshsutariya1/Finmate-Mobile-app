@@ -1,6 +1,10 @@
+import 'package:finmate/constants/assets.dart';
+import 'package:finmate/constants/colors.dart';
+import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool isLoginLoading = false;
   bool isGoogleLoading = false;
+  bool viewPassword = false;
 
   @override
   void dispose() {
@@ -41,32 +46,127 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
+      body: Container(
+        alignment: Alignment.bottomCenter,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            fit: BoxFit.fill,
+            image: AssetImage(backgroundImage),
+          ),
+        ),
+        child: Container(
+          margin: EdgeInsets.only(
+            top: 60,
+            left: 15,
+            right: 15,
+            bottom: 20,
+          ),
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: backgroundColorWhite,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: loginForm(),
+        ),
       ),
-      body: Column(
+    );
+  }
+
+  Widget loginForm() {
+    return SingleChildScrollView(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 20,
+        mainAxisSize: MainAxisSize.min,
+        spacing: 8,
         children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: _onTapLogin,
-              child: (isLoginLoading)
-                  ? const CircularProgressIndicator()
-                  : const Text('Login'),
+          sbh10,
+          Image.asset(appLogo),
+          sbh5,
+          Text(
+            "Sign In",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 25,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              _onTapGoogle(ref);
-            },
-            child: (isGoogleLoading)
-                ? const CircularProgressIndicator()
-                : Text("Login With Google"),
+          Text(
+            'to "Enter The Voult"',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
           ),
+          sbh10,
+          customTextField(
+            controller: _emailController,
+            text: "Email Address",
+            iconData: Icons.email_rounded,
+          ),
+          sbh5,
+          customTextField(
+            controller: _passwordController,
+            text: "Password",
+            passwordField: true,
+            viewPassword: viewPassword,
+            iconData: Icons.password_rounded,
+            onTapVisibilityIcon: () {
+              setState(() {
+                viewPassword = !viewPassword;
+              });
+            },
+          ),
+          sbh10,
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {},
+              child: Text("Forgot Password?"),
+            ),
+          ),
+          Center(
+            child: authButton(
+              text: "Sign In",
+              onTap: _onTapLogin,
+            ),
+          ),
+          sbh5,
+          Center(
+            child: googleButton(onTap: _onTapGoogle),
+          ),
+          sbh10,
+          bottomText(),
+          sbh10,
         ],
       ),
+    );
+  }
+
+  Widget bottomText() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an Account? ",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 15,
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigate().goBack();
+          },
+          child: Text(
+            "Sign Up",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -96,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // }
   }
 
-  void _onTapGoogle(WidgetRef ref) async {
+  void _onTapGoogle() async {
     setState(() {
       isGoogleLoading = true;
     });

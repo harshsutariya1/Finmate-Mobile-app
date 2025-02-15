@@ -13,31 +13,37 @@ void snackbarToast({
     autoDismiss: true,
     snackbarDuration: const Duration(seconds: 3),
     builder: (context) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
       margin: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
       decoration: BoxDecoration(
         border: Border.all(color: color3),
         borderRadius: BorderRadius.circular(10),
         color: color4,
       ),
-      child: Row(
-        spacing: 20,
-        children: [
-          Icon(
-            icon,
-            color: color3,
-          ),
-          Text(
-            text,
-            softWrap: true,
-            style: TextStyle(
-              color: color2,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
-        ],
+      child: snackBarBody(
+        icon: icon,
+        text: text,
       ),
     ),
   ).show(context);
+}
+
+Widget snackBarBody({
+  required IconData icon,
+  required String text,
+}) {
+  return ListTile(
+    leading: Icon(
+      icon,
+      color: color3,
+    ),
+    title: Text(
+      text,
+      softWrap: true,
+      style: TextStyle(
+        color: color2,
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+      ),
+    ),
+  );
 }

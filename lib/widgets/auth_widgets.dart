@@ -14,10 +14,16 @@ Widget customTextField({
     children: [
       TextFormField(
         controller: controller,
-        obscureText: viewPassword,
+        obscureText: (passwordField) ? !viewPassword : false,
         decoration: InputDecoration(
           labelText: text,
-          prefixIcon: Icon(iconData),
+          labelStyle: TextStyle(
+            color: color1,
+          ),
+          prefixIcon: Icon(
+            iconData,
+            color: color1,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -120,3 +126,5 @@ Widget googleButton({
     ),
   );
 }
+
+
