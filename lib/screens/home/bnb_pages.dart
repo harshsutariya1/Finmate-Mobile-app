@@ -57,18 +57,23 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     final userData = ref.watch(userDataNotifierProvider);
     final userFinanceData = ref.watch(userFinanceDataNotifierProvider);
     final List<Widget> screens = [
+      // 1
       HomeScreen(
         userData: userData,
         userFinanceData: userFinanceData,
         authService: _authService,
       ),
+      // 2
       AnalyticsScreen(),
+      // 3
       AddTransactionScreen(
         userData: userData,
         userFinanceData: userFinanceData,
         authService: _authService,
       ),
+      // 4
       InvestmentsScreen(),
+      // 5
       GroupsScreen(),
     ];
 

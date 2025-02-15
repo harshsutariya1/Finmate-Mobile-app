@@ -5,6 +5,7 @@ import 'package:finmate/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   setup().then((_) {
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
       navigatorKey: Navigate().navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        textTheme: GoogleFonts.poppinsTextTheme(),
         useMaterial3: true,
       ),
       routes: Routes.routes,

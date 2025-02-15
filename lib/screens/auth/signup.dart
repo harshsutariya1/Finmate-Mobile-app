@@ -1,6 +1,10 @@
+import 'package:finmate/constants/assets.dart';
+import 'package:finmate/constants/colors.dart';
+import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,17 +21,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   late AuthService _authService;
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController =
-      TextEditingController(text: "dhairya@gmail.com");
-  final TextEditingController _passwordController =
-      TextEditingController(text: "password");
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
-      TextEditingController(text: "password");
-  final TextEditingController _nameController =
-      TextEditingController(text: "dhairya");
+      TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
 
   bool isSignupLoading = false;
   bool isGoogleLoading = false;
+  bool viewPassword = false;
 
   @override
   void dispose() {
@@ -47,36 +49,123 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SignUp'),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 20,
-        children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: _onTapSignin,
-              child: (isSignupLoading)
-                  ? const CircularProgressIndicator()
-                  : const Text('SignUp'),
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            fit: BoxFit.fill,
+            image: AssetImage(backgroundImage),
+          ),
+        ),
+        child: Container(
+          margin: EdgeInsets.only(
+            top: 60,
+            left: 15,
+            right: 15,
+            bottom: 20,
+          ),
+          alignment: Alignment.center,
+          height: double.infinity,
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: backgroundColorWhite,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 8,
+              children: [
+                Image.asset(appLogo),
+                Text(
+                  "Join Us",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 25,
+                  ),
+                ),
+                Text(
+                  "Take control of your finances now",
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
+                ),
+                sbh10,
+                customTextField(
+                  controller: _nameController,
+                  text: "Full Name",
+                  iconData: Icons.person,
+                ),
+                sbh5,
+                customTextField(
+                  controller: _emailController,
+                  text: "Email",
+                  iconData: Icons.email_rounded,
+                ),
+                sbh5,
+                customTextField(
+                  controller: _passwordController,
+                  text: "Password",
+                  passwordField: true,
+                  viewPassword: viewPassword,
+                  iconData: Icons.password_rounded,
+                  onTapVisibilityIcon: () {
+                    setState(() {
+                      viewPassword = !viewPassword;
+                    });
+                  },
+                ),
+                sbh5,
+                customTextField(
+                  controller: _confirmPasswordController,
+                  text: "Confirm Password",
+                  iconData: Icons.password_rounded,
+                ),
+                sbh10,
+                Center(
+                  child: authButton(
+                    text: "SignUp",
+                    onTap: _onTapSignin,
+                  ),
+                ),
+                sbh5,
+                Center(
+                  child: googleButton(onTap: _onTapGoogle),
+                ),
+                sbh10,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Already have an Account? ",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 15,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigate().goBack();
+                      },
+                      child: Text(
+                        "Sign In",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              _onTapGoogle(ref);
-            },
-            child: (isGoogleLoading)
-                ? const CircularProgressIndicator()
-                : Text("SignIn With Google"),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  void _onTapSignin() async { 
+  void _onTapSignin() async {
     setState(() {
       isSignupLoading = true;
     });
@@ -107,7 +196,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     });
   }
 
-  void _onTapGoogle(WidgetRef ref) async {
+  void _onTapGoogle() async {
     setState(() {
       isGoogleLoading = true;
     });
@@ -116,13 +205,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         Navigate().toAndRemoveUntil(BnbPages());
         snackbarToast(
           context: context,
-          text: "Signin Successfully",
+          text: "SignUp Successfully",
           icon: Icons.done_all_outlined,
         );
       } else {
         snackbarToast(
           context: context,
-          text: "Error Signing User",
+          text: "Error SigningUp User",
           icon: Icons.error_rounded,
         );
       }
