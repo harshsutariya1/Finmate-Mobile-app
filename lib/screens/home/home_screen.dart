@@ -28,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColorWhite,
       appBar: AppBar(
         title: Text(
           (widget.userData.name == "")
@@ -61,6 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ?.map((transaction) => transactionData(transaction))
                     .toList() ??
                 [],
+            Divider(),
           ],
         ),
       ),
@@ -80,7 +82,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Transaction Id: ${transaction.tid}"),
+          Text(
+            "Transaction Id: ${transaction.tid}",
+            style: TextStyle(
+              color: color1,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Text("Transaction Amount: ${transaction.amount}"),
           Text(
               "Transaction Date: ${transaction.date?.day}/${transaction.date?.month}/${transaction.date?.year}"),
