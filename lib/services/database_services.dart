@@ -46,7 +46,7 @@ Future<bool> addTransactionToUserData({
 }) async {
   try {
     final result = await userTransactionsCollection(uid).add(transactionData);
-    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionData(
+    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionTidData(
           uid: uid,
           tid: result.id,
           transaction: transactionData,

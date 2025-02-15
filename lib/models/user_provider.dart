@@ -20,21 +20,16 @@ class UserDataNotifier extends _$UserDataNotifier {
   }
 
   Future<bool> fetchCurrentUserData(String? uid) async {
-    if (uid == null || uid.isEmpty) {
-      logger.w("Error: UID is null or empty");
-      return false; // Exit the function early if the UID is invalid
-    }
-
     try {
       logger.i("checking document of: $uid");
       final docSnapshot = await userCollection.doc(uid).get();
 
       if (docSnapshot.exists) {
-      state = docSnapshot.data()!;
-      logger.i(
-          "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
+        state = docSnapshot.data()!;
+        logger.i(
+            "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
 
-      return true;
+        return true;
       } else {
         logger.w("User with uid $uid not found.");
         await FirebaseAuth.instance.signOut();

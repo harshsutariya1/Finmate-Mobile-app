@@ -18,13 +18,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController =
-      TextEditingController(text: "harsh@gmail.com");
+      TextEditingController(text: "dhairya@gmail.com");
   final TextEditingController _passwordController =
       TextEditingController(text: "password");
   final TextEditingController _confirmPasswordController =
       TextEditingController(text: "password");
   final TextEditingController _nameController =
-      TextEditingController(text: "Harsh");
+      TextEditingController(text: "dhairya");
 
   bool isSignupLoading = false;
   bool isGoogleLoading = false;
@@ -76,7 +76,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  void _onTapSignin() async {
+  void _onTapSignin() async { 
     setState(() {
       isSignupLoading = true;
     });

@@ -28,14 +28,13 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
         for (var element in value.docs) {
           transactions.add(element.data());
         }
-      }).then((value) {
-        state = UserFinanceData(
-          listOfGroups: [],
-          listOfTransactions: transactions,
-        );
-        logger.i(
-            "User transaction data fetched successfully, \nNumber of transactions: ${transactions.length}");
       });
+      state = UserFinanceData(
+        listOfGroups: [],
+        listOfTransactions: transactions,
+      );
+      logger.i(
+          "User transaction data fetched successfully, \nNumber of transactions: ${transactions.length}");
 
       return true;
     } catch (e) {
@@ -44,7 +43,7 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
     }
   }
 
-  Future<bool> updateTransactionData({
+  Future<bool> updateTransactionTidData({
     required String uid,
     required String tid,
     required Transaction transaction,
@@ -60,7 +59,7 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
 
       return true;
     } catch (e) {
-      logger.w("Error while updating transaction data: $e");
+      logger.w("Error while updating transaction tid: $e");
       return false;
     }
   }

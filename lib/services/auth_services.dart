@@ -1,6 +1,4 @@
 import 'package:finmate/Models/user.dart';
-import 'package:finmate/models/user_finance_data_provider.dart';
-import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
@@ -38,22 +36,15 @@ class AuthService {
             final uid = user?.uid;
 
             if (uid != null && uid.isNotEmpty) {
-              ref
-                  .read(userDataNotifierProvider.notifier)
-                  .fetchCurrentUserData(uid);
-              ref
-                  .read(userFinanceDataNotifierProvider.notifier)
-                  .fetchUserFinanceData(uid);
+              loggerNoStack.i(
+                  "User email: ${user?.email}\nUser is signed in: to home screen, name: ${user?.displayName}");
+
+              return BnbPages();
             } else {
               logger
                   .e("Error: UID is null or empty: retuning to signup screen");
               return const AuthScreen();
             }
-
-            loggerNoStack.i(
-                "User email: ${user?.email}\nUser is signed in: to home screen, name: ${user?.displayName}");
-
-            return const BnbPages();
           } else {
             loggerNoStack.i("User is not signed in: to auth screen");
             return const AuthScreen();
@@ -64,26 +55,22 @@ class AuthService {
   }
 
   Future<bool> login(String email, String password, WidgetRef ref) async {
-    print("login function called");
+    print("login function running");
     try {
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
       if (credential.user != null) {
         user = credential.user;
-        ref
-            .read(userDataNotifierProvider.notifier)
-            .fetchCurrentUserData(user?.uid);
-        ref
-            .read(userFinanceDataNotifierProvider.notifier)
-            .fetchUserFinanceData(user!.uid);
         return true;
+      } else {
+        return false;
       }
     } catch (e) {
-      loggerNoStack.w("Login failed");
+      loggerNoStack.w("Login failed, user id not found");
       logger.w("Error: $e");
       return false;
     }
-    return false;
+    // return false;
   }
 
   Future<String> signup(
@@ -92,7 +79,7 @@ class AuthService {
     String password,
     WidgetRef ref,
   ) async {
-    print("signup function called");
+    print("signup function running");
     try {
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
@@ -104,12 +91,6 @@ class AuthService {
           name: name,
           email: email,
         ));
-        ref
-            .read(userDataNotifierProvider.notifier)
-            .fetchCurrentUserData(user?.uid);
-        ref
-            .read(userFinanceDataNotifierProvider.notifier)
-            .fetchUserFinanceData(user!.uid);
         return "Success";
       } else {
         return "Error";
@@ -138,6 +119,7 @@ class AuthService {
       final email = user?.email;
       final name = user?.displayName;
       print("UID: $uid, \nemail: $email,");
+      this.user = user;
 
       bool userExists = await checkExistingUser(uid!);
 
@@ -151,14 +133,6 @@ class AuthService {
             email: email,
           ));
         }
-        await ref
-            .read(userDataNotifierProvider.notifier)
-            .fetchCurrentUserData(uid);
-        await ref
-            .read(userFinanceDataNotifierProvider.notifier)
-            .fetchUserFinanceData(uid);
-
-        this.user = user;
         // go to HomeScreen
         print('Google Signed in as: ${user.displayName}');
         return true;

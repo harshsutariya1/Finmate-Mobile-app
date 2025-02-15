@@ -104,12 +104,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _authService.handleGoogleSignIn(ref).then(
       (value) {
         if (value) {
-          Navigate().toAndRemoveUntil(BnbPages());
           snackbarToast(
             context: context,
             text: "Login successful",
             icon: Icons.done_all_outlined,
           );
+          Navigate().toAndRemoveUntil(BnbPages());
         } else {
           snackbarToast(
             context: context,
