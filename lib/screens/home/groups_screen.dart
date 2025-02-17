@@ -1,3 +1,4 @@
+import 'package:finmate/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -11,7 +12,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColorWhite,
       appBar: AppBar(
+        backgroundColor: backgroundColorWhite,
         title: const Text('Groups'),
       ),
       body: Center(

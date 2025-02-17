@@ -80,6 +80,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     return Scaffold(
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
+        
+        backgroundColor: backgroundColorWhite,
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
         iconSize: 30,
@@ -91,6 +93,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         items: List.generate(
           screens.length,
           (index) => BottomNavigationBarItem(
+            
             icon: Icon(
               listOfIcons[index],
               color: Colors.black,

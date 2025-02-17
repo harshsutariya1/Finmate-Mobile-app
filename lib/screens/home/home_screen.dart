@@ -30,6 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: backgroundColorWhite,
       appBar: AppBar(
+        backgroundColor: backgroundColorWhite,
         title: Text(
           (widget.userData.name == "")
               ? "Home"
@@ -56,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(child: Text("FinMate App Home")),
+            Center(child: Text("Transactions")),
             Divider(),
             ...widget.userFinanceData.listOfTransactions
                     ?.map((transaction) => transactionData(transaction))
@@ -76,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       margin: EdgeInsets.symmetric(horizontal: 30),
       decoration: BoxDecoration(
         border: Border.all(color: color2),
-        color: color4,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(

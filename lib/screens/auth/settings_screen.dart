@@ -1,3 +1,4 @@
+import 'package:finmate/constants/colors.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
@@ -17,49 +18,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigate().goBack();
-          },
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-        ),
-        centerTitle: true,
-        title: const Text('Settings'),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              widget.authService.logoutDilog(context);
-            },
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
+      backgroundColor: backgroundColorWhite,
+      appBar: appBar(),
       body: Column(
-        spacing: 15,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center(child: const Text("Settings Screen")),
+          borderedContainer([
+            listTile(
+              iconData: Icons.edit_document,
+              text: "Edit Personal Information",
+            ),
+            listTile(
+              iconData: Icons.language,
+              text: "Language",
+              isLanguageTile: true,
+            ),
+          ]),
         ],
       ),
     );
   }
 
-  // void _onTapLogout(BuildContext context) async {
-  //   if (await widget.authService.logoutDilog(context)) {
-  //     Navigate().push(AuthScreen());
-  //     snackbarToast(
-  //       context: context,
-  //       text: "Logout successful",
-  //       icon: Icons.done_all_outlined,
-  //     );
-  //   } else {
-  //     snackbarToast(
-  //       context: context,
-  //       text: "Error logging out",
-  //       icon: Icons.error_rounded,
-  //     );
-  //   }
-  // }
+  PreferredSizeWidget appBar() {
+    return AppBar(
+      backgroundColor: backgroundColorWhite,
+      leading: IconButton(
+        onPressed: () {
+          Navigate().goBack();
+        },
+        icon: const Icon(
+          Icons.arrow_back_ios_rounded,
+          color: color1,
+        ),
+      ),
+      centerTitle: true,
+      title: Text(
+        'Settings',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: color1,
+        ),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () async {
+            widget.authService.logoutDilog(context);
+          },
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: color1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget borderedContainer(List<Widget> listOfTiles) {
+    return Container(
+      margin: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        border: Border.all(color: color2),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ...listOfTiles.map((listTile) => listTile),
+        ],
+      ),
+    );
+  }
+
+  Widget listTile({
+    required IconData iconData,
+    required String text,
+    bool isLanguageTile = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        iconData,
+        color: color3,
+        size: 28,
+      ),
+      title: Text(
+        text,
+        style: TextStyle(
+          color: color2,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: (isLanguageTile)
+          ? Text(
+              "English",
+              style: TextStyle(
+                color: color3,
+                fontSize: 15,
+              ),
+            )
+          : null,
+    );
+  }
 }
