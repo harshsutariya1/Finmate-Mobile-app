@@ -1,5 +1,6 @@
 import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 
 Widget customTextField({
@@ -127,4 +128,25 @@ Widget googleButton({
   );
 }
 
-
+PreferredSizeWidget customAppBar(String title) {
+  return AppBar(
+    backgroundColor: backgroundColorWhite,
+    leading: IconButton(
+      onPressed: () {
+        Navigate().goBack();
+      },
+      icon: const Icon(
+        Icons.arrow_back_ios_rounded,
+        color: color1,
+      ),
+    ),
+    centerTitle: true,
+    title: Text(
+      title,
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: color1,
+      ),
+    ),
+  );
+}
