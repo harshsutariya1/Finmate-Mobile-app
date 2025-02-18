@@ -59,8 +59,6 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     final List<Widget> screens = [
       // 1
       HomeScreen(
-        userData: userData,
-        userFinanceData: userFinanceData,
         authService: _authService,
       ),
       // 2
@@ -80,8 +78,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     return Scaffold(
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        
-        backgroundColor: backgroundColorWhite,
+        backgroundColor: color4,
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
         iconSize: 30,
@@ -93,7 +90,6 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         items: List.generate(
           screens.length,
           (index) => BottomNavigationBarItem(
-            
             icon: Icon(
               listOfIcons[index],
               color: Colors.black,

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
 import 'package:finmate/models/user_finance_data_provider.dart';
 import 'package:finmate/models/user_provider.dart';

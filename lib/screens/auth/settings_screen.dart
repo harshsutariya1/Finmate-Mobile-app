@@ -1,25 +1,32 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({
     super.key,
     required this.authService,
+    // required this.userData,
   });
 
   final AuthService authService;
+  // final UserData userData;
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    UserData userData = ref.watch(userDataNotifierProvider);
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       appBar: customAppBar("Settings"),
       body: SingleChildScrollView(
         child: Column(
@@ -30,6 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               listTile(
                 iconData: Icons.edit_document,
                 text: "Edit Personal Information",
+                onTap: () => Navigate().push(EditUserDetails(
+                  userData: userData,
+                )),
               ),
               Divider(
                 indent: 15,

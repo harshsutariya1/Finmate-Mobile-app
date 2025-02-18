@@ -1,6 +1,9 @@
 import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/screens/auth/login.dart';
+import 'package:finmate/screens/auth/signup.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -14,7 +17,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       body: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
@@ -60,11 +63,11 @@ class _AuthScreenState extends State<AuthScreen> {
       children: [
         button(
           text: "Sign In",
-          ontap: () => Navigator.pushNamed(context, '/login'),
+          ontap: () => Navigate().push(LoginScreen()),
         ),
         button(
           text: "Join Us",
-          ontap: () => Navigator.pushNamed(context, '/signup'),
+          ontap: () => Navigate().push(SignUpScreen()),
         ),
         sbh10,
         Text(

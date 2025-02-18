@@ -63,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           padding: EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: backgroundColorWhite,
+            color: color4,
             borderRadius: BorderRadius.circular(20),
           ),
           child: loginForm(),

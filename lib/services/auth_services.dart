@@ -1,4 +1,4 @@
-import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';

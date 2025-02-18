@@ -128,16 +128,19 @@ Widget googleButton({
   );
 }
 
-PreferredSizeWidget customAppBar(String title) {
+PreferredSizeWidget customAppBar(
+  String title, {
+  bool isEditProfileScreen = false,
+}) {
   return AppBar(
-    backgroundColor: backgroundColorWhite,
+    backgroundColor: (isEditProfileScreen) ? Colors.transparent : color4,
     leading: IconButton(
       onPressed: () {
         Navigate().goBack();
       },
-      icon: const Icon(
+      icon: Icon(
         Icons.arrow_back_ios_rounded,
-        color: color1,
+        color: (isEditProfileScreen) ? color4 : color1,
       ),
     ),
     centerTitle: true,
@@ -145,8 +148,62 @@ PreferredSizeWidget customAppBar(String title) {
       title,
       style: TextStyle(
         fontWeight: FontWeight.bold,
-        color: color1,
+        color: (isEditProfileScreen) ? color4 : color1,
       ),
     ),
+  );
+}
+
+Widget editButton({void Function()? onTap}) {
+  return InkWell(
+    onTap: onTap ?? () {},
+    child: Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(83, 158, 158, 158),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: CircleAvatar(
+        backgroundColor: Colors.white,
+        child:Icon(
+                Icons.edit_rounded,
+                color: color3,
+              ),
+      ),
+    ),
+  );
+}
+
+Future showYesNoDialog(
+  BuildContext context, {
+  required String title,
+  required Widget contentWidget,
+  required void Function() onTapYes,
+  required void Function() onTapNo,
+}) {
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog.adaptive(
+        title: const Text('Edit Name ?'),
+        content: contentWidget,
+        actions: [
+          ElevatedButton(
+            onPressed: onTapYes,
+            child: const Text("Yes"),
+          ),
+          ElevatedButton(
+            onPressed: onTapNo,
+            child: const Text("No"),
+          ),
+        ],
+      );
+    },
   );
 }

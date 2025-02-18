@@ -1,7 +1,9 @@
-import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/models/user_finance_data_provider.dart';
+import 'package:finmate/models/user_provider.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/services/auth_services.dart';
@@ -12,12 +14,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
-    required this.userData,
-    required this.userFinanceData,
+    // required this.userData,
+    // required this.userFinanceData,
     required this.authService,
   });
-  final UserData userData;
-  final UserFinanceData userFinanceData;
+  // final UserData userData;
+  // final UserFinanceData userFinanceData;
   final AuthService authService;
 
   @override
@@ -27,14 +29,16 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
+    UserData userData = ref.watch(userDataNotifierProvider);
+    UserFinanceData userFinanceData = ref.watch(userFinanceDataNotifierProvider);
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       appBar: AppBar(
-        backgroundColor: backgroundColorWhite,
+        backgroundColor: color4,
         title: Text(
-          (widget.userData.name == "")
+          (userData.name == "")
               ? "Home"
-              : widget.userData.name ?? "Home",
+              : userData.name ?? "Home",
         ),
         actions: [
           IconButton(
@@ -45,7 +49,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           IconButton(
             onPressed: () {
-              Navigate().push(SettingsScreen(authService: widget.authService));
+              Navigate().push(SettingsScreen(
+                authService: widget.authService,
+              ));
             },
             icon: Icon(Icons.settings),
           ),
@@ -59,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Center(child: Text("Transactions")),
             Divider(),
-            ...widget.userFinanceData.listOfTransactions
+            ...userFinanceData.listOfTransactions
                     ?.map((transaction) => transactionData(transaction))
                     .toList() ??
                 [],

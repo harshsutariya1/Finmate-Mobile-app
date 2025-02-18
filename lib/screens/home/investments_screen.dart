@@ -12,9 +12,9 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       appBar: AppBar(
-        backgroundColor: backgroundColorWhite,
+        backgroundColor: color4,
         title: const Text('Investments'),
       ),
       body: Center(

@@ -1,6 +1,7 @@
 class UserData {
   String? uid;
   String? name;
+  String? userName;
   String? pfpURL;
   String? email;
   String? gender;
@@ -12,6 +13,7 @@ class UserData {
   UserData({
     required this.uid,
     required this.name,
+    this.userName = "",
     this.pfpURL = "",
     this.email = "",
     this.gender = "",
@@ -25,6 +27,7 @@ class UserData {
     return UserData(
       uid: json['uid'] as String,
       name: json['name'] as String,
+      userName: json['userName'] as String? ?? "",
       pfpURL: json['pfpURL'] as String? ?? "",
       email: json['email'] as String,
       gender: json['gender'] as String? ?? "",
@@ -39,6 +42,7 @@ class UserData {
     return {
       'uid': uid,
       'name': name,
+      'userName': userName, 
       'pfpURL': pfpURL,
       'email': email,
       'gender': gender,

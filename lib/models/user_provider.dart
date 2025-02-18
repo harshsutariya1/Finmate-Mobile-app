@@ -1,4 +1,4 @@
-import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
@@ -27,7 +27,7 @@ class UserDataNotifier extends _$UserDataNotifier {
       if (docSnapshot.exists) {
         state = docSnapshot.data()!;
         logger.i(
-            "User with uid $uid found. \nemail: ${state.email} \nname: ${state.name} \nimage: ${state.pfpURL}");
+            "User with uid $uid found. \nUserName: ${state.userName} \nName: ${state.name} \nEmail: ${state.email} \nImage: ${state.pfpURL}");
 
         return true;
       } else {
@@ -41,9 +41,9 @@ class UserDataNotifier extends _$UserDataNotifier {
     }
   }
 
-  void updateCurrentUserData({
-    // required String uid,
+  Future<bool> updateCurrentUserData({
     String? name,
+    String? userName,
     String? pfpURL,
     String? email,
     String? gender,
@@ -55,20 +55,41 @@ class UserDataNotifier extends _$UserDataNotifier {
     try {
       final userRef = userCollection.doc(state.uid);
 
-      Map<String, dynamic> updatedData = {
-        'name': name ?? state.name,
-        'pfpURL': pfpURL ?? state.pfpURL,
-        'email': email ?? state.email,
-        'gender': gender ?? state.gender,
-        'cash': cash ?? state.cash,
-        'dob': dob ?? state.dob,
-        'transactionIds': transactionIds ?? state.transactionIds,
-        'groupIds': groupIds ?? state.groupIds,
-      };
+      Map<String, dynamic> updatedData = {};
+
+      if (name != null) {
+        updatedData['name'] = name;
+      }
+      if (userName != null) {
+        updatedData['userName'] = userName;
+      }
+      if (pfpURL != null) {
+        updatedData['pfpURL'] = pfpURL;
+      }
+      if (email != null) {
+        updatedData['email'] = email;
+      }
+      if (gender != null) {
+        updatedData['gender'] = gender;
+      }
+      if (cash != null) {
+        updatedData['cash'] = cash;
+      }
+      if (dob != null) {
+        updatedData['dob'] = dob.toIso8601String();
+      }
+      if (transactionIds != null) {
+        updatedData['transactionIds'] = transactionIds;
+      }
+      if (groupIds != null) {
+        updatedData['groupIds'] = groupIds;
+      }
+
       await userRef.update(updatedData).then((value) {
         state = UserData(
           uid: state.uid,
           name: name ?? state.name,
+          userName: userName ?? state.userName,
           pfpURL: pfpURL ?? state.pfpURL,
           email: email ?? state.email,
           gender: gender ?? state.gender,
@@ -78,9 +99,13 @@ class UserDataNotifier extends _$UserDataNotifier {
           groupIds: groupIds ?? state.groupIds,
         );
         logger.i('Document updated successfully!');
+      }).then((value) {
+        return true;
       });
+      return true;
     } catch (e) {
       logger.w("Error updating document: $e");
+      return false;
     }
   }
 }

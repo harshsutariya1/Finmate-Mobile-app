@@ -12,9 +12,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       appBar: AppBar(
-        backgroundColor: backgroundColorWhite,
+        backgroundColor: color4,
         title: const Text('Groups'),
       ),
       body: Center(

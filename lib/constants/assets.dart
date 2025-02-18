@@ -8,6 +8,7 @@ const String groupsIcon = 'assets/images/groups.png';
 // _____________ Image assets __________________________________________________
 const String backgroundImage = "assets/images/Background.png";
 const String authImage = "assets/images/authImage.png";
+const String blankProfileImage = "assets/images/profile.jpg";
 // _____________________________________________________________________________
 // _____________ Icon assets ___________________________________________________
 const String appLogo = "assets/icons/LOGO.png";

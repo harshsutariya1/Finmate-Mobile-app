@@ -1,4 +1,4 @@
-import 'package:finmate/Models/user.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
@@ -29,9 +29,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColorWhite,
+      backgroundColor: color4,
       appBar: AppBar(
-        backgroundColor: backgroundColorWhite,
+        backgroundColor: color4,
         centerTitle: true,
         title: const Text('Add Transaction'),
       ),

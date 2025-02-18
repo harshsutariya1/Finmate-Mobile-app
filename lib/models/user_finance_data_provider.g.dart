@@ -7,7 +7,7 @@ part of 'user_finance_data_provider.dart';
 // **************************************************************************
 
 String _$userFinanceDataNotifierHash() =>
-    r'3ff57f22fe02d706d83fae6541f6f338e3957757';
+    r'659f6c159c3a695ae1bc2c1161eda23b03febed3';
 
 /// See also [UserFinanceDataNotifier].
 @ProviderFor(UserFinanceDataNotifier)

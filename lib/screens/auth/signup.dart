@@ -70,7 +70,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           height: double.infinity,
           padding: EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: backgroundColorWhite,
+            color: color4,
             borderRadius: BorderRadius.circular(20),
           ),
           child: signupForm(),
