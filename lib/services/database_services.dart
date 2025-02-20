@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
@@ -36,34 +35,6 @@ Future<void> createUserProfile({required UserData userProfile}) async {
     await userCollection.doc(userProfile.uid).set(userProfile);
   } catch (e) {
     print("Error creating user profile: $e");
-  }
-}
-
-Future<bool> addTransactionToUserData({
-  required String uid,
-  required transaction_model.Transaction transactionData,
-  required WidgetRef ref,
-}) async {
-  try {
-    final result = await userTransactionsCollection(uid).add(transactionData);
-    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionTidData(
-          uid: uid,
-          tid: result.id,
-          transaction: transactionData,
-        );
-
-    List<String>? currentIds =
-        ref.read(userDataNotifierProvider).transactionIds ?? [];
-    currentIds.add(result.id);
-    ref
-        .read(userDataNotifierProvider.notifier)
-        .updateCurrentUserData(transactionIds: currentIds);
-
-    print("Transaction added to user");
-    return true;
-  } catch (e) {
-    print("Error adding transaction to user: $e");
-    return false;
   }
 }
 
@@ -106,17 +77,16 @@ Future<String?> uploadUserPfpic({
   required String uid,
 }) async {
   try {
-    print("uploading profile pic");
+    print("uploading profile pic...");
     Reference fileReference = firebaseStorage
         .ref('users/pfpics')
         .child("$uid${path.extension(file.path)}");
 
     UploadTask uploadTask = fileReference.putFile(file);
-    print("upload task done: \n${fileReference.getDownloadURL()}");
 
     return uploadTask.then((p) {
       if (p.state == TaskState.success) {
-        print("profile pic uploaded");
+        print("File Uploaded: ${fileReference.getDownloadURL().toString()}");
         return fileReference.getDownloadURL();
       }
       print("error while uploading profile pic");
@@ -127,3 +97,55 @@ Future<String?> uploadUserPfpic({
     return null;
   }
 }
+
+Future<bool> addTransactionToUserData({
+  required String uid,
+  required transaction_model.Transaction transactionData,
+  required WidgetRef ref,
+}) async {
+  try {
+    final result = await userTransactionsCollection(uid).add(transactionData);
+    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionTidData(
+          uid: uid,
+          tid: result.id,
+          transaction: transactionData,
+        );
+
+    List<String>? currentIds =
+        ref.read(userDataNotifierProvider).transactionIds ?? [];
+    currentIds.add(result.id);
+    ref
+        .read(userDataNotifierProvider.notifier)
+        .updateCurrentUserData(transactionIds: currentIds);
+
+    print("Transaction added to user");
+    return true;
+  } catch (e) {
+    print("Error adding transaction to user: $e");
+    return false;
+  }
+}
+
+Future<bool> deleteTransactionFromUserData({
+  required String uid,
+  required String transactionId,
+  required WidgetRef ref,
+}) async {
+  try {
+    await userTransactionsCollection(uid).doc(transactionId).delete();
+
+    List<String>? currentIds =
+        ref.read(userDataNotifierProvider).transactionIds ?? [];
+    currentIds.remove(transactionId);
+    ref
+        .read(userDataNotifierProvider.notifier)
+        .updateCurrentUserData(transactionIds: currentIds);
+
+    print("Transaction deleted from user");
+    return true;
+  } catch (e) {
+    print("Error deleting transaction from user: $e");
+    return false;
+  }
+}
+

@@ -1,6 +1,6 @@
-import 'package:finmate/models/user.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/auth_services.dart';
@@ -33,7 +33,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       appBar: AppBar(
         backgroundColor: color4,
         centerTitle: true,
-        title: const Text('Add Transaction'),
+        title: const Text('Add New Transaction'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: SizedBox(
@@ -53,10 +53,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ref,
             );
           },
-          child: const Text("Add Transaction"),
+          child: const Text("Save Transaction"),
         ),
       ),
-      body: Column(
+      body: _body(),
+    );
+  }
+
+  Widget _body(){
+    return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: const [
@@ -64,8 +69,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             child: Text("Scan QR Code"),
           ),
         ],
-      ),
-    );
+      );
   }
 
   void addTransaction(
@@ -73,7 +77,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     Transaction transactionData,
     WidgetRef ref,
   ) async {
-    // Add transaction logic here
     final result = await addTransactionToUserData(
       uid: uid,
       transactionData: transactionData,

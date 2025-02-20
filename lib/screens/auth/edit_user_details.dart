@@ -1,13 +1,18 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 class EditUserDetails extends ConsumerStatefulWidget {
   const EditUserDetails({
@@ -21,8 +26,12 @@ class EditUserDetails extends ConsumerStatefulWidget {
 }
 
 class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
+  var logger = Logger(
+    printer: PrettyPrinter(methodCount: 2),
+  );
   final _formKey = GlobalKey<FormState>();
   bool isEditing = false;
+  bool imageLoader = false;
 
   late TextEditingController _nameController;
   late TextEditingController _usernameController;
@@ -75,25 +84,58 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
               ),
             ),
             Align(
+              // Image Picker
               alignment: Alignment.bottomCenter,
               child: CircleAvatar(
                 backgroundColor: color1,
                 radius: 63,
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: AssetImage(blankProfileImage),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: FloatingActionButton.small(
-                      backgroundColor: Colors.white,
-                      shape: CircleBorder(),
-                      child: Icon(
-                        Icons.edit_rounded,
-                        color: color3,
+                child: CachedNetworkImage(
+                  imageUrl: userData.pfpURL.toString(),
+                  imageBuilder: (context, imageProvider) => CircleAvatar(
+                    radius: 60,
+                    backgroundImage: imageProvider,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: FloatingActionButton.small(
+                        onPressed: () {
+                          onTapEditImage(userData);
+                        },
+                        backgroundColor: Colors.white,
+                        shape: CircleBorder(),
+                        child: (imageLoader)
+                            ? Padding(
+                                padding: const EdgeInsets.all(5),
+                                child: CircularProgressIndicator.adaptive(),
+                              )
+                            : Icon(
+                                Icons.edit_rounded,
+                                color: color3,
+                              ),
                       ),
-                      onPressed: () {},
                     ),
                   ),
+                  errorWidget: (context, url, error) {
+                    return CircleAvatar(
+                      radius: 60,
+                      backgroundImage: AssetImage(blankProfileImage),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: FloatingActionButton.small(
+                          onPressed: () {
+                            onTapEditImage(userData);
+                          },
+                          backgroundColor: Colors.white,
+                          shape: CircleBorder(),
+                          child: Icon(
+                            Icons.edit_rounded,
+                            color: color3,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  placeholder: (context, url) =>
+                      CircularProgressIndicator.adaptive(),
                 ),
               ),
             ),
@@ -101,6 +143,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
         ),
         sbh15,
         Stack(
+          // Username
           alignment: Alignment.centerRight,
           children: [
             SizedBox(
@@ -134,14 +177,12 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
                               showYesNoDialog(
                                 context,
                                 title: 'Edit Username ?',
-                                contentWidget: (isEditing)
-                                    ? CircularProgressIndicator.adaptive()
-                                    : Text(
-                                        '${userData.userName ?? "username"} ➡️ ${_usernameController.text}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                        ),
-                                      ),
+                                contentWidget: Text(
+                                  '${userData.userName ?? "username"} ➡️ ${_usernameController.text}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
                                 onTapYes: () {
                                   setState(() {
                                     isEditing = true;
@@ -212,6 +253,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
           ],
         ),
         Text(
+          // email
           userData.email == "" ? "No email found" : userData.email ?? "",
           style: TextStyle(
             fontSize: 18,
@@ -240,14 +282,12 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
                   showYesNoDialog(
                     context,
                     title: 'Edit Name ?',
-                    contentWidget: (isEditing)
-                        ? CircularProgressIndicator.adaptive()
-                        : Text(
-                            '${userData.name ?? "Name"} ➡️ ${_nameController.text}',
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
+                    contentWidget: Text(
+                      '${userData.name ?? "Name"} ➡️ ${_nameController.text}',
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
                     onTapYes: () {
                       setState(() {
                         isEditing = true;
@@ -302,5 +342,36 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
         ),
       ],
     );
+  }
+
+  void onTapEditImage(UserData userData) async {
+    setState(() {
+      imageLoader = true;
+    });
+    try {
+      File? imageFile = await getImageFromGallery();
+      if (imageFile != null) {
+        final imageUrl = await uploadUserPfpic(
+            file: imageFile, uid: userData.uid.toString());
+        logger.i('Image Selected: $imageUrl');
+        if (imageUrl != null) {
+          ref
+              .read(userDataNotifierProvider.notifier)
+              .updateCurrentUserData(pfpURL: imageUrl);
+        } else {
+          logger.e("Error uploading image");
+        }
+      } else {
+        logger.w("No image selected");
+      }
+      setState(() {
+        imageLoader = false;
+      });
+    } catch (e) {
+      logger.e("Error while editing image: $e");
+      setState(() {
+        imageLoader = false;
+      });
+    }
   }
 }

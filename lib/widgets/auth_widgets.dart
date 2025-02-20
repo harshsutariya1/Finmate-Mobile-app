@@ -191,7 +191,7 @@ Future showYesNoDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog.adaptive(
-        title: const Text('Edit Name ?'),
+        title: Text(title),
         content: contentWidget,
         actions: [
           ElevatedButton(

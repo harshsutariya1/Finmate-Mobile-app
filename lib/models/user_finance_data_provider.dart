@@ -28,13 +28,14 @@ class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
         for (var element in value.docs) {
           transactions.add(element.data());
         }
+      }).then((value) {
+        state = UserFinanceData(
+          listOfGroups: [],
+          listOfTransactions: transactions.toList(),
+        );
+        logger.i(
+            "User transaction data fetched successfully. ${state.listOfTransactions?.length}");
       });
-      state = UserFinanceData(
-        listOfGroups: [],
-        listOfTransactions: transactions,
-      );
-      logger.i(
-          "User transaction data fetched successfully, \nNumber of transactions: ${transactions.length}");
 
       return true;
     } catch (e) {
