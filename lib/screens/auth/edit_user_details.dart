@@ -5,7 +5,7 @@ import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/user.dart';
-import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/models/user_provider2.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';

@@ -26,18 +26,15 @@ const List<String> transactionCategories = [
   'Others',
 ];
 
-// const List<IconData> transactionCategoryIcons = [
-//   Icons.fastfood,        // Food
-//   Icons.directions_bus,  // Transport
-//   Icons.movie,           // Entertainment
-//   Icons.lightbulb,       // Utilities
-//   Icons.local_hospital,  // Health
-//   Icons.shopping_cart,   // Shopping
-//   Icons.school,          // Education
-//   Icons.attach_money,    // Salary
-//   Icons.trending_up,     // Investment
-//   Icons.category,        // Others
-// ];
+const List<String> paymentModes = [
+  'Cash',
+  'Wallet',
+  'UPI Payment',
+  'Credit Card',
+  'Debit Card',
+  'Bank Transfer',
+  'Others',
+];
 
 class Transaction {
   String? tid;

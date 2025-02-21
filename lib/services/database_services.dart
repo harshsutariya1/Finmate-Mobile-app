@@ -2,11 +2,12 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
-import 'package:finmate/models/user_finance_data_provider.dart';
-import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/models/user_finance_data_provider2.dart';
+import 'package:finmate/models/user_provider2.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
 final ImagePicker _picker = ImagePicker();
@@ -98,6 +99,15 @@ Future<String?> uploadUserPfpic({
   }
 }
 
+Stream<QuerySnapshot> getTransactionsSnapshot(String uid) {
+  try {
+    return userCollection.doc(uid).collection('user_transactions').snapshots();
+  } catch (e) {
+    Logger().e("Error while getting transactions snapshots: $e");
+    return const Stream.empty();
+  }
+}
+
 Future<bool> addTransactionToUserData({
   required String uid,
   required transaction_model.Transaction transactionData,
@@ -148,4 +158,3 @@ Future<bool> deleteTransactionFromUserData({
     return false;
   }
 }
-

@@ -1,23 +1,21 @@
 import 'package:finmate/models/user.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'user_provider.g.dart';
+// Provider for UserDataNotifier
+final userDataNotifierProvider =
+    StateNotifierProvider<UserDataNotifier, UserData>((ref) {
+  return UserDataNotifier();
+});
 
-//	dart run build_runner watch -d
-@riverpod
-class UserDataNotifier extends _$UserDataNotifier {
+class UserDataNotifier extends StateNotifier<UserData> {
+  UserDataNotifier() : super(UserData(uid: "", name: ""));
   var logger = Logger(
     printer: PrettyPrinter(methodCount: 2),
   );
-
-  @override
-  UserData build() {
-    // Initial empty user state
-    return UserData(uid: "", name: "");
-  }
 
   Future<bool> fetchCurrentUserData(String? uid) async {
     try {
@@ -27,16 +25,16 @@ class UserDataNotifier extends _$UserDataNotifier {
       if (docSnapshot.exists) {
         state = docSnapshot.data()!;
         logger.i(
-            "User with uid $uid found. \nUserName: ${state.userName} \nName: ${state.name} \nEmail: ${state.email} \nImage: ${state.pfpURL} \nNo of Transactios: ${state.transactionIds?.length} \nNo of Groups: ${state.groupIds?.length}");
+            "✅ User data loaded successfully for $uid. \nUserName: ${state?.userName} \nName: ${state?.name} \nEmail: ${state?.email} \nImage: ${state?.pfpURL} \nNo of Transactios: ${state?.transactionIds?.length} \nNo of Groups: ${state?.groupIds?.length}");
 
         return true;
       } else {
-        logger.w("User with uid $uid not found.");
         await FirebaseAuth.instance.signOut();
+        logger.w("⚠️ User with uid $uid not found. Logging out...");
         return false;
       }
     } catch (e) {
-      logger.w("Failed to fetch current user data: $e");
+      logger.w("❌ Error fetching user data: $e");
       return false;
     }
   }
@@ -52,8 +50,12 @@ class UserDataNotifier extends _$UserDataNotifier {
     List<String>? transactionIds,
     List<String>? groupIds,
   }) async {
+    if (state == null) {
+      logger.w("⚠️ No user is logged in. Cannot update data.");
+      return false;
+    }
     try {
-      final userRef = userCollection.doc(state.uid);
+      final userRef = userCollection.doc(state?.uid);
 
       Map<String, dynamic> updatedData = {};
 
@@ -87,25 +89,35 @@ class UserDataNotifier extends _$UserDataNotifier {
 
       await userRef.update(updatedData).then((value) {
         state = UserData(
-          uid: state.uid,
-          name: name ?? state.name,
-          userName: userName ?? state.userName,
-          pfpURL: pfpURL ?? state.pfpURL,
-          email: email ?? state.email,
-          gender: gender ?? state.gender,
-          cash: cash ?? state.cash,
-          dob: dob ?? state.dob,
-          transactionIds: transactionIds ?? state.transactionIds,
-          groupIds: groupIds ?? state.groupIds,
+          uid: state?.uid,
+          name: name ?? state?.name,
+          userName: userName ?? state?.userName,
+          pfpURL: pfpURL ?? state?.pfpURL,
+          email: email ?? state?.email,
+          gender: gender ?? state?.gender,
+          cash: cash ?? state?.cash,
+          dob: dob ?? state?.dob,
+          transactionIds: transactionIds ?? state?.transactionIds,
+          groupIds: groupIds ?? state?.groupIds,
         );
-        logger.i('Document updated successfully!');
+        logger.i('✅ User data updated successfully!');
       }).then((value) {
         return true;
       });
       return true;
     } catch (e) {
-      logger.w("Error updating document: $e");
+      logger.w("❌ Error updating user data: $e");
       return false;
     }
   }
 }
+
+final userDataProvider =
+    FutureProvider.family<UserData, String>((ref, uid) async {
+  final userNotifier = ref.read(userDataNotifierProvider.notifier);
+  await userNotifier.fetchCurrentUserData(uid);
+  final userFinanceNotifier =
+      ref.read(userFinanceDataNotifierProvider.notifier);
+  await userFinanceNotifier.fetchUserFinanceData(uid);
+  return ref.read(userDataNotifierProvider);
+});

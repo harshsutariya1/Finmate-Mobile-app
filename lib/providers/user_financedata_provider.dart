@@ -1,25 +1,20 @@
+// Provider for UserFinanceDataNotifier
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/services/database_services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'user_finance_data_provider.g.dart';
+final userFinanceDataNotifierProvider =
+    StateNotifierProvider<UserFinanceDataNotifier, UserFinanceData>((ref) {
+  return UserFinanceDataNotifier();
+});
 
-//	dart run build_runner watch -d
-@riverpod
-class UserFinanceDataNotifier extends _$UserFinanceDataNotifier {
+class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
+  UserFinanceDataNotifier() : super(UserFinanceData());
   var logger = Logger(
-    printer: PrettyPrinter(methodCount: 0),
+    printer: PrettyPrinter(methodCount: 1),
   );
-
-  @override
-  UserFinanceData build() {
-    return UserFinanceData(
-      listOfGroups: [],
-      listOfTransactions: [],
-    );
-  }
 
   Future<bool> fetchUserFinanceData(String uid) async {
     List<Transaction> transactions = [];

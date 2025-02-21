@@ -1,3 +1,5 @@
+import 'package:finmate/screens/auth/auth_check_widget.dart';
+import 'package:finmate/screens/auth/logincheck.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/utils/utils.dart';
@@ -9,7 +11,9 @@ import 'package:google_fonts/google_fonts.dart';
 void main() {
   setup().then((_) {
     runApp(
-      ProviderScope(child: MyApp()),
+      ProviderScope(
+        child: MyApp(),
+      ),
     );
   });
 }
@@ -32,8 +36,7 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.poppinsTextTheme(),
         useMaterial3: true,
       ),
-      // routes: Routes.routes,
-      home: _authService.checkLogin(),
+      home: AuthCheckWidget(),
     );
   }
 }

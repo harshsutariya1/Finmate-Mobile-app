@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'user_finance_data_provider.dart';
+part of 'user_finance_data_provider2.dart';
 
 // **************************************************************************
 // RiverpodGenerator

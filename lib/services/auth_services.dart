@@ -1,9 +1,12 @@
 import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/models/user_finance_data_provider2.dart';
+import 'package:finmate/models/user_provider2.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/loader.dart';
+import 'package:finmate/widgets/loading_Error_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,20 +32,49 @@ class AuthService {
         stream: _firebaseAuth.authStateChanges(),
         builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Loader();
+            return const LoadingScreen();
           }
           if (snapshot.hasData) {
             user = snapshot.data;
             final uid = user?.uid;
 
             if (uid != null && uid.isNotEmpty) {
-              loggerNoStack.i(
-                  "User email: ${user?.email}\nUser is signed in: to home screen, name: ${user?.displayName}");
-
-              return BnbPages();
+              return FutureBuilder(
+                future: Future.wait([
+                  ref.read(userDataNotifierProvider.notifier).getUserData(uid),
+                  ref
+                      .read(userFinanceDataNotifierProvider.notifier)
+                      .getUserFinanceData(uid),
+                ]),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return LoadingScreen(); // Loading screen
+                  } else if (snapshot.hasData &&
+                      snapshot.data![0] != null &&
+                      snapshot.data![1] != null) {
+                    Future(() {
+                      ref
+                          .read(userDataNotifierProvider.notifier)
+                          .setUserData(snapshot.data![0] as UserData);
+                    });
+                    Future(() {
+                      ref
+                          .read(userFinanceDataNotifierProvider.notifier)
+                          .setUserFinanceData(
+                              snapshot.data![1] as UserFinanceData);
+                    });
+                    return BnbPages();
+                  } else {
+                    logger.i(
+                        "Error getting user data: ${!(snapshot.data![0] != null && snapshot.data![1] != null)} and going to auth screen.");
+                    logout();
+                    return const AuthScreen(); // User is not logged in
+                  }
+                },
+              );
             } else {
               logger
-                  .e("Error: UID is null or empty: retuning to signup screen");
+                  .e("Error: UID is null or empty: returning to signup screen");
               return const AuthScreen();
             }
           } else {
@@ -183,25 +215,26 @@ class AuthService {
   void logoutDilog(BuildContext context) {
     print("logoutDilog function called");
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog.adaptive(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to logout?'),
-            actions: [
-              ElevatedButton(
-                  onPressed: () {
-                    logout();
-                    Navigate().toAndRemoveUntil(AuthScreen());
-                  },
-                  child: const Text("Yes")),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("No")),
-            ],
-          );
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog.adaptive(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            ElevatedButton(
+                onPressed: () {
+                  logout();
+                  Navigate().toAndRemoveUntil(AuthScreen());
+                },
+                child: const Text("Yes")),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text("No")),
+          ],
+        );
+      },
+    );
   }
 }

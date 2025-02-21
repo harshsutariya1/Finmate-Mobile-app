@@ -3,7 +3,6 @@ import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
-import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
@@ -15,11 +14,9 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
     super.key,
     required this.userData,
     required this.userFinanceData,
-    required this.authService,
   });
   final UserData userData;
   final UserFinanceData userFinanceData;
-  final AuthService authService;
   @override
   ConsumerState<AddTransactionScreen> createState() =>
       _AddTransactionScreenState();

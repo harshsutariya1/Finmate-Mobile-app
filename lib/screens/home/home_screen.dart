@@ -1,15 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
-import 'package:finmate/models/user_finance_data_provider.dart';
-import 'package:finmate/models/user_provider.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
-import 'package:finmate/services/auth_services.dart';
-import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,9 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
-    required this.authService,
   });
-  final AuthService authService;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -47,64 +42,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           IconButton(
             onPressed: () {
-              Navigate().push(SettingsScreen(
-                authService: widget.authService,
-              ));
+              Navigate().push(SettingsScreen());
             },
             icon: Icon(Icons.settings),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          spacing: 15,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(child: Text("Transactions")),
-            Divider(),
-            StreamBuilder<firestore.QuerySnapshot>(
-              stream: userCollection
-                  .doc(userData.uid)
-                  .collection('user_transactions')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Text('No transactions found');
-                }
-
-                final transactions = snapshot.data!.docs
-                    .map((doc) => Transaction.fromJson(
-                        doc.data() as Map<String, dynamic>))
-                    .toList();
-
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    final transaction = transactions[index];
-                    return transactionData(transaction);
-                  },
-                  separatorBuilder: (context, index) => sbh15,
-                );
-              },
-            ),
-            Divider(),
-            Text("Now Add new transaction screen"),
-          ],
-        ),
+      body: Column(
+        spacing: 15,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Center(child: Text("Transactions")),
+          Divider(),
+          (userFinanceData.listOfTransactions!.isEmpty)
+              ? Center(
+                  child: Text("No Transactions found!"),
+                )
+              : Expanded(
+                  child: ListView.separated(
+                    itemCount: userFinanceData.listOfTransactions!.length,
+                    separatorBuilder: (BuildContext context, int index) {
+                      return sbh15;
+                    },
+                    itemBuilder: (BuildContext context, int index) {
+                      return transactionTile(
+                          userFinanceData.listOfTransactions![index]);
+                    },
+                  ),
+                ),
+          Divider(),
+          Text("Now Add new transaction screen"),
+        ],
       ),
     );
   }
 
-  Widget transactionData(Transaction transaction) {
+  Widget transactionTile(Transaction transaction) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
