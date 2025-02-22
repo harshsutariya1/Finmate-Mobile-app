@@ -40,6 +40,7 @@ class Transaction {
   String? tid;
   String? amount;
   DateTime? date;
+  TimeOfDay? time;
   String? uid;
   String? category;
   String? methodOfPayment;
@@ -49,11 +50,14 @@ class Transaction {
     this.tid = "",
     this.amount = "0",
     DateTime? date,
+    this.time,
     this.uid = "",
     this.category = "",
     this.methodOfPayment = "",
     this.description = "",
-  }) : date = date ?? DateTime.now();
+  }) : date = date ?? DateTime.now() {
+    time = time ?? TimeOfDay.now();
+  }
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
@@ -61,6 +65,10 @@ class Transaction {
       description: json['description'] as String,
       amount: json['amount'] as String,
       date: DateTime.parse(json['date']),
+      time: TimeOfDay(
+        hour: int.parse(json['time'].split(":")[0]),
+        minute: int.parse(json['time'].split(":")[1]),
+      ),
       uid: json['uid'] as String,
       category: json['category'] as String,
       methodOfPayment: json['methodOfPayment'] as String,
@@ -73,6 +81,7 @@ class Transaction {
       'description': description,
       'amount': amount,
       'date': date?.toIso8601String(),
+      'time': '${time?.hour}:${time?.minute}',
       'uid': uid,
       'category': category,
       'methodOfPayment': methodOfPayment,

@@ -1,8 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
-import 'package:finmate/models/user_finance_data.dart';
-import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
@@ -25,13 +23,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _paymentModeController = TextEditingController();
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
   @override
   Widget build(BuildContext context) {
     UserData userData = ref.watch(userDataNotifierProvider);
-    UserFinanceData userFinanceData =
-        ref.watch(userFinanceDataNotifierProvider);
+    // UserFinanceData userFinanceData =
+    //     ref.watch(userFinanceDataNotifierProvider);
 
     return DefaultTabController(
       length: 3,
@@ -155,9 +153,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         Expanded(
           child: _textfield(
             controller: TextEditingController(
-              text: _selectedDate != null
-                  ? "${_selectedDate!.toLocal()}".split(' ')[0]
-                  : "Select Date",
+              text: "${_selectedDate.toLocal()}".split(' ')[0],
             ),
             hintText: "Select Date",
             prefixIconData: Icons.calendar_today,
@@ -180,9 +176,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         Expanded(
           child: _textfield(
             controller: TextEditingController(
-              text: _selectedTime != null
-                  ? _selectedTime!.format(context)
-                  : "Select Time",
+              text: _selectedTime.format(context),
             ),
             hintText: "Select Time",
             prefixIconData: Icons.access_time,
@@ -276,12 +270,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           final description = _descriptionController.text;
           final category = _categoryController.text;
           final paymentMode = _paymentModeController.text;
-          if (amount.isEmpty ||
-              date == null ||
-              time == null ||
-              description.isEmpty ||
-              category.isEmpty ||
-              paymentMode.isEmpty) {
+          if (amount.isEmpty || category.isEmpty || paymentMode.isEmpty) {
             snackbarToast(
               context: context,
               text: "Please fill all the fields",
@@ -293,11 +282,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               userData.uid ?? '',
               Transaction(
                 uid: userData.uid ?? "",
-                amount: (-25.5).toString(),
-                category: "Food",
-                date: DateTime.utc(2022, 12, 25),
-                description: "Bought food",
-                methodOfPayment: "Cash",
+                amount: amount,
+                category: category,
+                date: date,
+                time: time,
+                description: description,
+                methodOfPayment: paymentMode,
               ),
               ref,
             );
