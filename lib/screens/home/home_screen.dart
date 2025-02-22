@@ -249,7 +249,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 spacing: 10,
                 children: [
                   Text(
-                    transaction.amount.toString(),
+                    (double.parse(transaction.amount.toString()) < 0)
+                        ? transaction.amount.toString()
+                        : "+${transaction.amount.toString()}",
                     style: TextStyle(
                       fontSize: 18,
                       color: double.parse(transaction.amount!) < 0

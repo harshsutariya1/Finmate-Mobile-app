@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finmate/models/user.dart';
+import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
+import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -31,9 +33,25 @@ CollectionReference<transaction_model.Transaction> userTransactionsCollection(
       );
 }
 
+DocumentReference<Cash> userCashDocument(String uid) {
+  return userCollection
+      .doc(uid)
+      .collection("payment_modes")
+      .doc("Cash")
+      .withConverter(
+        fromFirestore: (snapshot, options) => Cash.fromJson(snapshot.data()!),
+        toFirestore: (cash, options) => cash.toJson(),
+      );
+}
+
 Future<void> createUserProfile({required UserData userProfile}) async {
   try {
-    await userCollection.doc(userProfile.uid).set(userProfile);
+    if (userProfile.uid != null) {
+      await userCollection.doc(userProfile.uid).set(userProfile);
+     await userCashDocument(userProfile.uid!).set(Cash(amount: 0));
+    } else {
+      print("Error: userProfile.uid is null");
+    }
   } catch (e) {
     print("Error creating user profile: $e");
   }

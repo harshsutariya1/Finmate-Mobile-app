@@ -1,4 +1,5 @@
 // Provider for UserFinanceDataNotifier
+import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/services/database_services.dart';
@@ -18,18 +19,26 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
   Future<bool> fetchUserFinanceData(String uid) async {
     List<Transaction> transactions = [];
+    // List<Group> groups = [];
+    // List<BankAccount> bankAccounts = [];
+    Cash? cash = Cash();
     try {
-      userTransactionsCollection(uid).get().then((value) {
+      await userTransactionsCollection(uid).get().then((value) {
         for (var element in value.docs) {
           transactions.add(element.data());
         }
       }).then((value) {
-        state = UserFinanceData(
-          listOfGroups: [],
-          listOfTransactions: transactions.toList(),
-        );
-        logger.i(
-            "User transaction data fetched successfully. ${state.listOfTransactions?.length}");
+        userCashDocument(uid).get().then((value) {
+          cash = value.data();
+        }).then((value) {
+          state = UserFinanceData(
+            listOfGroups: [],
+            listOfTransactions: transactions.toList(),
+            cash: cash,
+          );
+          logger.i(
+              "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfTransactions?.length} \nCash Amount: ${state.cash?.amount}");
+        });
       });
 
       return true;

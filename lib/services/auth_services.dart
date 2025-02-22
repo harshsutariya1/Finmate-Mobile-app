@@ -118,6 +118,7 @@ class AuthService {
             userProfile: UserData(
           uid: user?.uid,
           name: name,
+          userName: user?.uid,
           email: email,
         ));
         return "Success";
@@ -157,6 +158,7 @@ class AuthService {
           await createUserProfile(
               userProfile: UserData(
             uid: uid,
+            userName: uid,
             name: name,
             pfpURL: pfpicUrl,
             email: email,

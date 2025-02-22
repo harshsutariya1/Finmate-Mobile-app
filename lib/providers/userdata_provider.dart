@@ -29,7 +29,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
 
         return true;
       } else {
-        await FirebaseAuth.instance.signOut();
+        // await FirebaseAuth.instance.signOut();
         logger.w("⚠️ User with uid $uid not found. Logging out...");
         return false;
       }
@@ -45,7 +45,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
     String? pfpURL,
     String? email,
     String? gender,
-    int? cash,
+    // int? cash,
     DateTime? dob,
     List<String>? transactionIds,
     List<String>? groupIds,
@@ -70,9 +70,9 @@ class UserDataNotifier extends StateNotifier<UserData> {
       if (gender != null) {
         updatedData['gender'] = gender;
       }
-      if (cash != null) {
-        updatedData['cash'] = cash;
-      }
+      // if (cash != null) {
+      //   updatedData['cash'] = cash;
+      // }
       if (dob != null) {
         updatedData['dob'] = dob.toIso8601String();
       }
@@ -91,7 +91,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
           pfpURL: pfpURL ?? state.pfpURL,
           email: email ?? state.email,
           gender: gender ?? state.gender,
-          cash: cash ?? state.cash,
+          // cash: cash ?? state.cash,
           dob: dob ?? state.dob,
           transactionIds: transactionIds ?? state.transactionIds,
           groupIds: groupIds ?? state.groupIds,

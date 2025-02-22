@@ -36,6 +36,12 @@ const List<String> paymentModes = [
   'Others',
 ];
 
+enum TransactionType {
+  expense,
+  income,
+  transfer,
+}
+
 class Transaction {
   String? tid;
   String? amount;
@@ -45,6 +51,7 @@ class Transaction {
   String? category;
   String? methodOfPayment;
   String? description;
+  TransactionType? type;
 
   Transaction({
     this.tid = "",
@@ -52,26 +59,34 @@ class Transaction {
     DateTime? date,
     this.time,
     this.uid = "",
-    this.category = "",
-    this.methodOfPayment = "",
+    this.category = "Others",
+    this.methodOfPayment = "Cash",
     this.description = "",
+    this.type,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
-      tid: json['tid'] as String,
-      description: json['description'] as String,
-      amount: json['amount'] as String,
-      date: DateTime.parse(json['date']),
-      time: TimeOfDay(
-        hour: int.parse(json['time'].split(":")[0]),
-        minute: int.parse(json['time'].split(":")[1]),
+      tid: json['tid'] as String? ?? "",
+      description: json['description'] as String? ?? "",
+      amount: json['amount'] as String? ?? "0",
+      date:
+          json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      time: (json['time'] != null)
+          ? TimeOfDay(
+              hour: int.parse(json['time'].split(":")[0]),
+              minute: int.parse(json['time'].split(":")[1]),
+            )
+          : TimeOfDay.now(),
+      uid: json['uid'] as String? ?? "",
+      category: json['category'] as String? ?? "Others",
+      methodOfPayment: json['methodOfPayment'] as String? ?? "Cash",
+      type: TransactionType.values.firstWhere(
+        (e) => e.toString() == 'TransactionType.${json['type']}',
+        orElse: () => TransactionType.expense,
       ),
-      uid: json['uid'] as String,
-      category: json['category'] as String,
-      methodOfPayment: json['methodOfPayment'] as String,
     );
   }
 
@@ -85,6 +100,7 @@ class Transaction {
       'uid': uid,
       'category': category,
       'methodOfPayment': methodOfPayment,
+      'type': type?.toString().split('.').last,
     };
   }
 }

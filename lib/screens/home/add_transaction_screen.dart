@@ -25,6 +25,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final TextEditingController _paymentModeController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  int indexOfTabbar = 0;
   @override
   Widget build(BuildContext context) {
     UserData userData = ref.watch(userDataNotifierProvider);
@@ -32,8 +33,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     //     ref.watch(userFinanceDataNotifierProvider);
 
     return DefaultTabController(
-      length: 3,
-      initialIndex: 1,
+      length: 2,
+      initialIndex: 0,
       child: Scaffold(
         backgroundColor: color4,
         appBar: _appbar(),
@@ -50,12 +51,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       centerTitle: true,
       title: const Text('Add New Transaction'),
       bottom: TabBar(
+        onTap: (value) => setState(() {
+          indexOfTabbar = value;
+          print("index of tabbar: $indexOfTabbar");
+        }),
         tabs: [
           Tab(
-            text: "Expence",
-          ),
-          Tab(
-            text: "Income",
+            text: "Expence / Income",
           ),
           Tab(
             text: "Transfer",
@@ -78,14 +80,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget _body() {
     return TabBarView(
       children: <Widget>[
-        _expenceFields(),
-        _incomeFields(),
+        _expenceIncomeFields(),
         _transferFields(),
       ],
     );
   }
 
-  Widget _expenceFields() {
+  Widget _expenceIncomeFields() {
     return Container(
       padding: EdgeInsets.only(
         top: 30,
@@ -110,31 +111,86 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               controller: _descriptionController,
               hintText: "Description",
               lableText: "Description",
-              prefixIconData: Icons.currency_rupee_sharp,
+              prefixIconData: Icons.description_outlined,
             ),
             _textfield(
-              controller: _categoryController,
-              prefixIconData: Icons.category_rounded,
-              hintText: "Select Category",
-              readOnly: true,
-              sufixIconData: Icons.arrow_drop_down_circle_outlined,
-            ),
+                controller: _categoryController,
+                prefixIconData: Icons.category_rounded,
+                hintText: "Select Category",
+                lableText: "Category",
+                readOnly: true,
+                sufixIconData: Icons.arrow_drop_down_circle_outlined,
+                onTap: () {
+                  // show modal bottom sheet to select category
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) {
+                      Iterable<String> categoryList =
+                          transactionCategoriesAndIcons.keys;
+                      return Container(
+                        height: 500,
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        child: Wrap(
+                          spacing: 8.0,
+                          children: categoryList.map((category) {
+                            return ChoiceChip(
+                              label: Text(category),
+                              selected: _categoryController.text == category,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _categoryController.text =
+                                      selected ? category : '';
+                                  Navigator.pop(context);
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
+                  );
+                }),
             _textfield(
-              controller: _paymentModeController,
-              prefixIconData: Icons.payments_rounded,
-              hintText: "Select Payment Mode",
-              readOnly: true,
-              sufixIconData: Icons.arrow_drop_down_circle_outlined,
-            ),
+                controller: _paymentModeController,
+                prefixIconData: Icons.payments_rounded,
+                hintText: "Select Payment Mode",
+                lableText: "Payment Mode",
+                readOnly: true,
+                sufixIconData: Icons.arrow_drop_down_circle_outlined,
+                onTap: () {
+                  // show modal bottom sheet to select payment mode
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) {
+                      return Container(
+                        height: 500,
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        child: Wrap(
+                          spacing: 8.0,
+                          children: paymentModes.map((paymentMode) {
+                            return ChoiceChip(
+                              label: Text(paymentMode),
+                              selected:
+                                  _paymentModeController.text == paymentMode,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _paymentModeController.text =
+                                      selected ? paymentMode : '';
+                                  Navigator.pop(context);
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
+                  );
+                }),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _incomeFields() {
-    return Center(
-      child: Text("Income fields"),
     );
   }
 
@@ -143,6 +199,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       child: Text("Transfer fields"),
     );
   }
+
+// _______________________________________________________________________ //
+// _______________________________________________________________________ //
 
   Widget _dateTimePicker() {
     return Row(
@@ -211,6 +270,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       controller: controller,
       readOnly: readOnly,
       onTap: (onTap != null) ? onTap : null,
+      keyboardType:
+          (lableText == "Amount") ? TextInputType.numberWithOptions() : null,
       decoration: InputDecoration(
         labelText: (lableText != null) ? lableText : null,
         hintText: (hintText != null) ? hintText : null,
@@ -270,27 +331,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           final description = _descriptionController.text;
           final category = _categoryController.text;
           final paymentMode = _paymentModeController.text;
-          if (amount.isEmpty || category.isEmpty || paymentMode.isEmpty) {
-            snackbarToast(
-              context: context,
-              text: "Please fill all the fields",
-              icon: Icons.error,
-            );
-            return;
+          if (indexOfTabbar == 0) {
+            // Expence / Income
+            if (amount.isEmpty || category.isEmpty || paymentMode.isEmpty) {
+              snackbarToast(
+                context: context,
+                text: "Please fill all the fields",
+                icon: Icons.error,
+              );
+              return;
+            } else {
+              addTransaction(
+                userData.uid ?? '',
+                Transaction(
+                  uid: userData.uid ?? "",
+                  amount: amount,
+                  category: category,
+                  date: date,
+                  time: time,
+                  description: description,
+                  methodOfPayment: paymentMode,
+                  type: (double.parse(amount) < 0)
+                      ? TransactionType.expense
+                      : TransactionType.income,
+                ),
+                ref,
+              );
+            }
           } else {
-            addTransaction(
-              userData.uid ?? '',
-              Transaction(
-                uid: userData.uid ?? "",
-                amount: amount,
-                category: category,
-                date: date,
-                time: time,
-                description: description,
-                methodOfPayment: paymentMode,
-              ),
-              ref,
-            );
+            // Transfer
           }
         },
         child: const Text(
