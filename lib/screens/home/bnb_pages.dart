@@ -1,7 +1,6 @@
 import 'package:finmate/constants/colors.dart';
-import 'package:finmate/models/user_finance_data_provider2.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-// import 'package:finmate/models/user_provider2.dart';
 import 'package:finmate/screens/home/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
 import 'package:finmate/screens/home/groups_screen.dart';

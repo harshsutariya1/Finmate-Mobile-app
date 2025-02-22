@@ -59,4 +59,23 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
+
+  Future<bool> deleteTransaction(String uid, String tid) async {
+    try {
+      userTransactionsCollection(uid).doc(tid).delete().then((value) {
+        state = UserFinanceData(
+          listOfGroups: state.listOfGroups,
+          listOfTransactions: state.listOfTransactions
+              ?.where((transaction) => transaction.tid != tid)
+              .toList(),
+        );
+        logger.i("Transaction with tid $tid removed successfully.");
+      });
+
+      return true;
+    } catch (e) {
+      logger.w("Error while removing transaction with tid $tid: $e");
+      return false;
+    }
+  }
 }

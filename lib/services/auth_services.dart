@@ -1,7 +1,5 @@
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
-import 'package:finmate/models/user_finance_data_provider2.dart';
-import 'package:finmate/models/user_provider2.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
@@ -41,10 +39,10 @@ class AuthService {
             if (uid != null && uid.isNotEmpty) {
               return FutureBuilder(
                 future: Future.wait([
-                  ref.read(userDataNotifierProvider.notifier).getUserData(uid),
-                  ref
-                      .read(userFinanceDataNotifierProvider.notifier)
-                      .getUserFinanceData(uid),
+                  // ref.read(userDataNotifierProvider.notifier).getUserData(uid),
+                  // ref
+                  //     .read(userFinanceDataNotifierProvider.notifier)
+                  //     .getUserFinanceData(uid),
                 ]),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -52,17 +50,17 @@ class AuthService {
                   } else if (snapshot.hasData &&
                       snapshot.data![0] != null &&
                       snapshot.data![1] != null) {
-                    Future(() {
-                      ref
-                          .read(userDataNotifierProvider.notifier)
-                          .setUserData(snapshot.data![0] as UserData);
-                    });
-                    Future(() {
-                      ref
-                          .read(userFinanceDataNotifierProvider.notifier)
-                          .setUserFinanceData(
-                              snapshot.data![1] as UserFinanceData);
-                    });
+                    // Future(() {
+                    //   ref
+                    //       .read(userDataNotifierProvider.notifier)
+                    //       .setUserData(snapshot.data![0] as UserData);
+                    // });
+                    // Future(() {
+                    //   ref
+                    //       .read(userFinanceDataNotifierProvider.notifier)
+                    //       .setUserFinanceData(
+                    //           snapshot.data![1] as UserFinanceData);
+                    // });
                     return BnbPages();
                   } else {
                     logger.i(

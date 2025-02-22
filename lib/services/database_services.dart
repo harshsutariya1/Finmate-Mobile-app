@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
-import 'package:finmate/models/user_finance_data_provider2.dart';
-import 'package:finmate/models/user_provider2.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -138,18 +138,19 @@ Future<bool> addTransactionToUserData({
 
 Future<bool> deleteTransactionFromUserData({
   required String uid,
-  required String transactionId,
+  required String tid,
   required WidgetRef ref,
 }) async {
   try {
-    await userTransactionsCollection(uid).doc(transactionId).delete();
-
     List<String>? currentIds =
         ref.read(userDataNotifierProvider).transactionIds ?? [];
-    currentIds.remove(transactionId);
-    ref
+    currentIds.remove(tid);
+    await ref
         .read(userDataNotifierProvider.notifier)
         .updateCurrentUserData(transactionIds: currentIds);
+    await ref
+        .read(userFinanceDataNotifierProvider.notifier)
+        .deleteTransaction(uid, tid);
 
     print("Transaction deleted from user");
     return true;

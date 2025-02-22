@@ -1,6 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/user.dart';
-import 'package:finmate/models/user_provider2.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
