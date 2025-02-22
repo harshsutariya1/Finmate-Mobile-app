@@ -28,7 +28,6 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
   var logger = Logger(
     printer: PrettyPrinter(methodCount: 2),
   );
-  final _formKey = GlobalKey<FormState>();
   bool isEditing = false;
   bool imageLoader = false;
 

@@ -25,7 +25,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
       if (docSnapshot.exists) {
         state = docSnapshot.data()!;
         logger.i(
-            "✅ User data loaded successfully for $uid. \nUserName: ${state?.userName} \nName: ${state?.name} \nEmail: ${state?.email} \nImage: ${state?.pfpURL} \nNo of Transactios: ${state?.transactionIds?.length} \nNo of Groups: ${state?.groupIds?.length}");
+            "✅ User data loaded successfully for $uid. \nUserName: ${state.userName} \nName: ${state.name} \nEmail: ${state.email} \nImage: ${state.pfpURL} \nNo of Transactios: ${state.transactionIds?.length} \nNo of Groups: ${state.groupIds?.length}");
 
         return true;
       } else {
@@ -50,12 +50,8 @@ class UserDataNotifier extends StateNotifier<UserData> {
     List<String>? transactionIds,
     List<String>? groupIds,
   }) async {
-    if (state == null) {
-      logger.w("⚠️ No user is logged in. Cannot update data.");
-      return false;
-    }
     try {
-      final userRef = userCollection.doc(state?.uid);
+      final userRef = userCollection.doc(state.uid);
 
       Map<String, dynamic> updatedData = {};
 
@@ -89,16 +85,16 @@ class UserDataNotifier extends StateNotifier<UserData> {
 
       await userRef.update(updatedData).then((value) {
         state = UserData(
-          uid: state?.uid,
-          name: name ?? state?.name,
-          userName: userName ?? state?.userName,
-          pfpURL: pfpURL ?? state?.pfpURL,
-          email: email ?? state?.email,
-          gender: gender ?? state?.gender,
-          cash: cash ?? state?.cash,
-          dob: dob ?? state?.dob,
-          transactionIds: transactionIds ?? state?.transactionIds,
-          groupIds: groupIds ?? state?.groupIds,
+          uid: state.uid,
+          name: name ?? state.name,
+          userName: userName ?? state.userName,
+          pfpURL: pfpURL ?? state.pfpURL,
+          email: email ?? state.email,
+          gender: gender ?? state.gender,
+          cash: cash ?? state.cash,
+          dob: dob ?? state.dob,
+          transactionIds: transactionIds ?? state.transactionIds,
+          groupIds: groupIds ?? state.groupIds,
         );
         logger.i('✅ User data updated successfully!');
       }).then((value) {

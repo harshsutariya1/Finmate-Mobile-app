@@ -30,6 +30,7 @@ Widget customTextField({
           ),
         ),
       ),
+      // right widget
       Padding(
         padding: const EdgeInsets.only(
           top: 3,
