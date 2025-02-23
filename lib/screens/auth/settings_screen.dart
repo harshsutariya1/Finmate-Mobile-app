@@ -1,6 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';
@@ -56,6 +57,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 text: "App Theme",
                 isThemeTile: true,
               ),
+              Divider(
+                indent: 15,
+                endIndent: 15,
+              ),
+              listTile(
+                iconData: Icons.account_balance_rounded,
+                text: "Accounts",
+                onTap: () => Navigate().push(AccountsScreen()),
+              ),
             ]),
             borderedContainer([
               listTile(iconData: Icons.security_rounded, text: "Security"),
@@ -82,7 +92,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 text: "Logout",
                 isLogoutTile: true,
                 onTap: () {
-                  AuthService().logoutDilog(context);
+                  AuthService().logoutDilog(context, ref);
                 },
               ),
             ]),

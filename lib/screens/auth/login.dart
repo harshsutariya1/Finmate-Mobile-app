@@ -129,6 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: authButton(
               text: "Sign In",
               onTap: _onTapLogin,
+              isloading: isLoginLoading,
             ),
           ),
           sbh5,

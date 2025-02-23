@@ -31,6 +31,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     UserData userData = ref.watch(userDataNotifierProvider);
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
+    List<Transaction>? transactionsList =
+        List.from(userFinanceData.listOfTransactions ?? []);
+
+    // Sort transactions by date and time in ascending order
+    // transactionsList?.sort((a, b) {
+    //   int dateComparison = a.date!.compareTo(b.date!);
+    //   if (dateComparison != 0) {
+    //     return dateComparison;
+    //   } else {
+    //     return a.time!.format(context).compareTo(b.time!.format(context));
+    //   }
+    // });
+
+    // Sort transactions by date and time in descending order
+    transactionsList.sort((a, b) {
+      int dateComparison = b.date!.compareTo(a.date!);
+      if (dateComparison != 0) {
+        return dateComparison;
+      } else {
+        return b.time!.format(context).compareTo(a.time!.format(context));
+      }
+    });
+
     return Scaffold(
       backgroundColor: color4,
       appBar: appbar(userData),
@@ -41,25 +64,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Center(child: Text("Transactions")),
           Divider(),
-          (userFinanceData.listOfTransactions!.isEmpty)
+          (userFinanceData.listOfTransactions == null ||
+                  userFinanceData.listOfTransactions!.isEmpty)
               ? Center(
                   child: Text("No Transactions found!"),
                 )
               : Expanded(
                   child: ListView.separated(
-                    itemCount: userFinanceData.listOfTransactions!.length,
+                    itemCount: transactionsList.length,
                     separatorBuilder: (BuildContext context, int index) {
                       return sbh15;
                     },
                     itemBuilder: (BuildContext context, int index) {
-                      return transactionTile(
-                          userFinanceData.listOfTransactions![index]);
+                      final Transaction transaction = transactionsList[index];
+
+                      return transactionTile(transaction);
                     },
                   ),
                 ),
-          Divider(),
-          Text("Now Add new transaction screen"),
-          sbh10,
+          sbh15,
         ],
       ),
     );
@@ -234,7 +257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         // date
                         Text(
-                          "${transaction.date?.day}/${transaction.date?.month}/${transaction.date?.year}",
+                          "${transaction.date?.day}/${transaction.date?.month}/${transaction.date?.year} ${transaction.time?.format(context)}",
                           style: TextStyle(
                             color: Colors.grey,
                           ),

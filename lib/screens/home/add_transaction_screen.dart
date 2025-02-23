@@ -1,7 +1,10 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
@@ -26,11 +29,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   int indexOfTabbar = 0;
+  bool isCashSelected = false;
+  bool isButtonDisabled = false;
+  bool isButtonLoading = false;
   @override
   Widget build(BuildContext context) {
     UserData userData = ref.watch(userDataNotifierProvider);
-    // UserFinanceData userFinanceData =
-    //     ref.watch(userFinanceDataNotifierProvider);
+    UserFinanceData userFinanceData =
+        ref.watch(userFinanceDataNotifierProvider);
 
     return DefaultTabController(
       length: 2,
@@ -39,8 +45,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         backgroundColor: color4,
         appBar: _appbar(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: _floatingButton(userData),
-        body: _body(),
+        floatingActionButton: _floatingButton(userData, userFinanceData),
+        body: _body(userFinanceData),
       ),
     );
   }
@@ -51,10 +57,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       centerTitle: true,
       title: const Text('Add New Transaction'),
       bottom: TabBar(
-        onTap: (value) => setState(() {
-          indexOfTabbar = value;
-          print("index of tabbar: $indexOfTabbar");
-        }),
+        // onTap: (value) => setState(() {
+        //   indexOfTabbar = value;
+        //   print("index of tabbar: $indexOfTabbar");
+        // }),
         tabs: [
           Tab(
             text: "Expence / Income",
@@ -77,16 +83,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _body() {
+  Widget _body(UserFinanceData userFinanceData) {
     return TabBarView(
       children: <Widget>[
-        _expenceIncomeFields(),
+        _expenceIncomeFields(userFinanceData),
         _transferFields(),
       ],
     );
   }
 
-  Widget _expenceIncomeFields() {
+  Widget _expenceIncomeFields(UserFinanceData userFinanceData) {
     return Container(
       padding: EdgeInsets.only(
         top: 30,
@@ -152,42 +158,55 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   );
                 }),
             _textfield(
-                controller: _paymentModeController,
-                prefixIconData: Icons.payments_rounded,
-                hintText: "Select Payment Mode",
-                lableText: "Payment Mode",
-                readOnly: true,
-                sufixIconData: Icons.arrow_drop_down_circle_outlined,
-                onTap: () {
-                  // show modal bottom sheet to select payment mode
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) {
-                      return Container(
-                        height: 500,
-                        width: double.infinity,
-                        padding: EdgeInsets.all(20),
-                        child: Wrap(
-                          spacing: 8.0,
-                          children: paymentModes.map((paymentMode) {
-                            return ChoiceChip(
-                              label: Text(paymentMode),
-                              selected:
-                                  _paymentModeController.text == paymentMode,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _paymentModeController.text =
-                                      selected ? paymentMode : '';
-                                  Navigator.pop(context);
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      );
-                    },
-                  );
-                }),
+              controller: _paymentModeController,
+              prefixIconData: Icons.payments_rounded,
+              hintText: "Select Payment Mode",
+              lableText: "Payment Mode",
+              readOnly: true,
+              sufixIconData: Icons.arrow_drop_down_circle_outlined,
+              onTap: () {
+                // show modal bottom sheet to select payment mode
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          bankAccountContainer(
+                            context: context,
+                            userFinanceData: userFinanceData,
+                            isSelectable: true,
+                            onTap: () {},
+                          ),
+                          walletsContainer(
+                            context: context,
+                            userFinanceData: userFinanceData,
+                            isSelectable: true,
+                            onTap: () {},
+                          ),
+                          cashContainer(
+                            isSelectable: true,
+                            isSelected: isCashSelected,
+                            userFinanceData: userFinanceData,
+                            onTap: () {
+                              setState(() {
+                                isCashSelected = !isCashSelected;
+                                _paymentModeController.text =
+                                    (isCashSelected) ? "Cash" : "";
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -306,7 +325,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _floatingButton(UserData userData) {
+  Widget _floatingButton(UserData userData, UserFinanceData userFinanceData) {
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 30,
@@ -324,52 +343,92 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        onPressed: () {
-          final amount = _amountController.text;
-          final date = _selectedDate;
-          final time = _selectedTime;
-          final description = _descriptionController.text;
-          final category = _categoryController.text;
-          final paymentMode = _paymentModeController.text;
-          if (indexOfTabbar == 0) {
-            // Expence / Income
-            if (amount.isEmpty || category.isEmpty || paymentMode.isEmpty) {
-              snackbarToast(
-                context: context,
-                text: "Please fill all the fields",
-                icon: Icons.error,
-              );
-              return;
-            } else {
-              addTransaction(
-                userData.uid ?? '',
-                Transaction(
-                  uid: userData.uid ?? "",
-                  amount: amount,
-                  category: category,
-                  date: date,
-                  time: time,
-                  description: description,
-                  methodOfPayment: paymentMode,
-                  type: (double.parse(amount) < 0)
-                      ? TransactionType.expense
-                      : TransactionType.income,
+        onPressed: isButtonDisabled
+            ? null
+            : () {
+                setState(() {
+                  isButtonDisabled = true;
+                  isButtonLoading = true;
+                });
+                final amount = _amountController.text;
+                final date = _selectedDate;
+                final time = _selectedTime;
+                final description = _descriptionController.text;
+                final category = _categoryController.text;
+                final paymentMode = _paymentModeController.text;
+                if (indexOfTabbar == 0) {
+                  // Expence / Income
+                  if (amount.isEmpty ||
+                      category.isEmpty ||
+                      paymentMode.isEmpty) {
+                    snackbarToast(
+                      context: context,
+                      text: "Please fill all the fields",
+                      icon: Icons.error,
+                    );
+                    setState(() {
+                      isButtonDisabled = false;
+                      isButtonLoading = false;
+                    });
+                    return;
+                  } else if (double.parse(amount) == 0) {
+                    snackbarToast(
+                      context: context,
+                      text: "Amount can't be zero",
+                      icon: Icons.error,
+                    );
+                    setState(() {
+                      isButtonDisabled = false;
+                      isButtonLoading = false;
+                    });
+                  } else if (double.parse(amount) < 0 &&
+                      paymentMode == "Cash" &&
+                      double.parse(amount).abs() >
+                          (double.parse(userFinanceData.cash!.amount ?? '0'))) {
+                    snackbarToast(
+                      context: context,
+                      text: "Insufficient cash balance",
+                      icon: Icons.error,
+                    );
+                    setState(() {
+                      isButtonDisabled = false;
+                      isButtonLoading = false;
+                    });
+                  } else {
+                    addTransaction(
+                      userData.uid ?? '',
+                      Transaction(
+                        uid: userData.uid ?? "",
+                        amount: amount,
+                        category: category,
+                        date: date,
+                        time: time,
+                        description: description,
+                        methodOfPayment: paymentMode,
+                        type: (double.parse(amount) < 0)
+                            ? TransactionType.expense
+                            : TransactionType.income,
+                      ),
+                      ref,
+                      userFinanceData,
+                    );
+                  }
+                } else {
+                  // Transfer fields
+                }
+              },
+        child: (isButtonLoading)
+            ? CircularProgressIndicator.adaptive(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )
+            : Text(
+                "Save Transaction",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-                ref,
-              );
-            }
-          } else {
-            // Transfer
-          }
-        },
-        child: const Text(
-          "Save Transaction",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+              ),
       ),
     );
   }
@@ -378,25 +437,39 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     String uid,
     Transaction transactionData,
     WidgetRef ref,
+    UserFinanceData userFinanceData,
   ) async {
-    final result = await addTransactionToUserData(
+    await addTransactionToUserData(
       uid: uid,
       transactionData: transactionData,
       ref: ref,
-    );
-    if (result) {
-      snackbarToast(
-        context: context,
-        text: "Transaction Added",
-        icon: Icons.check_circle,
-      );
-      Navigate().toAndRemoveUntil(BnbPages());
-    } else {
-      snackbarToast(
-        context: context,
-        text: "Error adding transaction",
-        icon: Icons.error,
-      );
-    }
+    ).then((value) {
+      String paymentMode = transactionData.methodOfPayment ?? "Cash";
+      if (paymentMode == "Cash") {
+        ref.read(userFinanceDataNotifierProvider.notifier).updateCashAmount(
+            uid: uid,
+            amount: (double.parse(transactionData.amount ?? "0") +
+                    (double.parse(userFinanceData.cash!.amount ?? '0')))
+                .toString());
+      }
+      if (value) {
+        snackbarToast(
+          context: context,
+          text: "Transaction Added",
+          icon: Icons.check_circle,
+        );
+        Navigate().toAndRemoveUntil(BnbPages());
+      } else {
+        snackbarToast(
+          context: context,
+          text: "Error adding transaction",
+          icon: Icons.error,
+        );
+      }
+    });
+    setState(() {
+      isButtonDisabled = false;
+      isButtonLoading = false;
+    });
   }
 }

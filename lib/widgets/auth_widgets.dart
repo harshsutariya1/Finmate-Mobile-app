@@ -58,6 +58,7 @@ Widget customTextField({
 Widget authButton({
   required String text,
   required void Function() onTap,
+  bool isloading = false,
 }) {
   return InkWell(
     onTap: onTap,
@@ -76,20 +77,25 @@ Widget authButton({
           )
         ],
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      ),
+      child: (isloading)
+          ? CircularProgressIndicator.adaptive(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            )
+          : Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
     ),
   );
 }
 
 Widget googleButton({
   required void Function() onTap,
+  bool isloading = false,
 }) {
   return InkWell(
     onTap: onTap,
@@ -111,10 +117,14 @@ Widget googleButton({
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 20,
         children: [
-          Image.asset(
-            googleLogo,
-            height: 25,
-          ),
+          (isloading)
+              ? CircularProgressIndicator.adaptive(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                )
+              : Image.asset(
+                  googleLogo,
+                  height: 25,
+                ),
           Text(
             "Continue with Google",
             style: TextStyle(
@@ -172,10 +182,10 @@ Widget editButton({void Function()? onTap}) {
       ),
       child: CircleAvatar(
         backgroundColor: Colors.white,
-        child:Icon(
-                Icons.edit_rounded,
-                color: color3,
-              ),
+        child: Icon(
+          Icons.edit_rounded,
+          color: color3,
+        ),
       ),
     ),
   );

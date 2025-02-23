@@ -1,5 +1,5 @@
 // import 'package:finmate/models/user_provider.dart';
-import 'package:finmate/providers/firebase_auth_provider.dart';
+import 'package:finmate/providers/auth_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
@@ -13,13 +13,15 @@ class AuthCheckWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    // final userDataExists = ref.watch(userDataExistsProvider);
+    // final authState = ref.watch(spStringKeyProvider("userId"));
 
     return authState.when(
       data: (user) {
         if (user == null) {
           return AuthScreen(); // User not logged in
         } else {
-          return UserDataLoader(uid: user.uid); // Load user data
+          return UserDataLoader(uid: user.uid);
         }
       },
       loading: () => LoadingScreen(),
@@ -35,7 +37,7 @@ class UserDataLoader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userDataState = ref.watch(userDataProvider(uid));
-    
+
     return userDataState.when(
       data: (userData) {
         if (userData.uid == null || userData.uid == "") {
@@ -46,6 +48,5 @@ class UserDataLoader extends ConsumerWidget {
       loading: () => LoadingScreen(),
       error: (err, stack) => ErrorScreen(error: err.toString()),
     );
-
   }
 }

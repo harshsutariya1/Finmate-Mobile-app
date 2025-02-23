@@ -1,13 +1,13 @@
 class Cash {
-  double? amount;
+  String? amount;
 
   Cash({
-    this.amount = 0,
+    this.amount = "0",
   });
 
   factory Cash.fromJson(Map<String, dynamic> json) {
     return Cash(
-      amount: double.tryParse(json['amount']) ?? 0.0,
+      amount: json['amount'] ?? "0.0",
     );
   }
 
@@ -22,11 +22,11 @@ class Cash {
 
 class BankAccount {
   String? name;
-  double? amount;
+  String? amount;
 
   BankAccount({
     this.name = "",
-    this.amount = 0,
+    this.amount = "0",
   });
 
   factory BankAccount.fromJson(Map<String, dynamic> json) {

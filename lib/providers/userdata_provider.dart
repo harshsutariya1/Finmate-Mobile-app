@@ -4,6 +4,7 @@ import 'package:finmate/services/database_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Provider for UserDataNotifier
 final userDataNotifierProvider =
@@ -18,6 +19,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
   );
 
   Future<bool> fetchCurrentUserData(String? uid) async {
+    final sp = await SharedPreferences.getInstance();
     try {
       logger.i("checking document of: $uid");
       final docSnapshot = await userCollection.doc(uid).get();
@@ -29,7 +31,8 @@ class UserDataNotifier extends StateNotifier<UserData> {
 
         return true;
       } else {
-        // await FirebaseAuth.instance.signOut();
+        await FirebaseAuth.instance.signOut();
+        sp.setString("userId", "");
         logger.w("⚠️ User with uid $uid not found. Logging out...");
         return false;
       }
@@ -105,6 +108,11 @@ class UserDataNotifier extends StateNotifier<UserData> {
       logger.w("❌ Error updating user data: $e");
       return false;
     }
+  }
+
+  void reset() {
+    state = UserData(uid: "", name: "");
+    print("user data reset");
   }
 }
 

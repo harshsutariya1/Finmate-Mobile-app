@@ -1,4 +1,6 @@
 import 'package:finmate/models/user.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -64,7 +67,7 @@ class AuthService {
                   } else {
                     logger.i(
                         "Error getting user data: ${!(snapshot.data![0] != null && snapshot.data![1] != null)} and going to auth screen.");
-                    logout();
+                    logout(ref);
                     return const AuthScreen(); // User is not logged in
                   }
                 },
@@ -85,11 +88,15 @@ class AuthService {
 
   Future<bool> login(String email, String password, WidgetRef ref) async {
     print("login function running");
+    final sp = await SharedPreferences.getInstance();
     try {
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
       if (credential.user != null) {
         user = credential.user;
+        sp.setString("userId", user!.uid);
+        ref.watch(userDataProvider(user!.uid));
+        await Future.delayed(Duration(seconds: 3));
         return true;
       } else {
         return false;
@@ -99,7 +106,6 @@ class AuthService {
       logger.w("Error: $e");
       return false;
     }
-    // return false;
   }
 
   Future<String> signup(
@@ -109,18 +115,23 @@ class AuthService {
     WidgetRef ref,
   ) async {
     print("signup function running");
+    final sp = await SharedPreferences.getInstance();
     try {
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
       if (credential.user != null) {
         user = credential.user;
-        createUserProfile(
+        await createUserProfile(
             userProfile: UserData(
           uid: user?.uid,
           name: name,
-          userName: user?.uid,
+          userName: user?.email,
           email: email,
-        ));
+        )).then((value) async {
+          ref.watch(userDataProvider(user!.uid));
+          await Future.delayed(Duration(seconds: 3));
+        });
+        sp.setString("userId", user!.uid);
         return "Success";
       } else {
         return "Error";
@@ -141,6 +152,7 @@ class AuthService {
 
   Future<bool> handleGoogleSignIn(WidgetRef ref) async {
     print("handleGoogleSignIn function called");
+    final sp = await SharedPreferences.getInstance();
     try {
       final userCredential = await signInWithGoogle();
       final user = userCredential?.user;
@@ -158,12 +170,15 @@ class AuthService {
           await createUserProfile(
               userProfile: UserData(
             uid: uid,
-            userName: uid,
+            userName: email,
             name: name,
             pfpURL: pfpicUrl,
             email: email,
           ));
         }
+        ref.watch(userDataProvider(uid));
+        await Future.delayed(Duration(seconds: 3));
+        sp.setString("userId", user.uid);
         // go to HomeScreen
         print('Google Signed in as: ${user.displayName}');
         return true;
@@ -198,11 +213,16 @@ class AuthService {
     return null;
   }
 
-  Future<bool> logout() async {
+  Future<bool> logout(WidgetRef ref) async {
     print("logout function called");
+    final sp = await SharedPreferences.getInstance();
     try {
       await _firebaseAuth.signOut();
       await _googleSignIn.signOut();
+      sp.setString("userId", "");
+      ref.read(userDataNotifierProvider.notifier).reset();
+      ref.read(userFinanceDataNotifierProvider.notifier).reset();
+
       user = null;
       return true;
     } catch (e) {
@@ -211,7 +231,7 @@ class AuthService {
     return false;
   }
 
-  void logoutDilog(BuildContext context) {
+  void logoutDilog(BuildContext context, WidgetRef ref) {
     print("logoutDilog function called");
     showDialog(
       context: context,
@@ -222,7 +242,7 @@ class AuthService {
           actions: [
             ElevatedButton(
                 onPressed: () {
-                  logout();
+                  logout(ref);
                   Navigate().toAndRemoveUntil(AuthScreen());
                 },
                 child: const Text("Yes")),

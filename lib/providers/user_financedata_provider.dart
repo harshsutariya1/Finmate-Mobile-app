@@ -48,18 +48,44 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+// update user finance data
+  Future<bool> updateCashAmount(
+      {required String uid, required String amount}) async {
+    try {
+      await userCashDocument(uid).update({
+        'amount': amount,
+      }).then((value) {
+        state = UserFinanceData(
+          listOfGroups: state.listOfGroups,
+          listOfTransactions: state.listOfTransactions,
+          cash: Cash(amount: amount),
+        );
+        logger.i("Cash amount updated successfully.");
+      });
+      return true;
+    } catch (e) {
+      logger.w("Error while updating cash amount: $e");
+      return false;
+    }
+  }
+
   Future<bool> updateTransactionTidData({
     required String uid,
     required String tid,
     required Transaction transaction,
   }) async {
-    Transaction t = transaction;
+    Transaction temp = transaction;
     try {
       userTransactionsCollection(uid).doc(tid).update({
         'tid': tid,
       }).then((value) {
-        t.tid = tid;
-        state.listOfTransactions?.add(t);
+        temp.tid = tid;
+        final listOTransactions = state.listOfTransactions;
+        listOTransactions?.add(temp);
+        state = UserFinanceData(
+          listOfGroups: state.listOfGroups,
+          listOfTransactions: listOTransactions,
+        );
       });
 
       return true;
@@ -86,5 +112,10 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       logger.w("Error while removing transaction with tid $tid: $e");
       return false;
     }
+  }
+
+  void reset() {
+    state = UserFinanceData();
+    print("user finance data reset");
   }
 }

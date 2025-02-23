@@ -137,11 +137,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             child: authButton(
               text: "SignUp",
               onTap: _onTapSignUp,
+              isloading: isSignupLoading,
             ),
           ),
           sbh5,
           Center(
-            child: googleButton(onTap: _onTapGoogle),
+            child: googleButton(
+              onTap: _onTapGoogle,
+              isloading: isGoogleLoading,
+            ),
           ),
           sbh10,
           bottomText(),

@@ -48,7 +48,7 @@ Future<void> createUserProfile({required UserData userProfile}) async {
   try {
     if (userProfile.uid != null) {
       await userCollection.doc(userProfile.uid).set(userProfile);
-     await userCashDocument(userProfile.uid!).set(Cash(amount: 0));
+      await userCashDocument(userProfile.uid!).set(Cash());
     } else {
       print("Error: userProfile.uid is null");
     }
@@ -58,7 +58,7 @@ Future<void> createUserProfile({required UserData userProfile}) async {
 }
 
 Future<bool> checkExistingUser(String uid) {
-  CollectionReference blogsRef = FirebaseFirestore.instance.collection('users');
+  CollectionReference blogsRef =  FirebaseFirestore.instance.collection('users');
   return blogsRef.doc(uid).get().then((doc) {
     if (doc.exists) {
       return true;
