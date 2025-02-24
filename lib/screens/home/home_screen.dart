@@ -1,5 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/transaction.dart';
@@ -12,14 +10,13 @@ import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
+import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({
-    super.key,
-  });
+  const HomeScreen({super.key});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -101,26 +98,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             left: 10,
             right: 0,
           ),
-          child: CircleAvatar(
-            radius: 25,
-            backgroundColor: color2,
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: color4,
-              child: CachedNetworkImage(
-                imageUrl: userData.pfpURL.toString(),
-                imageBuilder: (context, imageProvider) => CircleAvatar(
-                  radius: 20,
-                  backgroundImage: imageProvider,
-                ),
-                errorWidget: (context, url, error) => CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage(blankProfileImage),
-                ),
-                placeholder: (context, url) =>
-                    CircularProgressIndicator.adaptive(),
-              ),
-            ),
+          child: userProfilePicInCircle(
+            imageUrl: userData.pfpURL.toString(),
+            innerRadius: 20,
+            outerRadius: 25,
           ),
         ),
         title: Text(

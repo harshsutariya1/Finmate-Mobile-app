@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/accounts.dart';
+import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
@@ -44,6 +45,13 @@ DocumentReference<Cash> userCashDocument(String uid) {
       );
 }
 
+CollectionReference<Group> userGroupsCollection(String uid) {
+  return userCollection.doc(uid).collection('user_groups').withConverter<Group>(
+        fromFirestore: (snapshots, _) => Group.fromJson(snapshots.data()!),
+        toFirestore: (group, _) => group.toJson(),
+      );
+}
+
 Future<void> createUserProfile({required UserData userProfile}) async {
   try {
     if (userProfile.uid != null) {
@@ -58,7 +66,7 @@ Future<void> createUserProfile({required UserData userProfile}) async {
 }
 
 Future<bool> checkExistingUser(String uid) {
-  CollectionReference blogsRef =  FirebaseFirestore.instance.collection('users');
+  CollectionReference blogsRef = FirebaseFirestore.instance.collection('users');
   return blogsRef.doc(uid).get().then((doc) {
     if (doc.exists) {
       return true;
