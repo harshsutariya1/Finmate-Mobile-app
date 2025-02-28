@@ -152,9 +152,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           .delete()
           .then((value) {
         state = UserFinanceData(
-          listOfGroups: state.listOfGroups
-              ?.where((g) => g.gid != group.gid)
-              .toList(),
+          listOfGroups:
+              state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
           listOfTransactions: state.listOfTransactions,
           cash: state.cash,
         );

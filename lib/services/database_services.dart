@@ -52,6 +52,18 @@ CollectionReference<Group> userGroupsCollection(String uid) {
       );
 }
 
+Future<List<UserData>> getAllAppUsers() async {
+  try {
+    QuerySnapshot<UserData> querySnapshot = await userCollection.get();
+    List<UserData> users = querySnapshot.docs.map((doc) => doc.data()).toList();
+    Logger().i("Got all the users of app: ${users.length}");
+    return users;
+  } catch (e) {
+    Logger().w("Error getting all app users: $e");
+    return [];
+  }
+}
+
 Future<void> createUserProfile({required UserData userProfile}) async {
   try {
     if (userProfile.uid != null) {

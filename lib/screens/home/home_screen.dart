@@ -7,11 +7,9 @@ import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
-import 'package:finmate/services/database_services.dart';
+import 'package:finmate/screens/home/all_transactions_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/other_widgets.dart';
-import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,16 +29,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<Transaction>? transactionsList =
         List.from(userFinanceData.listOfTransactions ?? []);
 
-    // Sort transactions by date and time in ascending order
-    // transactionsList?.sort((a, b) {
-    //   int dateComparison = a.date!.compareTo(b.date!);
-    //   if (dateComparison != 0) {
-    //     return dateComparison;
-    //   } else {
-    //     return a.time!.format(context).compareTo(b.time!.format(context));
-    //   }
-    // });
-
     // Sort transactions by date and time in descending order
     transactionsList.sort((a, b) {
       int dateComparison = b.date!.compareTo(a.date!);
@@ -59,26 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center(child: Text("Transactions")),
-          Divider(),
-          (userFinanceData.listOfTransactions == null ||
-                  userFinanceData.listOfTransactions!.isEmpty)
-              ? Center(
-                  child: Text("No Transactions found!"),
-                )
-              : Expanded(
-                  child: ListView.separated(
-                    itemCount: transactionsList.length,
-                    separatorBuilder: (BuildContext context, int index) {
-                      return sbh15;
-                    },
-                    itemBuilder: (BuildContext context, int index) {
-                      final Transaction transaction = transactionsList[index];
-
-                      return transactionTile(transaction);
-                    },
-                  ),
-                ),
+          transactionContainer(userFinanceData, transactionsList),
           sbh15,
         ],
       ),
@@ -125,150 +94,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget transactionTile(Transaction transaction) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Dismissible(
-        key: ValueKey(transaction),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (direction) async {
-          bool result = false;
-          showYesNoDialog(
-            context,
-            title: "Delete Transaction ?",
-            contentWidget: SizedBox(),
-            onTapYes: () async {
-              if (transaction.uid != null && transaction.tid != null) {
-                if (await deleteTransactionFromUserData(
-                    uid: transaction.uid!, tid: transaction.tid!, ref: ref)) {
-                  snackbarToast(
-                    context: context,
-                    text: "Transaction Deleted!",
-                    icon: Icons.done,
-                  );
-                  result = true;
-                  Navigate().goBack();
-                } else {
-                  // error occured
-                  snackbarToast(
-                    context: context,
-                    text: "Failed deleting transaction!",
-                    icon: Icons.delete_forever_rounded,
-                  );
-                  Navigate().goBack();
-                }
-              }
-            },
-            onTapNo: () {
-              Navigate().goBack();
-            },
-          );
-          return Future.value(result);
-        },
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color.fromARGB(130, 255, 255, 255),
-                Colors.red,
-              ],
-            ),
-          ),
-          child: Icon(
-            Icons.delete_rounded,
-            color: Colors.white,
-          ),
+  Widget transactionContainer(
+    UserFinanceData userFinanceData,
+    List<Transaction> transactionsList,
+  ) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: color2.withAlpha(100),
+          width: 3,
         ),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: color2.withAlpha(150),
-            ),
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 10,
-                  children: [
-                    // category icon
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: color2,
-                      child: CircleAvatar(
-                        backgroundColor: color4,
-                        radius: 28,
-                        child: Icon(
-                          transactionCategoriesAndIcons[transaction.category],
-                          color: color3,
-                        ),
-                      ),
-                    ),
-                    // description and date
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.min,
-                      spacing: 7,
-                      children: [
-                        // description
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.4,
-                          ),
-                          child: Text(
-                            "${transaction.description}",
-                            style: TextStyle(
-                              color: color1,
-                              fontSize: 16,
-                            ),
-                            softWrap: true,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // date
-                        Text(
-                          "${transaction.date?.day}/${transaction.date?.month}/${transaction.date?.year} ${transaction.time?.format(context)}",
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  "Recent Transactions",
+                  style: TextStyle(
+                    color: color1,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              // amount
-              Column(
-                spacing: 10,
-                children: [
-                  Text(
-                    (double.parse(transaction.amount.toString()) < 0)
-                        ? transaction.amount.toString()
-                        : "+${transaction.amount.toString()}",
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextButton(
+                  onPressed: () {
+                    Navigate().push(AllTransactionsScreen());
+                  },
+                  child: Text(
+                    "View All",
                     style: TextStyle(
-                      fontSize: 18,
-                      color: double.parse(transaction.amount!) < 0
-                          ? Colors.red
-                          : color3,
-                      fontWeight: FontWeight.bold,
+                      color: color2,
+                      fontSize: 16,
                     ),
                   ),
-                ],
-              )
+                ),
+              ),
             ],
           ),
-        ),
+          (userFinanceData.listOfTransactions == null ||
+                  userFinanceData.listOfTransactions!.isEmpty)
+              ? Center(
+                  child: Text("No Transactions found!"),
+                )
+              : Column(
+                  children: transactionsList
+                      .take(4)
+                      .map((transaction) =>
+                          transactionTile(context, transaction, ref))
+                      .toList(),
+                ),
+        ],
       ),
     );
   }

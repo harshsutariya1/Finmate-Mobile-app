@@ -1,7 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/screens/home/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
-import 'package:finmate/screens/home/groups_screen.dart';
+import 'package:finmate/screens/home/Group%20screens/groups_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/investments_screen.dart';
 import 'package:flutter/material.dart';

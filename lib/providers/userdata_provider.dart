@@ -116,6 +116,12 @@ class UserDataNotifier extends StateNotifier<UserData> {
   }
 }
 
+final allAppUsers = FutureProvider<List<UserData>>((ref) async {
+  List<UserData> listOfUsers = await getAllAppUsers();
+  Logger().i("Got all users of application: ${listOfUsers.length}");
+  return listOfUsers;
+});
+
 final userDataProvider =
     FutureProvider.family<UserData, String>((ref, uid) async {
   final userNotifier = ref.read(userDataNotifierProvider.notifier);
@@ -123,5 +129,6 @@ final userDataProvider =
   final userFinanceNotifier =
       ref.read(userFinanceDataNotifierProvider.notifier);
   await userFinanceNotifier.fetchUserFinanceData(uid);
+  ref.read(allAppUsers);
   return ref.read(userDataNotifierProvider);
 });
