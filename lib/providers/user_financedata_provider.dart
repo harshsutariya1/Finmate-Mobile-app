@@ -120,12 +120,17 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  Future<bool> createGroupProfile({required Group groupProfile}) async {
+  Future<bool> createGroupProfile({
+    required Group groupProfile,
+    required WidgetRef ref,
+  }) async {
     try {
       if (groupProfile.creatorId != null) {
         final result = await userGroupsCollection(groupProfile.creatorId!)
             .add(groupProfile);
+
         await result.update({'gid': result.id});
+
         state = UserFinanceData(
           listOfGroups: state.listOfGroups!
             ..add(groupProfile.copyWith(gid: result.id)),

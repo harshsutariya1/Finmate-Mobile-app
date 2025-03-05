@@ -22,10 +22,14 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
 
-    return Scaffold(
-      backgroundColor: color4,
-      appBar: _appBar(),
-      body: _body(),
+    return DefaultTabController(
+      length: 2,
+      initialIndex: 0,
+      child: Scaffold(
+        backgroundColor: color4,
+        appBar: _appBar(),
+        body: _body(),
+      ),
     );
   }
 
@@ -34,15 +38,53 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
       backgroundColor: color4,
       centerTitle: true,
       title: Text(widget.group.name ?? "Group Overview"),
+      bottom: TabBar(
+        tabs: [
+          Tab(
+            text: "Group Overview",
+          ),
+          Tab(
+            text: "Chat",
+          ),
+        ],
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          color: color3,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.normal,
+          color: Colors.blueGrey,
+        ),
+        indicatorColor: color3,
+      ),
     );
   }
 
   Widget _body() {
+    return TabBarView(children: [
+      _groupOverview(),
+      _groupChat(),
+    ]);
+  }
+
+  Widget _groupOverview() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Center(
           child: Text('Group Overview'),
+        )
+      ],
+    );
+  }
+
+  Widget _groupChat() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Center(
+          child: Text('Group Chat'),
         )
       ],
     );

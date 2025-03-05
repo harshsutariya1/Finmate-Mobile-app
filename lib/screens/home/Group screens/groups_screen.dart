@@ -5,7 +5,7 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-import 'package:finmate/screens/home/Group%20screens/add_group_details.dart';
+import 'package:finmate/screens/home/Group%20screens/create_group.dart';
 import 'package:finmate/screens/home/Group%20screens/group_overview.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
@@ -105,6 +105,8 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   }
 
   Widget _groupTile(Group group, UserData userData, List<String> memberPfpics) {
+    final memberPfpics =
+        group.memberPfpics?.take(5).toList().reversed.toList() ?? [];
     return InkWell(
       onTap: () {
         Navigate().push(GroupOverview(group: group));
@@ -129,9 +131,9 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                 Text(
                   group.name ?? "Group Name",
                   style: TextStyle(
-                    color: color4,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
                 IconButton(
@@ -191,43 +193,23 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                 Stack(
                   alignment: Alignment.centerRight,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 120),
-                      child: userProfilePicInCircle(
-                        imageUrl: userData.pfpURL.toString(),
-                        outerRadius: 23,
-                        innerRadius: 20,
+                    for (var memberPfp in (memberPfpics.reversed))
+                      Padding(
+                        padding: EdgeInsets.only(
+                          right: 30.0 *
+                              (memberPfpics.indexOf(memberPfp.toString())),
+                        ),
+                        child: userProfilePicInCircle(
+                          imageUrl: memberPfp.toString(),
+                          outerRadius: 23,
+                          innerRadius: 20,
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 90),
-                      child: userProfilePicInCircle(
-                        imageUrl: userData.pfpURL.toString(),
-                        outerRadius: 23,
-                        innerRadius: 20,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 60),
-                      child: userProfilePicInCircle(
-                        imageUrl: userData.pfpURL.toString(),
-                        outerRadius: 23,
-                        innerRadius: 20,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 30),
-                      child: userProfilePicInCircle(
-                        imageUrl: userData.pfpURL.toString(),
-                        outerRadius: 23,
-                        innerRadius: 20,
-                      ),
-                    ),
                     userProfilePicInCircle(
                       outerRadius: 23,
                       innerRadius: 20,
                       isNumber: true,
-                      textNumber: "+3",
+                      textNumber: "+${group.memberPfpics!.length - 4}",
                     ),
                   ],
                 ),

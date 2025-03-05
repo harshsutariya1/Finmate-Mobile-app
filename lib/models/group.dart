@@ -13,6 +13,7 @@ class Group {
   String? totalAmount;
   List<String>? transactionIds;
   List<String>? memberIds;
+  List<String>? memberPfpics;
 
   Group({
     this.gid = "",
@@ -25,6 +26,7 @@ class Group {
     this.totalAmount = "0",
     this.transactionIds = const [],
     this.memberIds = const [],
+    this.memberPfpics = const [],
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
@@ -40,6 +42,7 @@ class Group {
     String? totalAmount,
     List<String>? transactionIds,
     List<String>? memberIds,
+    List<String>? memberPfpics,
   }) {
     return Group(
       gid: gid ?? this.gid,
@@ -52,6 +55,7 @@ class Group {
       totalAmount: totalAmount ?? this.totalAmount,
       transactionIds: transactionIds ?? this.transactionIds,
       memberIds: memberIds ?? this.memberIds,
+      memberPfpics: memberPfpics ?? this.memberPfpics,
     );
   }
 
@@ -79,6 +83,9 @@ class Group {
       memberIds: map['memberIds'] != null
           ? List<String>.from((map['memberIds'] ?? []))
           : [],
+      memberPfpics: map['memberPfpics'] != null
+          ? List<String>.from((map['memberPfpics'] ?? []))
+          : [],
     );
   }
 
@@ -94,6 +101,7 @@ class Group {
       'totalAmount': totalAmount,
       'transactionIds': transactionIds,
       'memberIds': memberIds,
+      'memberPfpics': memberPfpics,
     };
   }
 }

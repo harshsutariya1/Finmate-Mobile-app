@@ -3,6 +3,7 @@ import 'package:finmate/models/group.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -99,8 +100,10 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
                   ...listOfSelectedUsers.map((user) => InkWell(
                         onTap: () {
                           setState(() {
-                            selectedUserUid.remove(user.uid);
-                            listOfSelectedUsers.remove(user);
+                            if (userData.uid != user.uid) {
+                              selectedUserUid.remove(user.uid);
+                              listOfSelectedUsers.remove(user);
+                            }
                           });
                         },
                         child: Container(
@@ -247,23 +250,26 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
     final groupName = _nameController.text;
     final groupDescription = _descriptionController.text;
     final groupAmount = _amountController.text;
-    if (groupName.isNotEmpty &&
-        groupAmount.isNotEmpty &&
-        groupDescription.isNotEmpty) {
+    if (groupName.isNotEmpty && groupAmount.isNotEmpty) {
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .createGroupProfile(
-              groupProfile: Group(
-            creatorId: userData.uid,
-            name: groupName,
-            description: groupDescription,
-            totalAmount: groupAmount,
-            memberIds: selectedUserUid,
-          ))
+            groupProfile: Group(
+              creatorId: userData.uid,
+              name: groupName,
+              description: groupDescription,
+              totalAmount: groupAmount,
+              memberIds: selectedUserUid,
+              memberPfpics:
+                  listOfSelectedUsers.map((user) => user.pfpURL!).toList(),
+            ),
+            ref: ref,
+          )
           .then((value) {
         if (value) {
           snackbarToast(
               context: context, text: "Group Created!", icon: Icons.done_all);
+          Navigate().goBack();
         } else {
           snackbarToast(
               context: context,
