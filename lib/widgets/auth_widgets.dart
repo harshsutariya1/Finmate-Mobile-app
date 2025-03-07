@@ -67,7 +67,7 @@ Widget authButton({
       width: double.infinity,
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: authButtonBackgroundColor,
+        color: color1,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(

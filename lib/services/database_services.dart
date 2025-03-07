@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/accounts.dart';
-import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/services/database_references.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,42 +15,6 @@ import 'package:path/path.dart' as path;
 
 final ImagePicker _picker = ImagePicker();
 final FirebaseStorage firebaseStorage = FirebaseStorage.instance;
-
-CollectionReference<UserData> userCollection =
-    FirebaseFirestore.instance.collection('users').withConverter<UserData>(
-          fromFirestore: (snapshots, _) => UserData.fromJson(snapshots.data()!),
-          toFirestore: (userData, _) => userData.toJson(),
-        );
-
-CollectionReference<transaction_model.Transaction> userTransactionsCollection(
-    String uid) {
-  return userCollection
-      .doc(uid)
-      .collection('user_transactions')
-      .withConverter<transaction_model.Transaction>(
-        fromFirestore: (snapshots, _) =>
-            transaction_model.Transaction.fromJson(snapshots.data()!),
-        toFirestore: (transaction, _) => transaction.toJson(),
-      );
-}
-
-DocumentReference<Cash> userCashDocument(String uid) {
-  return userCollection
-      .doc(uid)
-      .collection("payment_modes")
-      .doc("Cash")
-      .withConverter(
-        fromFirestore: (snapshot, options) => Cash.fromJson(snapshot.data()!),
-        toFirestore: (cash, options) => cash.toJson(),
-      );
-}
-
-CollectionReference<Group> userGroupsCollection(String uid) {
-  return userCollection.doc(uid).collection('user_groups').withConverter<Group>(
-        fromFirestore: (snapshots, _) => Group.fromJson(snapshots.data()!),
-        toFirestore: (group, _) => group.toJson(),
-      );
-}
 
 Future<List<UserData>> getAllAppUsers() async {
   try {
@@ -133,6 +97,33 @@ Future<String?> uploadUserPfpic({
     });
   } catch (e) {
     print("Error uploading user profile pic: $e");
+    return null;
+  }
+}
+
+Future<String?> uploadGroupChatPics({
+  required File file,
+  required String uid,
+  required String gid,
+}) async {
+  try {
+    print("uploading pic...");
+    Reference fileReference = firebaseStorage
+        .ref('groups/$gid/chatImages')
+        .child("$uid${path.extension(file.path)}");
+
+    UploadTask uploadTask = fileReference.putFile(file);
+
+    return uploadTask.then((p) {
+      if (p.state == TaskState.success) {
+        Logger().i("File Uploaded: ${fileReference.getDownloadURL().toString()}");
+        return fileReference.getDownloadURL();
+      }
+      Logger().e("error while uploading pic");
+      return null;
+    });
+  } catch (e) {
+    Logger().e("Error uploading pic: $e");
     return null;
   }
 }

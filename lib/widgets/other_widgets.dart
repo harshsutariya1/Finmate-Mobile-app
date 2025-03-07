@@ -55,6 +55,7 @@ Widget transactionTile(
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
         bool result = false;
+        // delete transaction dialog
         showYesNoDialog(
           context,
           title: "Delete Transaction ?",
@@ -95,6 +96,7 @@ Widget transactionTile(
               Colors.red,
             ],
           ),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Icon(
           Icons.delete_rounded,

@@ -4,6 +4,8 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/home/Group%20screens/group_chats.dart';
+import 'package:finmate/screens/home/Group%20screens/group_members.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,7 +25,7 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
         ref.watch(userFinanceDataNotifierProvider);
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       initialIndex: 0,
       child: Scaffold(
         backgroundColor: color4,
@@ -46,6 +48,9 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
           Tab(
             text: "Chat",
           ),
+          Tab(
+            text: "Members",
+          ),
         ],
         labelStyle: TextStyle(
           fontWeight: FontWeight.bold,
@@ -64,7 +69,8 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   Widget _body() {
     return TabBarView(children: [
       _groupOverview(),
-      _groupChat(),
+      GroupChats(group: widget.group),
+      GroupMembers(group: widget.group),
     ]);
   }
 
@@ -74,17 +80,6 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
       children: [
         const Center(
           child: Text('Group Overview'),
-        )
-      ],
-    );
-  }
-
-  Widget _groupChat() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Center(
-          child: Text('Group Chat'),
         )
       ],
     );

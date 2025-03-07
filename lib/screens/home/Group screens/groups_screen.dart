@@ -38,17 +38,11 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         return b.time!.format(context).compareTo(a.time!.format(context));
       }
     });
-    List<String> memberPfpics = [
-      userData.pfpURL.toString(),
-      userData.pfpURL.toString(),
-      userData.pfpURL.toString(),
-      userData.pfpURL.toString(),
-    ];
 
     return Scaffold(
       backgroundColor: color4,
       appBar: _appBar(userData),
-      body: _body(userData, userFinanceData, groupsList, memberPfpics),
+      body: _body(userData, userFinanceData, groupsList),
     );
   }
 
@@ -86,7 +80,6 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
     UserData userData,
     UserFinanceData userFinanceData,
     List<Group> groupsList,
-    List<String> memberPfpics,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -97,14 +90,14 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
           : ListView.separated(
               itemCount: groupsList.length,
               itemBuilder: (context, index) {
-                return _groupTile(groupsList[index], userData, memberPfpics);
+                return _groupTile(groupsList[index], userData);
               },
               separatorBuilder: (context, index) => sbh15,
             ),
     );
   }
 
-  Widget _groupTile(Group group, UserData userData, List<String> memberPfpics) {
+  Widget _groupTile(Group group, UserData userData) {
     final memberPfpics =
         group.memberPfpics?.take(5).toList().reversed.toList() ?? [];
     return InkWell(
@@ -136,8 +129,8 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                     fontSize: 20,
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
+                InkWell(
+                  onTap: () {
                     showYesNoDialog(
                       context,
                       title: "Delete Group?",
@@ -168,9 +161,12 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                       },
                     );
                   },
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.red,
+                  child: CircleAvatar(
+                    backgroundColor: color4,
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
               ],
@@ -178,7 +174,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             sbh20,
             // Group Description
             Text(
-              "${group.totalAmount ?? 0.0} INR",
+              "${group.totalAmount ?? 0.0} ₹",
               style: TextStyle(
                 color: color4,
                 fontWeight: FontWeight.bold,

@@ -3,7 +3,7 @@ import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
-import 'package:finmate/services/database_services.dart';
+import 'package:finmate/services/database_references.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
@@ -32,9 +32,11 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         userCashDocument(uid).get().then((value) {
           cash = value.data();
         }).then((value) {
-          userGroupsCollection(uid).get().then((value) {
+          groupsCollection.get().then((value) {
             for (var element in value.docs) {
-              groups.add(element.data());
+              if (element.data().memberIds?.contains(uid) ?? false) {
+                groups.add(element.data());
+              }
             }
           }).then((value) {
             state = UserFinanceData(
@@ -126,9 +128,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   }) async {
     try {
       if (groupProfile.creatorId != null) {
-        final result = await userGroupsCollection(groupProfile.creatorId!)
-            .add(groupProfile);
-
+        final result = await groupsCollection.add(groupProfile);
         await result.update({'gid': result.id});
 
         state = UserFinanceData(
@@ -152,10 +152,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> deleteGroupProfile({required Group group}) async {
     print("uid: ${group.creatorId}, gid: ${group.gid}");
     try {
-      await userGroupsCollection(group.creatorId!)
-          .doc(group.gid)
-          .delete()
-          .then((value) {
+      await groupsCollection.doc(group.gid).delete().then((value) {
         state = UserFinanceData(
           listOfGroups:
               state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
