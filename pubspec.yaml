@@ -68,6 +68,8 @@ dependencies:
   shorebird_code_push: ^2.0.3
   flutter_slidable: ^4.0.0
   searchfield: ^1.2.4
+  dotted_border: ^2.1.0
+  persistent_bottom_nav_bar: ^6.2.1
 
 dev_dependencies:
   flutter_test:

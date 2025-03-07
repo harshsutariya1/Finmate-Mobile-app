@@ -1,7 +1,7 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/screens/home/Group%20screens/groups_screen.dart';
 import 'package:finmate/screens/home/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
-import 'package:finmate/screens/home/Group%20screens/groups_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/investments_screen.dart';
 import 'package:flutter/material.dart';
@@ -59,24 +59,40 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         iconSize: 30,
         onTap: (index) {
           setState(() {
+            print(index.toString());
             currentIndex = index;
           });
         },
         items: List.generate(
           screens.length,
-          (index) => BottomNavigationBarItem(
-            icon: Icon(
-              listOfIcons[index],
-              color: Colors.black,
-            ),
-            activeIcon: Icon(
-              listOfIcons[index],
-              color: color3,
-            ),
-            label: listOfTitles[index],
-          ),
+          (index) => (index == 2)
+              ? BottomNavigationBarItem(icon: SizedBox.shrink(), label: '')
+              : BottomNavigationBarItem(
+                  icon: Icon(
+                    listOfIcons[index],
+                    color: Colors.black,
+                  ),
+                  activeIcon: Icon(
+                    listOfIcons[index],
+                    color: color3,
+                  ),
+                  label: listOfTitles[index],
+                ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            currentIndex = 2;
+          });
+        },
+        backgroundColor: color3,
+        child: Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -108,15 +108,15 @@ Future<String?> uploadGroupChatPics({
 }) async {
   try {
     print("uploading pic...");
-    Reference fileReference = firebaseStorage
-        .ref('groups/$gid/chatImages')
-        .child("$uid${path.extension(file.path)}");
+    Reference fileReference = firebaseStorage.ref('groups/$gid/chatImages').child(
+        "${uid}_${DateTime.now().millisecondsSinceEpoch}${path.extension(file.path)}");
 
     UploadTask uploadTask = fileReference.putFile(file);
 
     return uploadTask.then((p) {
       if (p.state == TaskState.success) {
-        Logger().i("File Uploaded: ${fileReference.getDownloadURL().toString()}");
+        Logger()
+            .i("File Uploaded: ${fileReference.getDownloadURL().toString()}");
         return fileReference.getDownloadURL();
       }
       Logger().e("error while uploading pic");

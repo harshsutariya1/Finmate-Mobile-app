@@ -52,6 +52,8 @@ class Transaction {
   String? methodOfPayment;
   String? description;
   TransactionType? type;
+  bool isGroupTransaction;
+  String gid;
 
   Transaction({
     this.tid = "",
@@ -63,6 +65,8 @@ class Transaction {
     this.methodOfPayment = "Cash",
     this.description = "",
     this.type,
+    this.isGroupTransaction = false,
+    this.gid = "",
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
@@ -87,6 +91,8 @@ class Transaction {
         (e) => e.toString() == 'TransactionType.${json['type']}',
         orElse: () => TransactionType.expense,
       ),
+      isGroupTransaction: json['isGroupTransaction'] as bool? ?? false,
+      gid: json['gid'] as String? ?? "",
     );
   }
 
@@ -101,6 +107,8 @@ class Transaction {
       'category': category,
       'methodOfPayment': methodOfPayment,
       'type': type?.toString().split('.').last,
+      'isGroupTransaction': isGroupTransaction,
+      'gid': gid,
     };
   }
 }

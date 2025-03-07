@@ -134,7 +134,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       Iterable<String> categoryList =
                           transactionCategoriesAndIcons.keys;
                       return Container(
-                        height: 500,
+                        // height: 500,
                         width: double.infinity,
                         padding: EdgeInsets.all(20),
                         child: Wrap(

@@ -192,8 +192,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                     for (var memberPfp in (memberPfpics.reversed))
                       Padding(
                         padding: EdgeInsets.only(
-                          right: 30.0 *
-                              (memberPfpics.indexOf(memberPfp.toString())),
+                          right: 30.0 * memberPfpics.indexOf(memberPfp),
                         ),
                         child: userProfilePicInCircle(
                           imageUrl: memberPfp.toString(),
@@ -201,12 +200,14 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                           innerRadius: 20,
                         ),
                       ),
-                    userProfilePicInCircle(
-                      outerRadius: 23,
-                      innerRadius: 20,
-                      isNumber: true,
-                      textNumber: "+${group.memberPfpics!.length - 4}",
-                    ),
+                    (group.memberPfpics!.length > 4)
+                        ? userProfilePicInCircle(
+                            outerRadius: 23,
+                            innerRadius: 20,
+                            isNumber: true,
+                            textNumber: "+${group.memberPfpics!.length - 4}",
+                          )
+                        : SizedBox(),
                   ],
                 ),
                 IconButton(
