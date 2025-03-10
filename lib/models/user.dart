@@ -21,6 +21,30 @@ class UserData {
     this.groupIds = const [],
   });
 
+  UserData copyWith({
+    String? uid,
+    String? name,
+    String? userName,
+    String? pfpURL,
+    String? email,
+    String? gender,
+    DateTime? dob,
+    List<String>? transactionIds,
+    List<String>? groupIds,
+  }) {
+    return UserData(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      userName: userName ?? this.userName,
+      pfpURL: pfpURL ?? this.pfpURL,
+      email: email ?? this.email,
+      gender: gender ?? this.gender,
+      dob: dob ?? this.dob,
+      transactionIds: transactionIds ?? this.transactionIds,
+      groupIds: groupIds ?? this.groupIds,
+    );
+  }
+
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
       uid: json['uid'] as String,

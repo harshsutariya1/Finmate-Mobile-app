@@ -1,4 +1,6 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
@@ -6,7 +8,6 @@ import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
-import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -25,10 +26,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _groupController = TextEditingController();
+  String selectedGroupId = "";
   final TextEditingController _paymentModeController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   int indexOfTabbar = 0;
+  bool isIncomeSelected = true;
   bool isCashSelected = false;
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
@@ -42,6 +46,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       length: 2,
       initialIndex: 0,
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: color4,
         appBar: _appbar(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -63,7 +68,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         // }),
         tabs: [
           Tab(
-            text: "Expence / Income",
+            text: "Expense / Income",
           ),
           Tab(
             text: "Transfer",
@@ -112,6 +117,40 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               hintText: "00.00",
               lableText: "Amount",
               prefixIconData: Icons.currency_rupee_sharp,
+              isSufixWidget: true,
+              sufixWidget: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 10,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color3.withAlpha(150),
+                      ),
+                      child: Row(
+                        spacing: 5,
+                        children: [
+                          Icon(
+                            (isIncomeSelected) ? Icons.add : Icons.remove,
+                            color: color4,
+                          ),
+                          Text(
+                            (isIncomeSelected) ? "Income" : "Expense",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: color4,
+                            ),
+                          ),
+                        ],
+                      ),
+                      onPressed: () => setState(() {
+                        isIncomeSelected = !isIncomeSelected;
+                      }),
+                    ),
+                  ),
+                ],
+              ),
             ),
             _textfield(
               controller: _descriptionController,
@@ -134,24 +173,61 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       Iterable<String> categoryList =
                           transactionCategoriesAndIcons.keys;
                       return Container(
-                        // height: 500,
                         width: double.infinity,
                         padding: EdgeInsets.all(20),
-                        child: Wrap(
-                          spacing: 8.0,
-                          children: categoryList.map((category) {
-                            return ChoiceChip(
-                              label: Text(category),
-                              selected: _categoryController.text == category,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _categoryController.text =
-                                      selected ? category : '';
-                                  Navigator.pop(context);
-                                });
-                              },
-                            );
-                          }).toList(),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Select Category"),
+                                  IconButton(
+                                    onPressed: () {
+                                      snackbarToast(
+                                          context: context,
+                                          text:
+                                              "This Function is in development",
+                                          icon: Icons.developer_mode_outlined);
+                                    },
+                                    icon: Icon(Icons.add),
+                                    color: color3,
+                                  )
+                                ],
+                              ),
+                              Wrap(
+                                spacing: 8.0,
+                                children: categoryList.map((category) {
+                                  return ChoiceChip(
+                                    label: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      spacing: 20,
+                                      children: [
+                                        Icon(
+                                          transactionCategoriesAndIcons[
+                                              category],
+                                          color: color1,
+                                        ),
+                                        Text(category),
+                                      ],
+                                    ),
+                                    // showCheckmark: false,
+                                    selected:
+                                        _categoryController.text == category,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        _categoryController.text =
+                                            selected ? category : '';
+                                        Navigator.pop(context);
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -196,11 +272,77 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                 isCashSelected = !isCashSelected;
                                 _paymentModeController.text =
                                     (isCashSelected) ? "Cash" : "";
+                                _groupController.text = (isCashSelected)
+                                    ? ""
+                                    : _groupController.text;
                               });
                               Navigator.pop(context);
                             },
                           ),
                         ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            _textfield(
+              controller: _groupController,
+              prefixIconData: Icons.group_add_rounded,
+              hintText: "Add Group Transaction",
+              lableText: "Group Transaction",
+              readOnly: true,
+              sufixIconData: Icons.arrow_drop_down_circle_outlined,
+              onTap: () {
+                // show modal bottom sheet to select payment mode
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    List<Group> groupList =
+                        userFinanceData.listOfGroups!.toList();
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 50),
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Select Group"),
+                              ],
+                            ),
+                            sbh10,
+                            Wrap(
+                              spacing: 8.0,
+                              children: groupList.map((group) {
+                                return ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    spacing: 20,
+                                    children: [
+                                      Text(group.name.toString()),
+                                    ],
+                                  ),
+                                  selected: _groupController.text ==
+                                      group.name.toString(),
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _groupController.text =
+                                          selected ? group.name.toString() : '';
+                                      selectedGroupId = group.gid.toString();
+                                      _paymentModeController.text = selected
+                                          ? ""
+                                          : _paymentModeController.text;
+                                      Navigator.pop(context);
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -282,6 +424,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     String? lableText,
     IconData? prefixIconData,
     IconData? sufixIconData,
+    bool isSufixWidget = false,
+    Widget? sufixWidget,
     bool readOnly = false,
     void Function()? onTap,
   }) {
@@ -303,16 +447,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 color: color3,
               )
             : null,
-        suffixIcon: (sufixIconData != null)
-            ? Icon(
-                sufixIconData,
-                color: color3,
-                size: 30,
-              )
-            : null,
+        suffixIcon: (isSufixWidget)
+            ? sufixWidget
+            : (sufixIconData != null)
+                ? Icon(
+                    sufixIconData,
+                    color: color3,
+                    size: 30,
+                  )
+                : null,
         border: OutlineInputBorder(
           borderSide: BorderSide(color: color1),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
@@ -350,20 +496,24 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   isButtonDisabled = true;
                   isButtonLoading = true;
                 });
-                final amount = _amountController.text;
+                final amount =
+                    "${(isIncomeSelected) ? "" : "-"}${_amountController.text.replaceAll('-', '').trim()}";
                 final date = _selectedDate;
                 final time = _selectedTime;
-                final description = _descriptionController.text;
+                final description = _descriptionController.text.trim();
                 final category = _categoryController.text;
                 final paymentMode = _paymentModeController.text;
+                final groupId = selectedGroupId;
                 if (indexOfTabbar == 0) {
-                  // Expence / Income
+                  // Expense / Income
                   if (amount.isEmpty ||
                       category.isEmpty ||
-                      paymentMode.isEmpty) {
+                      description.isEmpty ||
+                      (paymentMode.isEmpty && groupId.isEmpty) ||
+                      (paymentMode.isNotEmpty && groupId.isNotEmpty)) {
                     snackbarToast(
                       context: context,
-                      text: "Please fill all the fields",
+                      text: "Please Check all the fields.",
                       icon: Icons.error,
                     );
                     setState(() {
@@ -405,9 +555,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         time: time,
                         description: description,
                         methodOfPayment: paymentMode,
-                        type: (double.parse(amount) < 0)
-                            ? TransactionType.expense
-                            : TransactionType.income,
+                        isGroupTransaction: groupId.isNotEmpty,
+                        gid: groupId,
+                        type: (isIncomeSelected)
+                            ? TransactionType.income
+                            : TransactionType.expense,
                       ),
                       ref,
                       userFinanceData,
@@ -439,18 +591,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     WidgetRef ref,
     UserFinanceData userFinanceData,
   ) async {
-    await addTransactionToUserData(
-      uid: uid,
-      transactionData: transactionData,
-      ref: ref,
-    ).then((value) {
-      String paymentMode = transactionData.methodOfPayment ?? "Cash";
+    await ref
+        .read(userFinanceDataNotifierProvider.notifier)
+        .addTransactionToUserData(
+          uid: uid,
+          transactionData: transactionData,
+          ref: ref,
+        )
+        .then((value) {
+      String paymentMode = (transactionData.isGroupTransaction)
+          ? "GroupTransaction"
+          : transactionData.methodOfPayment ?? "Cash";
       if (paymentMode == "Cash") {
-        ref.read(userFinanceDataNotifierProvider.notifier).updateCashAmount(
+        ref.read(userFinanceDataNotifierProvider.notifier).updateUserCashAmount(
             uid: uid,
             amount: (double.parse(transactionData.amount ?? "0") +
                     (double.parse(userFinanceData.cash!.amount ?? '0')))
                 .toString());
+      } else if (paymentMode == "GroupTransaction") {
+        ref.read(userFinanceDataNotifierProvider.notifier).updateGroupAmount(
+              gid: transactionData.gid,
+              amount: (double.parse(transactionData.amount ?? "0") +
+                      (double.parse(userFinanceData.listOfGroups
+                              ?.where(
+                                  (group) => group.gid == transactionData.gid)
+                              .first
+                              .totalAmount ??
+                          '0')))
+                  .toString(),
+            );
       }
       if (value) {
         snackbarToast(

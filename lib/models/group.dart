@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
+import 'package:finmate/models/transaction.dart';
 import 'package:flutter/material.dart';
 
 class Group {
@@ -12,6 +13,7 @@ class Group {
   String? description;
   String? totalAmount;
   List<String>? transactionIds;
+  List<Transaction>? listOfTransactions;
   List<String>? memberIds;
   List<String>? memberPfpics;
 
@@ -25,6 +27,7 @@ class Group {
     this.description = "",
     this.totalAmount = "0",
     this.transactionIds = const [],
+    this.listOfTransactions = const [],
     this.memberIds = const [],
     this.memberPfpics = const [],
   }) : date = date ?? DateTime.now() {
@@ -41,6 +44,7 @@ class Group {
     String? description,
     String? totalAmount,
     List<String>? transactionIds,
+    List<Transaction>? listOfTransactions,
     List<String>? memberIds,
     List<String>? memberPfpics,
   }) {
@@ -54,6 +58,7 @@ class Group {
       description: description ?? this.description,
       totalAmount: totalAmount ?? this.totalAmount,
       transactionIds: transactionIds ?? this.transactionIds,
+      listOfTransactions: listOfTransactions ?? this.listOfTransactions,
       memberIds: memberIds ?? this.memberIds,
       memberPfpics: memberPfpics ?? this.memberPfpics,
     );
@@ -80,6 +85,9 @@ class Group {
       transactionIds: map['transactionIds'] != null
           ? List<String>.from((map['transactionIds'] ?? []))
           : [],
+      listOfTransactions: map['listOfTransactions'] != null
+          ? List<Transaction>.from((map['listOfTransactions'] ?? []))
+          : [],
       memberIds: map['memberIds'] != null
           ? List<String>.from((map['memberIds'] ?? []))
           : [],
@@ -100,6 +108,7 @@ class Group {
       'description': description,
       'totalAmount': totalAmount,
       'transactionIds': transactionIds,
+      'listOfTransactions': listOfTransactions,
       'memberIds': memberIds,
       'memberPfpics': memberPfpics,
     };

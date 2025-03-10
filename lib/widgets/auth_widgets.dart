@@ -26,7 +26,7 @@ Widget customTextField({
             color: color1,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),

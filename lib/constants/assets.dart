@@ -1,5 +1,5 @@
 // _____________ Navigation Bar assets _________________________________________
-const String homeIcon = 'assets/images/home.png';
+const String homeIcon = 'assets/icons/home-page.png';
 const String analyticsIcon = 'assets/images/analytics.png';
 const String scanIcon = 'assets/images/scan.png';
 const String investmentsIcon = 'assets/images/investments.png';

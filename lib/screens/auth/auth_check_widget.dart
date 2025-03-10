@@ -3,7 +3,7 @@ import 'package:finmate/providers/auth_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
-import 'package:finmate/widgets/loading_Error_screen.dart';
+import 'package:finmate/widgets/loading_error_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

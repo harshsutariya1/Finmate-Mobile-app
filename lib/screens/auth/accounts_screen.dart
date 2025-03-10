@@ -332,7 +332,7 @@ void showBottomSheet(
                 // update cash amount
                 await ref
                     .read(userFinanceDataNotifierProvider.notifier)
-                    .updateCashAmount(
+                    .updateUserCashAmount(
                       uid: userdata.uid ?? '',
                       amount: cashAmountController.text,
                     );

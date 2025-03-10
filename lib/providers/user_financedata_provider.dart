@@ -3,6 +3,7 @@ import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/services/database_references.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -28,14 +29,25 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         for (var element in value.docs) {
           transactions.add(element.data());
         }
-      }).then((value) {
-        userCashDocument(uid).get().then((value) {
+      }).then((value) async {
+        await userCashDocument(uid).get().then((value) {
           cash = value.data();
-        }).then((value) {
-          groupsCollection.get().then((value) {
+        }).then((value) async {
+          await groupsCollection.get().then((value) async {
             for (var element in value.docs) {
               if (element.data().memberIds?.contains(uid) ?? false) {
-                groups.add(element.data());
+                final currentGroup = element.data();
+                // get the group transactions
+                await groupTansactionCollection(currentGroup.gid!)
+                    .get()
+                    .then((transactionSnapshot) {
+                  for (var transaction in transactionSnapshot.docs) {
+                    currentGroup.listOfTransactions?.add(transaction.data());
+                  }
+                });
+                Logger().i(
+                    "Current Group: ${currentGroup.name},\nGroup Transactions: ${currentGroup.listOfTransactions?.length}");
+                groups.add(currentGroup);
               }
             }
           }).then((value) {
@@ -57,7 +69,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  Future<bool> updateCashAmount(
+  Future<bool> updateUserCashAmount(
       {required String uid, required String amount}) async {
     try {
       await userCashDocument(uid).update({
@@ -77,23 +89,105 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+  Future<bool> updateGroupAmount(
+      {required String gid, required String amount}) async {
+    try {
+      await groupsCollection.doc(gid).update({
+        'totalAmount': amount,
+      }).then((value) {
+        final group =
+            state.listOfGroups?.firstWhere((group) => group.gid == gid);
+        if (group != null) {
+          final updatedGroup = group.copyWith(totalAmount: amount);
+          final updatedGroups = state.listOfGroups?.map((g) {
+            return g.gid == gid ? updatedGroup : g;
+          }).toList();
+
+          state = UserFinanceData(
+            listOfGroups: updatedGroups,
+            listOfTransactions: state.listOfTransactions,
+            cash: state.cash,
+          );
+          logger.i("Group amount updated successfully.");
+        }
+      });
+      return true;
+    } catch (e) {
+      logger.w("Error while updating amount: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addTransactionToUserData({
+    required String uid,
+    required Transaction transactionData,
+    required WidgetRef ref,
+  }) async {
+    try {
+      final result = (transactionData.isGroupTransaction)
+          ? await groupTansactionCollection(transactionData.gid)
+              .add(transactionData)
+          : await userTransactionsCollection(uid).add(transactionData);
+      await updateTransactionTidData(
+        uid: uid,
+        tid: result.id,
+        transaction: transactionData,
+      );
+
+      if (transactionData.isGroupTransaction == false) {
+        List<String>? currentIds =
+            ref.read(userDataNotifierProvider).transactionIds ?? [];
+        currentIds.add(result.id);
+        ref
+            .read(userDataNotifierProvider.notifier)
+            .updateCurrentUserData(transactionIds: currentIds);
+      }
+
+      print("Transaction added to user");
+      return true;
+    } catch (e) {
+      print("Error adding transaction to user: $e");
+      return false;
+    }
+  }
+
   Future<bool> updateTransactionTidData({
     required String uid,
     required String tid,
     required Transaction transaction,
   }) async {
-    Transaction temp = transaction;
+    final Transaction temp = transaction;
     try {
-      userTransactionsCollection(uid).doc(tid).update({
+      // adding tid to transaction doc in firestore
+      ((temp.isGroupTransaction)
+              ? groupTansactionCollection(temp.gid).doc(tid)
+              : userTransactionsCollection(uid).doc(tid))
+          .update({
         'tid': tid,
-      }).then((value) {
+      }).then((value) async {
+        // adding tid to provider state
         temp.tid = tid;
-        final listOTransactions = state.listOfTransactions;
-        listOTransactions?.add(temp);
-        state = UserFinanceData(
-          listOfGroups: state.listOfGroups,
-          listOfTransactions: listOTransactions,
-        );
+        if (temp.isGroupTransaction) {
+          final listOfGroupTransactionIds = (state.listOfGroups
+                  ?.where((group) => group.gid == temp.gid)
+                  .first)!
+              .transactionIds;
+          if (temp.tid != null) {
+            listOfGroupTransactionIds?.add(temp.tid!);
+            // updating transationIds list in firestore
+            await groupsCollection.doc(temp.gid).update({
+              'transactionIds': listOfGroupTransactionIds,
+            });
+          }
+        } else {
+          // adding tid to provider state
+          final listOTransactions = state.listOfTransactions;
+          listOTransactions?.add(temp);
+          state = UserFinanceData(
+            listOfGroups: state.listOfGroups,
+            listOfTransactions: listOTransactions,
+          );
+        }
       });
 
       return true;

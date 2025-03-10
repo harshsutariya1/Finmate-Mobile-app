@@ -4,6 +4,8 @@ import 'package:finmate/screens/home/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytics_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/investments_screen.dart';
+import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -35,6 +37,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     'Groups',
   ];
 
+  bool isExpanded = false;
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
@@ -43,7 +47,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
       // 2
       AnalyticsScreen(),
       // 3
-      AddTransactionScreen(),
+      SizedBox(),
       // 4
       InvestmentsScreen(),
       // 5
@@ -51,6 +55,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     ];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: color4,
@@ -60,7 +65,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         onTap: (index) {
           setState(() {
             print(index.toString());
-            currentIndex = index;
+            currentIndex = (index != 2) ? index : 3;
           });
         },
         items: List.generate(
@@ -80,16 +85,116 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
                 ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            currentIndex = 2;
-          });
-        },
-        backgroundColor: color3,
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
+      floatingActionButton: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        height: (isExpanded) ? 130 : 60,
+        width: (isExpanded) ? 200 : 60,
+        margin: EdgeInsets.only(
+          bottom: (isExpanded) ? 50 : 0,
+        ),
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: InkWell(
+                onTap: () {
+                  Navigate().push(AddTransactionScreen());
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 46, 193, 201),
+                    shape: BoxShape.circle,
+                    boxShadow: (!isExpanded)
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: Colors.grey,
+                              blurRadius: 3,
+                              spreadRadius: 1,
+                              offset: Offset(0, 1),
+                            )
+                          ],
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: InkWell(
+                onTap: () {
+                  snackbarToast(
+                      context: context,
+                      text: "This function is in development.",
+                      icon: Icons.developer_mode_rounded);
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 46, 193, 201),
+                    shape: BoxShape.circle,
+                    boxShadow: (!isExpanded)
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: Colors.grey,
+                              blurRadius: 3,
+                              spreadRadius: 1,
+                              offset: Offset(0, 1),
+                            )
+                          ],
+                  ),
+                  child: Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    isExpanded = !isExpanded;
+                  });
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: color3,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey,
+                        blurRadius: 3,
+                        spreadRadius: 1,
+                        offset: Offset(0, 1),
+                      )
+                    ],
+                  ),
+                  child: AnimatedRotation(
+                    duration: Duration(milliseconds: 300),
+                    turns: (isExpanded) ? 0.125 : 0,
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 35,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

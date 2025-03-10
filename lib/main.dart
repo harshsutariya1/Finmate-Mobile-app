@@ -9,14 +9,14 @@ void main() {
   setup().then((_) {
     runApp(
       ProviderScope(
-        child: MyApp(),
+        child: MyApp(),  
       ),
     );
   });
 }
 
 Future<void> setup() async {
-  await setupFirebase();
+  await setupFirebase(); 
   await registerServices();
 }
 

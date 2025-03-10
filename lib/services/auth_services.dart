@@ -5,7 +5,7 @@ import 'package:finmate/screens/auth/auth.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/loading_Error_screen.dart';
+import 'package:finmate/widgets/loading_error_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

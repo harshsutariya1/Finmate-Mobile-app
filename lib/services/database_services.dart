@@ -137,34 +137,6 @@ Stream<QuerySnapshot> getTransactionsSnapshot(String uid) {
   }
 }
 
-Future<bool> addTransactionToUserData({
-  required String uid,
-  required transaction_model.Transaction transactionData,
-  required WidgetRef ref,
-}) async {
-  try {
-    final result = await userTransactionsCollection(uid).add(transactionData);
-    ref.read(userFinanceDataNotifierProvider.notifier).updateTransactionTidData(
-          uid: uid,
-          tid: result.id,
-          transaction: transactionData,
-        );
-
-    List<String>? currentIds =
-        ref.read(userDataNotifierProvider).transactionIds ?? [];
-    currentIds.add(result.id);
-    ref
-        .read(userDataNotifierProvider.notifier)
-        .updateCurrentUserData(transactionIds: currentIds);
-
-    print("Transaction added to user");
-    return true;
-  } catch (e) {
-    print("Error adding transaction to user: $e");
-    return false;
-  }
-}
-
 Future<bool> deleteTransactionFromUserData({
   required String uid,
   required String tid,

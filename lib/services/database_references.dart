@@ -31,6 +31,17 @@ CollectionReference<transaction_model.Transaction> userTransactionsCollection(
       );
 }
 
+CollectionReference<transaction_model.Transaction> groupTansactionCollection(String gid) {
+  return groupsCollection
+      .doc(gid)
+      .collection("group_transactions")
+      .withConverter<transaction_model.Transaction>(
+        fromFirestore: (snapshots, _) =>
+            transaction_model.Transaction.fromJson(snapshots.data()!),
+        toFirestore: (transaction, _) => transaction.toJson(),
+      );
+}
+
 DocumentReference<Cash> userCashDocument(String uid) {
   return userCollection
       .doc(uid)

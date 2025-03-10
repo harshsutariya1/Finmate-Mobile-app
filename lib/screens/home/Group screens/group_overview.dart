@@ -88,6 +88,7 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
           (value) => value.where(
               (user) => widget.group.memberIds?.contains(user.uid) ?? false),
         );
+    // final Transaction groupTransactions =  ;
 
     return Scaffold(
       backgroundColor: color4,
@@ -203,10 +204,9 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
       child: Stack(
         children: [
           Container(
-            height: 100,
             alignment: Alignment.center,
             width: double.infinity,
-            padding: EdgeInsets.all(10),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
             margin: EdgeInsets.symmetric(
               vertical: 10,
             ),
@@ -214,13 +214,22 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: group.transactionIds!.isNotEmpty
-                ? Text(group.transactionIds!.length.toString())
-                : Text(
-                    "No Transactions Found ❗",
-                    style: TextStyle(
-                      color: Colors.grey,
+            child: group.transactionIds!.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      "No Transactions Found ❗",
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
                     ),
+                  )
+                : Column(
+                    spacing: 10,
+                    children: [
+                      ...group.listOfTransactions!.map((transaction) =>
+                          transactionTile(context, transaction, ref)),
+                    ],
                   ),
           ),
           Container(
@@ -236,27 +245,6 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               ),
             ),
           ),
-          // Align(
-          //   alignment: Alignment.bottomRight,
-          //   child: Container(
-          //     padding: EdgeInsets.symmetric(horizontal: 10),
-          //     decoration: BoxDecoration(
-          //       color: color4,
-          //     ),
-          //     child: Row(
-          //       mainAxisAlignment: MainAxisAlignment.center,
-          //       mainAxisSize: MainAxisSize.min,
-          //       spacing: 10,
-          //       children: [
-          //         Text("View All"),
-          //         Icon(
-          //           Icons.arrow_forward_ios_outlined,
-          //           size: 16,
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );

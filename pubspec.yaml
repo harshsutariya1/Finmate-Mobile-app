@@ -70,6 +70,7 @@ dependencies:
   searchfield: ^1.2.4
   dotted_border: ^2.1.0
   persistent_bottom_nav_bar: ^6.2.1
+  flutter_expandable_fab: ^2.3.0
 
 dev_dependencies:
   flutter_test:
