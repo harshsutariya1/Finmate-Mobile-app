@@ -7,7 +7,7 @@ import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
-import 'package:finmate/screens/home/all_transactions_screen.dart';
+import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
     List<Transaction>? transactionsList =
-        List.from(userFinanceData.listOfTransactions ?? []);
+        List.from(userFinanceData.listOfUserTransactions ?? []);
 
     // Sort transactions by date and time in descending order
     transactionsList.sort((a, b) {
@@ -42,53 +42,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: color4,
       appBar: appbar(userData),
-      body: Column(
+      body: _body(userFinanceData, transactionsList),
+    );
+  }
+
+  PreferredSizeWidget appbar(UserData userData) {
+    return AppBar(
+      backgroundColor: color4,
+      leading: Padding(
+        padding: const EdgeInsets.only(
+          top: 6,
+          bottom: 6,
+          left: 10,
+          right: 0,
+        ),
+        child: userProfilePicInCircle(
+          imageUrl: userData.pfpURL.toString(),
+          innerRadius: 20,
+          outerRadius: 25,
+        ),
+      ),
+      title: Text(
+        (userData.name == "") ? "Home" : userData.name ?? "Home",
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigate().push(NotificationScreen());
+          },
+          icon: Icon(Icons.notifications_none_rounded),
+        ),
+        IconButton(
+          onPressed: () {
+            Navigate().push(SettingsScreen());
+          },
+          icon: Icon(Icons.settings),
+        ),
+      ],
+    );
+  }
+
+  Widget _body(
+      UserFinanceData userFinanceData, List<Transaction> transactionsList) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
         spacing: 15,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           transactionContainer(userFinanceData, transactionsList),
           sbh15,
-        ],
-      ),
-    );
-  }
-
-  PreferredSizeWidget appbar(UserData userData) {
-    return PreferredSize(
-      preferredSize: Size.fromHeight(80.0), // Set the desired height here
-
-      child: AppBar(
-        backgroundColor: color4,
-        leading: Padding(
-          padding: const EdgeInsets.only(
-            top: 6,
-            bottom: 6,
-            left: 10,
-            right: 0,
-          ),
-          child: userProfilePicInCircle(
-            imageUrl: userData.pfpURL.toString(),
-            innerRadius: 20,
-            outerRadius: 25,
-          ),
-        ),
-        title: Text(
-          (userData.name == "") ? "Home" : userData.name ?? "Home",
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigate().push(NotificationScreen());
-            },
-            icon: Icon(Icons.notifications_none_rounded),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigate().push(SettingsScreen());
-            },
-            icon: Icon(Icons.settings),
-          ),
         ],
       ),
     );
@@ -142,8 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ],
           ),
-          (userFinanceData.listOfTransactions == null ||
-                  userFinanceData.listOfTransactions!.isEmpty)
+          (userFinanceData.listOfUserTransactions == null ||
+                  userFinanceData.listOfUserTransactions!.isEmpty)
               ? Center(
                   child: Text("No Transactions found!"),
                 )

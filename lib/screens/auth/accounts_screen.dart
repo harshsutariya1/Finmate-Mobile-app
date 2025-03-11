@@ -5,6 +5,7 @@ import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/widgets/settings_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -449,26 +450,26 @@ Widget accountTile({
   );
 }
 
-Widget borderedContainer(List<Widget> listOfWidgets) {
-  return Container(
-    margin: EdgeInsets.symmetric(
-      vertical: 10,
-      horizontal: 10,
-    ),
-    decoration: BoxDecoration(
-      border: Border.all(
-        color: const Color.fromARGB(50, 57, 62, 70),
-        width: 2,
-      ),
-      borderRadius: BorderRadius.circular(15),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...listOfWidgets.map((widget) => widget),
-      ],
-    ),
-  );
-}
+// Widget borderedContainer(List<Widget> listOfWidgets) {
+//   return Container(
+//     margin: EdgeInsets.symmetric(
+//       vertical: 10,
+//       horizontal: 10,
+//     ),
+//     decoration: BoxDecoration(
+//       border: Border.all(
+//         color: const Color.fromARGB(50, 57, 62, 70),
+//         width: 2,
+//       ),
+//       borderRadius: BorderRadius.circular(15),
+//     ),
+//     child: Column(
+//       mainAxisSize: MainAxisSize.min,
+//       mainAxisAlignment: MainAxisAlignment.start,
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         ...listOfWidgets.map((widget) => widget),
+//       ],
+//     ),
+//   );
+// }

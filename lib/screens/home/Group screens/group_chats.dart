@@ -130,7 +130,7 @@ class _GroupChatsState extends ConsumerState<GroupChats> {
     final size = MediaQuery.sizeOf(context);
     return ListTile(
       key: (isLastTile) ? ValueKey("lastTile") : null,
-      // profile pic
+      //sender profile pic
       leading: (senderData?.uid != userData.uid)
           ? userProfilePicInCircle(
               imageUrl: senderData?.pfpURL ?? "",
@@ -212,14 +212,6 @@ class _GroupChatsState extends ConsumerState<GroupChats> {
         ),
       ),
 
-      // profile pic
-      trailing: (senderData?.uid == userData.uid)
-          ? userProfilePicInCircle(
-              imageUrl: senderData?.pfpURL ?? "",
-              outerRadius: 20,
-              innerRadius: 18,
-            )
-          : null,
       onLongPress: () => (senderData?.uid == userData.uid)
           ? showYesNoDialog(context,
               title: "Delete Massage?",

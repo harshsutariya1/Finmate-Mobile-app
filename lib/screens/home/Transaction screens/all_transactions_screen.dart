@@ -23,7 +23,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
     List<Transaction>? transactionsList =
-        List.from(userFinanceData.listOfTransactions ?? []);
+        List.from(userFinanceData.listOfUserTransactions ?? []);
 
 // Sort transactions by date and time in descending order
     transactionsList.sort((a, b) {
@@ -44,14 +44,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       ),
       body: Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-        child: (userFinanceData.listOfTransactions == null ||
-                userFinanceData.listOfTransactions!.isEmpty)
+        child: (userFinanceData.listOfUserTransactions == null ||
+                userFinanceData.listOfUserTransactions!.isEmpty)
             ? Center(
                 child: Text("No Transactions found!"),
               )
             : Column(
                 children: transactionsList
-                    // .take(4)
                     .map((transaction) =>
                         transactionTile(context, transaction, ref))
                     .toList(),

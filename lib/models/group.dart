@@ -12,7 +12,7 @@ class Group {
   TimeOfDay? time;
   String? description;
   String? totalAmount;
-  List<String>? transactionIds;
+  // List<String>? transactionIds;
   List<Transaction>? listOfTransactions;
   List<String>? memberIds;
   List<String>? memberPfpics;
@@ -26,7 +26,7 @@ class Group {
     this.time,
     this.description = "",
     this.totalAmount = "0",
-    this.transactionIds = const [],
+    // this.transactionIds = const [],
     this.listOfTransactions = const [],
     this.memberIds = const [],
     this.memberPfpics = const [],
@@ -43,7 +43,7 @@ class Group {
     TimeOfDay? time,
     String? description,
     String? totalAmount,
-    List<String>? transactionIds,
+    // List<String>? transactionIds,
     List<Transaction>? listOfTransactions,
     List<String>? memberIds,
     List<String>? memberPfpics,
@@ -57,7 +57,7 @@ class Group {
       time: time ?? this.time,
       description: description ?? this.description,
       totalAmount: totalAmount ?? this.totalAmount,
-      transactionIds: transactionIds ?? this.transactionIds,
+      // transactionIds: transactionIds ?? this.transactionIds,
       listOfTransactions: listOfTransactions ?? this.listOfTransactions,
       memberIds: memberIds ?? this.memberIds,
       memberPfpics: memberPfpics ?? this.memberPfpics,
@@ -82,9 +82,9 @@ class Group {
           : "description",
       totalAmount:
           map['totalAmount'] != null ? map['totalAmount'] as String : "0.0",
-      transactionIds: map['transactionIds'] != null
-          ? List<String>.from((map['transactionIds'] ?? []))
-          : [],
+      // transactionIds: map['transactionIds'] != null
+      //     ? List<String>.from((map['transactionIds'] ?? []))
+      //     : [],
       listOfTransactions: map['listOfTransactions'] != null
           ? List<Transaction>.from((map['listOfTransactions'] ?? []))
           : [],
@@ -107,7 +107,7 @@ class Group {
       'time': '${time?.hour}:${time?.minute}',
       'description': description,
       'totalAmount': totalAmount,
-      'transactionIds': transactionIds,
+      // 'transactionIds': transactionIds,
       'listOfTransactions': listOfTransactions,
       'memberIds': memberIds,
       'memberPfpics': memberPfpics,

@@ -121,6 +121,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Group Name
                 Text(
                   group.name ?? "Group Name",
                   style: TextStyle(
@@ -129,46 +130,50 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                     fontSize: 20,
                   ),
                 ),
-                InkWell(
-                  onTap: () {
-                    showYesNoDialog(
-                      context,
-                      title: "Delete Group?",
-                      contentWidget: SizedBox(),
-                      onTapYes: () async {
-                        await ref
-                            .read(userFinanceDataNotifierProvider.notifier)
-                            .deleteGroupProfile(group: group)
-                            .then((value) {
-                          if (value) {
-                            snackbarToast(
-                              context: context,
-                              text: "Group deleted successfully!",
-                              icon: Icons.check_circle_outline_rounded,
-                            );
-                            Navigate().goBack();
-                          } else {
-                            snackbarToast(
-                              context: context,
-                              text: "Failed to delete group!",
-                              icon: Icons.error_outline_rounded,
-                            );
-                          }
-                        });
-                      },
-                      onTapNo: () {
-                        Navigate().goBack();
-                      },
-                    );
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: color4,
-                    child: Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
+                // Delete Button
+                (userData.uid == group.creatorId)
+                    ? InkWell(
+                        onTap: () {
+                          showYesNoDialog(
+                            context,
+                            title: "Delete Group?",
+                            contentWidget: SizedBox(),
+                            onTapYes: () async {
+                              await ref
+                                  .read(
+                                      userFinanceDataNotifierProvider.notifier)
+                                  .deleteGroupProfile(group: group)
+                                  .then((value) {
+                                if (value) {
+                                  snackbarToast(
+                                    context: context,
+                                    text: "Group deleted successfully!",
+                                    icon: Icons.check_circle_outline_rounded,
+                                  );
+                                  Navigate().goBack();
+                                } else {
+                                  snackbarToast(
+                                    context: context,
+                                    text: "Failed to delete group!",
+                                    icon: Icons.error_outline_rounded,
+                                  );
+                                }
+                              });
+                            },
+                            onTapNo: () {
+                              Navigate().goBack();
+                            },
+                          );
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: color4,
+                          child: Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.red,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
               ],
             ),
             sbh20,

@@ -1,9 +1,9 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/screens/home/Group%20screens/groups_screen.dart';
-import 'package:finmate/screens/home/add_transaction_screen.dart';
-import 'package:finmate/screens/home/analytics_screen.dart';
+import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
+import 'package:finmate/screens/home/analytical%20screens/analytics_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
-import 'package:finmate/screens/home/investments_screen.dart';
+import 'package:finmate/screens/home/investment%20screens/investments_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -86,7 +86,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         ),
       ),
       floatingActionButton: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
+        duration: Duration(milliseconds: 200),
         height: (isExpanded) ? 130 : 60,
         width: (isExpanded) ? 200 : 60,
         margin: EdgeInsets.only(

@@ -1,9 +1,13 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/group.dart';
+import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/Group%20screens/group_chats.dart';
 import 'package:finmate/screens/home/Group%20screens/group_members.dart';
+import 'package:finmate/screens/home/Group%20screens/group_settings.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +62,15 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
         ),
         indicatorColor: color3,
       ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigate().push(GroupSettings(group: widget.group));
+          },
+          icon: Icon(Icons.settings),
+        ),
+        sbw10,
+      ],
     );
   }
 
@@ -88,7 +101,6 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
           (value) => value.where(
               (user) => widget.group.memberIds?.contains(user.uid) ?? false),
         );
-    // final Transaction groupTransactions =  ;
 
     return Scaffold(
       backgroundColor: color4,
@@ -199,6 +211,17 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
   }
 
   Widget groupTransactionsBox(Group group) {
+    final List<Transaction>? listOfTransactions = group.listOfTransactions;
+    // Sort transactions by date and time in descending order
+    listOfTransactions?.sort((a, b) {
+      int dateComparison = b.date!.compareTo(a.date!);
+      if (dateComparison != 0) {
+        return dateComparison;
+      } else {
+        return b.time!.format(context).compareTo(a.time!.format(context));
+      }
+    });
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 25),
       child: Stack(
@@ -214,7 +237,7 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: group.transactionIds!.isEmpty
+            child: group.listOfTransactions!.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Text(
@@ -227,7 +250,7 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
                 : Column(
                     spacing: 10,
                     children: [
-                      ...group.listOfTransactions!.map((transaction) =>
+                      ...listOfTransactions!.take(4).map((transaction) =>
                           transactionTile(context, transaction, ref)),
                     ],
                   ),

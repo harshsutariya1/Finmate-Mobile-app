@@ -27,13 +27,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _groupController = TextEditingController();
-  String selectedGroupId = "";
+  Group? selectedGroup;
   final TextEditingController _paymentModeController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   int indexOfTabbar = 0;
   bool isIncomeSelected = true;
-  bool isCashSelected = false;
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
   @override
@@ -51,7 +50,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         appBar: _appbar(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: _floatingButton(userData, userFinanceData),
-        body: _body(userFinanceData),
+        body: _body(userFinanceData, userData),
       ),
     );
   }
@@ -88,16 +87,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _body(UserFinanceData userFinanceData) {
+  Widget _body(UserFinanceData userFinanceData, UserData userData) {
     return TabBarView(
       children: <Widget>[
-        _expenceIncomeFields(userFinanceData),
+        _expenceIncomeFields(userFinanceData, userData),
         _transferFields(),
       ],
     );
   }
 
-  Widget _expenceIncomeFields(UserFinanceData userFinanceData) {
+  Widget _expenceIncomeFields(
+      UserFinanceData userFinanceData, UserData userData) {
     return Container(
       padding: EdgeInsets.only(
         top: 30,
@@ -265,16 +265,20 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                           cashContainer(
                             isSelectable: true,
-                            isSelected: isCashSelected,
+                            isSelected: _paymentModeController.text == "Cash",
                             userFinanceData: userFinanceData,
                             onTap: () {
                               setState(() {
-                                isCashSelected = !isCashSelected;
                                 _paymentModeController.text =
-                                    (isCashSelected) ? "Cash" : "";
-                                _groupController.text = (isCashSelected)
-                                    ? ""
-                                    : _groupController.text;
+                                    (_paymentModeController.text == "Cash")
+                                        ? ""
+                                        : "Cash";
+                                if (userData.uid != selectedGroup?.creatorId) {
+                                  _groupController.text =
+                                      (_paymentModeController.text.isNotEmpty)
+                                          ? ""
+                                          : _groupController.text;
+                                }
                               });
                               Navigator.pop(context);
                             },
@@ -327,14 +331,20 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                   ),
                                   selected: _groupController.text ==
                                       group.name.toString(),
-                                  onSelected: (selected) {
+                                  onSelected: (groupSelected) {
                                     setState(() {
-                                      _groupController.text =
-                                          selected ? group.name.toString() : '';
-                                      selectedGroupId = group.gid.toString();
-                                      _paymentModeController.text = selected
-                                          ? ""
-                                          : _paymentModeController.text;
+                                      _groupController.text = groupSelected
+                                          ? group.name.toString()
+                                          : '';
+                                      selectedGroup =
+                                          groupSelected ? group : null;
+                                      if (userData.uid !=
+                                          selectedGroup?.creatorId) {
+                                        _paymentModeController.text =
+                                            groupSelected
+                                                ? ""
+                                                : _paymentModeController.text;
+                                      }
                                       Navigator.pop(context);
                                     });
                                   },
@@ -482,6 +492,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         vertical: 10,
       ),
       width: double.infinity,
+      height: 80,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color3,
@@ -503,14 +514,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 final description = _descriptionController.text.trim();
                 final category = _categoryController.text;
                 final paymentMode = _paymentModeController.text;
-                final groupId = selectedGroupId;
+                final groupId = selectedGroup?.gid;
                 if (indexOfTabbar == 0) {
                   // Expense / Income
                   if (amount.isEmpty ||
                       category.isEmpty ||
-                      description.isEmpty ||
-                      (paymentMode.isEmpty && groupId.isEmpty) ||
-                      (paymentMode.isNotEmpty && groupId.isNotEmpty)) {
+                      (paymentMode.isEmpty && groupId == null)) {
                     snackbarToast(
                       context: context,
                       text: "Please Check all the fields.",
@@ -553,10 +562,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         category: category,
                         date: date,
                         time: time,
-                        description: description,
+                        description:
+                            description.isEmpty ? category : description,
                         methodOfPayment: paymentMode,
-                        isGroupTransaction: groupId.isNotEmpty,
-                        gid: groupId,
+                        isGroupTransaction: _groupController.text.isNotEmpty,
+                        gid: groupId ?? '',
                         type: (isIncomeSelected)
                             ? TransactionType.income
                             : TransactionType.expense,
@@ -599,16 +609,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           ref: ref,
         )
         .then((value) {
-      String paymentMode = (transactionData.isGroupTransaction)
-          ? "GroupTransaction"
-          : transactionData.methodOfPayment ?? "Cash";
-      if (paymentMode == "Cash") {
+      if (transactionData.methodOfPayment == "Cash") {
         ref.read(userFinanceDataNotifierProvider.notifier).updateUserCashAmount(
             uid: uid,
             amount: (double.parse(transactionData.amount ?? "0") +
                     (double.parse(userFinanceData.cash!.amount ?? '0')))
                 .toString());
-      } else if (paymentMode == "GroupTransaction") {
+      }
+      if (transactionData.isGroupTransaction) {
         ref.read(userFinanceDataNotifierProvider.notifier).updateGroupAmount(
               gid: transactionData.gid,
               amount: (double.parse(transactionData.amount ?? "0") +

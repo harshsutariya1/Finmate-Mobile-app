@@ -3,7 +3,6 @@ import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
-import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/services/database_references.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -34,10 +33,11 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           cash = value.data();
         }).then((value) async {
           await groupsCollection.get().then((value) async {
+            // fetch all the groups
             for (var element in value.docs) {
               if (element.data().memberIds?.contains(uid) ?? false) {
                 final currentGroup = element.data();
-                // get the group transactions
+                // fetch group transactions
                 await groupTansactionCollection(currentGroup.gid!)
                     .get()
                     .then((transactionSnapshot) {
@@ -53,11 +53,11 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           }).then((value) {
             state = UserFinanceData(
               listOfGroups: groups,
-              listOfTransactions: transactions,
+              listOfUserTransactions: transactions,
               cash: cash,
             );
             logger.i(
-                "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length}");
+                "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfUserTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length}");
           });
         });
       });
@@ -77,7 +77,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       }).then((value) {
         state = UserFinanceData(
           listOfGroups: state.listOfGroups,
-          listOfTransactions: state.listOfTransactions,
+          listOfUserTransactions: state.listOfUserTransactions,
           cash: Cash(amount: amount),
         );
         logger.i("Cash amount updated successfully.");
@@ -105,7 +105,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
           state = UserFinanceData(
             listOfGroups: updatedGroups,
-            listOfTransactions: state.listOfTransactions,
+            listOfUserTransactions: state.listOfUserTransactions,
             cash: state.cash,
           );
           logger.i("Group amount updated successfully.");
@@ -134,15 +134,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         transaction: transactionData,
       );
 
-      if (transactionData.isGroupTransaction == false) {
-        List<String>? currentIds =
-            ref.read(userDataNotifierProvider).transactionIds ?? [];
-        currentIds.add(result.id);
-        ref
-            .read(userDataNotifierProvider.notifier)
-            .updateCurrentUserData(transactionIds: currentIds);
-      }
-
       print("Transaction added to user");
       return true;
     } catch (e) {
@@ -156,36 +147,37 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String tid,
     required Transaction transaction,
   }) async {
-    final Transaction temp = transaction;
+    final Transaction tempTransaction = transaction;
     try {
       // adding tid to transaction doc in firestore
-      ((temp.isGroupTransaction)
-              ? groupTansactionCollection(temp.gid).doc(tid)
+      ((tempTransaction.isGroupTransaction)
+              ? groupTansactionCollection(tempTransaction.gid).doc(tid)
               : userTransactionsCollection(uid).doc(tid))
           .update({
         'tid': tid,
       }).then((value) async {
-        // adding tid to provider state
-        temp.tid = tid;
-        if (temp.isGroupTransaction) {
-          final listOfGroupTransactionIds = (state.listOfGroups
-                  ?.where((group) => group.gid == temp.gid)
-                  .first)!
-              .transactionIds;
-          if (temp.tid != null) {
-            listOfGroupTransactionIds?.add(temp.tid!);
-            // updating transationIds list in firestore
-            await groupsCollection.doc(temp.gid).update({
-              'transactionIds': listOfGroupTransactionIds,
-            });
-          }
-        } else {
-          // adding tid to provider state
-          final listOTransactions = state.listOfTransactions;
-          listOTransactions?.add(temp);
+        tempTransaction.tid = tid;
+        if (!tempTransaction.isGroupTransaction) {
+          // updating transation in user transactions
+          final List<Transaction>? listOfUserTransactions =
+              state.listOfUserTransactions;
+          listOfUserTransactions?.add(tempTransaction);
           state = UserFinanceData(
             listOfGroups: state.listOfGroups,
-            listOfTransactions: listOTransactions,
+            listOfUserTransactions: listOfUserTransactions,
+            cash: state.cash,
+          );
+        } else {
+          // updating transation in group transactionsList
+          final List<Group>? listOfGroups = state.listOfGroups;
+          listOfGroups
+              ?.firstWhere((group) => group.gid == tempTransaction.gid)
+              .listOfTransactions
+              ?.add(tempTransaction);
+          state = UserFinanceData(
+            listOfGroups: listOfGroups,
+            listOfUserTransactions: state.listOfUserTransactions,
+            cash: state.cash,
           );
         }
       });
@@ -202,7 +194,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       userTransactionsCollection(uid).doc(tid).delete().then((value) {
         state = UserFinanceData(
           listOfGroups: state.listOfGroups,
-          listOfTransactions: state.listOfTransactions
+          listOfUserTransactions: state.listOfUserTransactions
               ?.where((transaction) => transaction.tid != tid)
               .toList(),
         );
@@ -228,7 +220,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         state = UserFinanceData(
           listOfGroups: state.listOfGroups!
             ..add(groupProfile.copyWith(gid: result.id)),
-          listOfTransactions: state.listOfTransactions,
+          listOfUserTransactions: state.listOfUserTransactions,
           cash: state.cash,
         );
       } else {
@@ -250,7 +242,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         state = UserFinanceData(
           listOfGroups:
               state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
-          listOfTransactions: state.listOfTransactions,
+          listOfUserTransactions: state.listOfUserTransactions,
           cash: state.cash,
         );
         logger.i("✅Group with gid $group.gid removed successfully.");
