@@ -2,8 +2,10 @@
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/services/database_references.dart';
+import 'package:finmate/services/database_services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
@@ -14,17 +16,18 @@ final userFinanceDataNotifierProvider =
 
 class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   UserFinanceDataNotifier() : super(UserFinanceData());
-  var logger = Logger(
-    printer: PrettyPrinter(methodCount: 1),
-  );
+  var logger = Logger();
 
-  Future<bool> fetchUserFinanceData(String uid) async {
+  Future<bool> fetchUserFinanceData(
+    String uid,
+  ) async {
     List<Transaction> transactions = [];
     List<Group> groups = [];
     // List<BankAccount> bankAccounts = [];
     Cash? cash = Cash();
     try {
       await userTransactionsCollection(uid).get().then((value) {
+        // fetch user transactions
         for (var element in value.docs) {
           transactions.add(element.data());
         }
@@ -40,13 +43,21 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
                 // fetch group transactions
                 await groupTansactionCollection(currentGroup.gid!)
                     .get()
-                    .then((transactionSnapshot) {
+                    .then((transactionSnapshot) async {
                   for (var transaction in transactionSnapshot.docs) {
                     currentGroup.listOfTransactions?.add(transaction.data());
                   }
+                  // fetch members data
+                  final List<String>? groupMembersIds = currentGroup.memberIds;
+                  List<UserData> appUsers = await getAllAppUsers();
+                  currentGroup.listOfMembers?.addAll(
+                    appUsers
+                        .where((user) => groupMembersIds!.contains(user.uid))
+                        .toList(),
+                  );
                 });
-                Logger().i(
-                    "Current Group: ${currentGroup.name},\nGroup Transactions: ${currentGroup.listOfTransactions?.length}");
+                // Logger().i(
+                //     "Current GroupName: ${currentGroup.name},\nGroup Transactions: ${currentGroup.listOfTransactions?.length} \nGroupMembers: ${currentGroup.listOfMembers?.length}");
                 groups.add(currentGroup);
               }
             }
@@ -68,6 +79,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
+
+// __________________________________________________________________________ //
 
   Future<bool> updateUserCashAmount(
       {required String uid, required String amount}) async {
@@ -99,12 +112,12 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             state.listOfGroups?.firstWhere((group) => group.gid == gid);
         if (group != null) {
           final updatedGroup = group.copyWith(totalAmount: amount);
-          final updatedGroups = state.listOfGroups?.map((g) {
-            return g.gid == gid ? updatedGroup : g;
+          final updatedGroupsList = state.listOfGroups?.map((oldGroup) {
+            return oldGroup.gid == gid ? updatedGroup : oldGroup;
           }).toList();
 
           state = UserFinanceData(
-            listOfGroups: updatedGroups,
+            listOfGroups: updatedGroupsList,
             listOfUserTransactions: state.listOfUserTransactions,
             cash: state.cash,
           );
@@ -117,6 +130,32 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
+
+  Future<bool> updateGroupMembers(
+      {required String gid, required List<UserData> groupMembersList}) async {
+    try {
+      final Group? group =
+          state.listOfGroups?.firstWhere((group) => group.gid == gid);
+      if (group != null) {
+        final updatedGroup = group.copyWith(listOfMembers: groupMembersList);
+        final updatedGroupsList = state.listOfGroups
+            ?.map((oldGroup) => oldGroup.gid == gid ? updatedGroup : oldGroup)
+            .toList();
+        state = state.copyWith(listOfGroups: updatedGroupsList);
+        await groupsCollection.doc(gid).update({
+          "memberIds": groupMembersList.map((member) => member.uid).toList(),
+        });
+        logger.i("Group members updated successfully.");
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Logger().i("Error updating group members: $e");
+      return false;
+    }
+  }
+
+// __________________________________________________________________________ //
 
   Future<bool> addTransactionToUserData({
     required String uid,
@@ -208,13 +247,16 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+// __________________________________________________________________________ //
+
   Future<bool> createGroupProfile({
     required Group groupProfile,
     required WidgetRef ref,
   }) async {
     try {
       if (groupProfile.creatorId != null) {
-        final result = await groupsCollection.add(groupProfile);
+        final result = await groupsCollection
+            .add(groupProfile.copyWith(listOfMembers: []));
         await result.update({'gid': result.id});
 
         state = UserFinanceData(
@@ -245,15 +287,17 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           listOfUserTransactions: state.listOfUserTransactions,
           cash: state.cash,
         );
-        logger.i("✅Group with gid $group.gid removed successfully.");
+        logger.i("✅ Group: ${group.name} removed successfully.");
       });
 
       return true;
     } catch (e) {
-      logger.w("❗Error while removing group with gid $group.gid: $e");
+      logger.w("❗Error while removing Group: ${group.name}: $e");
       return false;
     }
   }
+
+// __________________________________________________________________________ //
 
   void reset() {
     state = UserFinanceData();

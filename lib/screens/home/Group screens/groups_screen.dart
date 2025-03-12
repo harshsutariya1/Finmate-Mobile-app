@@ -98,8 +98,10 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   }
 
   Widget _groupTile(Group group, UserData userData) {
-    final memberPfpics =
-        group.memberPfpics?.take(5).toList().reversed.toList() ?? [];
+    final List<UserData>? groupMembers = group.listOfMembers;
+    final List<String> memberPfpics =
+        groupMembers?.map((member) => member.pfpURL ?? '').toList() ?? [];
+    final sortMembersPfpics = memberPfpics.take(5).toList();
     return InkWell(
       onTap: () {
         Navigate().push(GroupOverview(group: group));
@@ -194,7 +196,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                 Stack(
                   alignment: Alignment.centerRight,
                   children: [
-                    for (var memberPfp in (memberPfpics.reversed))
+                    for (var memberPfp in (sortMembersPfpics.reversed))
                       Padding(
                         padding: EdgeInsets.only(
                           right: 30.0 * memberPfpics.indexOf(memberPfp),
@@ -205,12 +207,12 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                           innerRadius: 20,
                         ),
                       ),
-                    (group.memberPfpics!.length > 4)
+                    (sortMembersPfpics.length > 4)
                         ? userProfilePicInCircle(
                             outerRadius: 23,
                             innerRadius: 20,
                             isNumber: true,
-                            textNumber: "+${group.memberPfpics!.length - 4}",
+                            textNumber: "+${sortMembersPfpics.length - 4}",
                           )
                         : SizedBox(),
                   ],

@@ -1,9 +1,14 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:flutter/material.dart';
 
-Widget borderedContainer(List<Widget> listOfWidgets) {
+Widget borderedContainer(
+  List<Widget> listOfWidgets, {
+  EdgeInsetsGeometry? customMargin,
+  EdgeInsetsGeometry? customPadding,
+}) {
   return Container(
-    margin: EdgeInsets.all(15),
+    margin: customMargin ?? EdgeInsets.all(15),
+    padding: customPadding,
     decoration: BoxDecoration(
       border: Border.all(
         color: const Color.fromARGB(50, 57, 62, 70),

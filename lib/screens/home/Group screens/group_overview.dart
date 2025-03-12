@@ -97,18 +97,17 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
   @override
   Widget build(BuildContext context) {
     final UserData userData = ref.watch(userDataNotifierProvider);
-    final groupMembersData = ref.read(allAppUsers).whenData(
-          (value) => value.where(
-              (user) => widget.group.memberIds?.contains(user.uid) ?? false),
-        );
+    final List<UserData>? groupMembersData = widget.group.listOfMembers;
 
     return Scaffold(
       backgroundColor: color4,
-      body: ListView(
-        children: [
-          showBalanceContainer(widget.group, userData, groupMembersData),
-          groupTransactionsBox(widget.group),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            showBalanceContainer(widget.group, userData, groupMembersData),
+            groupTransactionsBox(widget.group),
+          ],
+        ),
       ),
     );
   }
@@ -116,11 +115,10 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
   Widget showBalanceContainer(
     Group groupData,
     UserData userData,
-    AsyncValue<Iterable<UserData>> groupMembersData,
+    List<UserData>? groupMembersData,
   ) {
     return Container(
       width: double.infinity,
-      height: 300,
       margin: EdgeInsets.symmetric(
         vertical: 25,
         horizontal: 20,
@@ -133,6 +131,7 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,55 +154,58 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               ),
             ],
           ),
-          groupMembersData.when(
-            data: (members) => Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 10,
-                  children: [
-                    ...members.map((member) {
-                      return Expanded(
-                        child: Container(
-                          height: double.infinity,
-                          padding: EdgeInsets.all(2),
-                          margin: EdgeInsets.only(top: 10, bottom: 0),
+          Container(
+            margin: EdgeInsets.only(top: 10),
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 10,
+              children: [
+                ...groupMembersData!.map((member) {
+                  // member horizontal bars
+                  return Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: groupMemberBarColor.withAlpha(104),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: color4),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          margin: EdgeInsets.only(right: 100),
                           decoration: BoxDecoration(
-                            color: color4,
+                            color: groupMemberBarColor,
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: Stack(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(5),
-                                margin: EdgeInsets.only(top: 0),
-                                decoration: BoxDecoration(
-                                  color: color2,
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                height: double.infinity,
-                              ),
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: userProfilePicInCircle(
-                                  imageUrl: member.pfpURL ?? '',
-                                  outerRadius: 22,
-                                  innerRadius: 20,
-                                ),
-                              ),
-                            ],
+                          // member image
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: userProfilePicInCircle(
+                              imageUrl: member.pfpURL ?? '',
+                              outerRadius: 22,
+                              innerRadius: 20,
+                            ),
                           ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
+                        // member balance
+                        Text(
+                          "${groupData.membersBalance?[member.uid] ?? "0.0"} ₹",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
             ),
-            loading: () => Center(child: CircularProgressIndicator.adaptive()),
-            error: (error, stack) => Center(child: Text('Error: $error')),
           ),
         ],
       ),
@@ -211,7 +213,7 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
   }
 
   Widget groupTransactionsBox(Group group) {
-    final List<Transaction>? listOfTransactions = group.listOfTransactions;
+    List<Transaction>? listOfTransactions = group.listOfTransactions;
     // Sort transactions by date and time in descending order
     listOfTransactions?.sort((a, b) {
       int dateComparison = b.date!.compareTo(a.date!);

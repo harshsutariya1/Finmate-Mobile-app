@@ -58,7 +58,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
       resizeToAvoidBottomInset: false,
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: color4,
+        backgroundColor: Colors.white,
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
         iconSize: 30,
@@ -181,6 +181,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
                         offset: Offset(0, 1),
                       )
                     ],
+                    border: Border.all(color: Colors.white, width: 1),
                   ),
                   child: AnimatedRotation(
                     duration: Duration(milliseconds: 300),

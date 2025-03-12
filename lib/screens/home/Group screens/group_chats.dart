@@ -29,6 +29,7 @@ class GroupChats extends ConsumerStatefulWidget {
 class _GroupChatsState extends ConsumerState<GroupChats> {
   final TextEditingController messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
   bool isSending = false;
   File? selectedPic;
 
@@ -93,27 +94,30 @@ class _GroupChatsState extends ConsumerState<GroupChats> {
 
   Widget listOfChats(
       List<QueryDocumentSnapshot<Chat>>? chatsList, UserData userData) {
+    final List<UserData> groupMembersData = widget.group.listOfMembers ?? [];
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            itemCount: chatsList!.length,
-            itemBuilder: (context, index) {
-              final Chat chatData = chatsList[index].data();
-              final sender = ref.read(allAppUsers).whenData((users) {
-                return users
-                    .where((user) => user.uid == chatData.senderId)
-                    .first;
-              });
-              return chatTile(
-                userData,
-                sender.value,
-                chatData,
-                isLastTile: (index == chatsList.length),
-              );
-            },
-          ),
+          child: (chatsList!.isNotEmpty)
+              ? ListView.builder(
+                  controller: _scrollController,
+                  itemCount: chatsList.length,
+                  itemBuilder: (context, index) {
+                    final Chat chatData = chatsList[index].data();
+                    final sender = groupMembersData.where((user) {
+                      return user.uid == chatData.senderId;
+                    }).first;
+                    return chatTile(
+                      userData,
+                      sender,
+                      chatData,
+                      isLastTile: (index == chatsList.length),
+                    );
+                  },
+                )
+              : Center(
+                  child: Text("Start Chating 👋"),
+                ),
         ),
         massageTextField(userData),
         sbh5,

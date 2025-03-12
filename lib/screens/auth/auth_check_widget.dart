@@ -13,8 +13,6 @@ class AuthCheckWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
-    // final userDataExists = ref.watch(userDataExistsProvider);
-    // final authState = ref.watch(spStringKeyProvider("userId"));
 
     return authState.when(
       data: (user) {

@@ -3,21 +3,23 @@ import 'package:finmate/models/group.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/home/Group%20screens/add_members.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
+import 'package:finmate/widgets/settings_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:searchfield/searchfield.dart';
+import 'package:logger/logger.dart';
 
-class AddGroupDetails extends StatefulWidget {
+class AddGroupDetails extends ConsumerStatefulWidget {
   const AddGroupDetails({super.key});
 
   @override
-  State<AddGroupDetails> createState() => _AddGroupDetailsState();
+  ConsumerState<AddGroupDetails> createState() => _AddGroupDetailsState();
 }
 
-class _AddGroupDetailsState extends State<AddGroupDetails> {
+class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -27,28 +29,21 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final UserData userData = ref.watch(userDataNotifierProvider);
-        final listOfUsers = ref.watch(allAppUsers);
-        listOfSelectedUsers.contains(userData)
-            ? null
-            : listOfSelectedUsers.add(userData);
-        selectedUserUid.contains(userData.uid)
-            ? null
-            : selectedUserUid.add(userData.uid!);
+    final UserData userData = ref.watch(userDataNotifierProvider);
+    listOfSelectedUsers.contains(userData)
+        ? null
+        : listOfSelectedUsers.add(userData);
+    selectedUserUid.contains(userData.uid)
+        ? null
+        : selectedUserUid.add(userData.uid!);
 
-        return Scaffold(
-          backgroundColor: color4,
-          appBar: _appBar(),
-          body: listOfUsers.when(
-            data: (users) => _body(userData, ref, users),
-            loading: () => Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(child: Text('Error: $error')),
-          ),
-          resizeToAvoidBottomInset: true,
-        );
-      },
+    return Scaffold(
+      backgroundColor: color4,
+      appBar: _appBar(),
+      body: _body(userData, ref),
+      resizeToAvoidBottomInset: false,
+      floatingActionButton: createGroupButton(userData, ref),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -60,7 +55,7 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
     );
   }
 
-  Widget _body(UserData userData, WidgetRef ref, List<UserData> listOfUsers) {
+  Widget _body(UserData userData, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
@@ -92,70 +87,94 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
               hintText: "Description",
               prefixIconData: Icons.description_outlined,
             ),
-            SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                alignment: WrapAlignment.start,
-                children: [
-                  ...listOfSelectedUsers.map((user) => InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (userData.uid != user.uid) {
-                              selectedUserUid.remove(user.uid);
-                              listOfSelectedUsers.remove(user);
-                            }
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(5),
-                          margin: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: Colors.white,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: 5,
-                            children: [
-                              userProfilePicInCircle(
-                                imageUrl: user.pfpURL.toString(),
-                                outerRadius: 18,
-                                innerRadius: 17,
+            borderedContainer(
+              [
+                // title
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Group Members",
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color3,
+                    ),
+                  ),
+                ),
+                // selected members
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 10),
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.start,
+                    children: [
+                      ...listOfSelectedUsers.map((user) => InkWell(
+                            onTap: () {
+                              setState(() {
+                                if (userData.uid != user.uid) {
+                                  selectedUserUid.remove(user.uid);
+                                  listOfSelectedUsers.remove(user);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(5),
+                              margin: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.white,
                               ),
-                              Text(
-                                "${user.name}",
-                                style: TextStyle(color: color1),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                spacing: 5,
+                                children: [
+                                  userProfilePicInCircle(
+                                    imageUrl: user.pfpURL.toString(),
+                                    outerRadius: 18,
+                                    innerRadius: 17,
+                                  ),
+                                  Text(
+                                    "${user.name}",
+                                    style: TextStyle(color: color1),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      )),
-                ],
-              ),
-            ),
-            SearchField(
-              hint: "Search Members",
-              suggestions: listOfUsers
-                  .map((e) => SearchFieldListItem("${e.uid}",
-                      child: Text(e.email ?? "")))
-                  .toList(),
-              onSuggestionTap: (value) {
-                final String uid = value.searchKey;
-                final UserData selectedUser =
-                    listOfUsers.firstWhere((user) => user.uid == uid);
-                if (!selectedUserUid.contains(uid)) {
-                  setState(() {
-                    selectedUserUid.add(uid);
-                    listOfSelectedUsers.add(selectedUser);
-                  });
-                } else {
-                  setState(() {});
-                }
-              },
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: createGroupButton(userData, ref),
+                            ),
+                          )),
+                    ],
+                  ),
+                ),
+                // view all button
+                ElevatedButton(
+                  onPressed: () async {
+                    final List<UserData>? selectedMembers = await Navigate()
+                        .push(AddMembers(selectedUsers: listOfSelectedUsers));
+                    if (selectedMembers != null) {
+                      Logger().i("Members Selected: ${selectedMembers.length}");
+                      setState(() {
+                        listOfSelectedUsers.addAll(selectedMembers);
+                        selectedUserUid.addAll(
+                            selectedMembers.map((user) => user.uid!).toList());
+                      });
+                    } else {
+                      Logger()
+                          .i("Members Selected: ${selectedMembers?.length}");
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "Add members",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+              customMargin: EdgeInsets.all(0),
+              customPadding: EdgeInsets.all(10),
             ),
           ],
         ),
@@ -205,14 +224,14 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
             : null,
         border: OutlineInputBorder(
           borderSide: BorderSide(color: color1),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
             color: color3,
             width: 2,
           ),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
     );
@@ -226,18 +245,25 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
         padding: EdgeInsets.symmetric(vertical: 15),
         margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
         decoration: BoxDecoration(
-          color: color2.withAlpha(200),
-          border: Border.all(color: color1, width: 2),
+          color: color3.withAlpha(200),
+          border: Border.all(color: color3, width: 2),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          "Create Group",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Create Group",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            (isLoading)
+                ? CircularProgressIndicator.adaptive()
+                : SizedBox.shrink(),
+          ],
         ),
       ),
     );
@@ -251,6 +277,18 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
     final groupDescription = _descriptionController.text;
     final groupAmount = _amountController.text;
     if (groupName.isNotEmpty && groupAmount.isNotEmpty) {
+      Map<String, String> calculateMembersBalance() {
+        final double totalAmount = double.parse(groupAmount);
+        final int memberCount = listOfSelectedUsers.length;
+        final double distributedAmount = totalAmount / memberCount;
+        return {
+          for (var user in listOfSelectedUsers)
+            user.uid!: distributedAmount.toStringAsFixed(2)
+        };
+      }
+
+      final Map<String, String> membersBalance = calculateMembersBalance();
+
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .createGroupProfile(
@@ -260,8 +298,8 @@ class _AddGroupDetailsState extends State<AddGroupDetails> {
               description: groupDescription,
               totalAmount: groupAmount,
               memberIds: selectedUserUid,
-              memberPfpics:
-                  listOfSelectedUsers.map((user) => user.pfpURL!).toList(),
+              listOfMembers: listOfSelectedUsers,
+              membersBalance: membersBalance,
             ),
             ref: ref,
           )

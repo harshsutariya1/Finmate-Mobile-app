@@ -7,3 +7,5 @@ const Color color4 = Color.fromARGB(255, 238, 238, 238);
 
 const Color userChatColor = Color.fromARGB(57, 0, 172, 181);
 const Color senderChatColor = Color.fromARGB(255, 212, 228, 244);
+
+const Color groupMemberBarColor = Color.fromARGB(255, 72, 76, 82);

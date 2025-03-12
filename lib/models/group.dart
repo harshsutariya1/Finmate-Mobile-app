@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/user.dart';
 import 'package:flutter/material.dart';
 
 class Group {
@@ -12,10 +13,10 @@ class Group {
   TimeOfDay? time;
   String? description;
   String? totalAmount;
-  // List<String>? transactionIds;
   List<Transaction>? listOfTransactions;
   List<String>? memberIds;
-  List<String>? memberPfpics;
+  List<UserData>? listOfMembers;
+  Map<String, String>? membersBalance;
 
   Group({
     this.gid = "",
@@ -26,12 +27,16 @@ class Group {
     this.time,
     this.description = "",
     this.totalAmount = "0",
-    // this.transactionIds = const [],
-    this.listOfTransactions = const [],
-    this.memberIds = const [],
-    this.memberPfpics = const [],
+    this.listOfTransactions,
+    this.memberIds,
+    this.listOfMembers,
+    this.membersBalance,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
+    listOfTransactions = listOfTransactions ?? [];
+    memberIds = memberIds ?? [];
+    listOfMembers = listOfMembers ?? [];
+    membersBalance = membersBalance ?? {};
   }
 
   Group copyWith({
@@ -43,10 +48,10 @@ class Group {
     TimeOfDay? time,
     String? description,
     String? totalAmount,
-    // List<String>? transactionIds,
     List<Transaction>? listOfTransactions,
     List<String>? memberIds,
-    List<String>? memberPfpics,
+    List<UserData>? listOfMembers,
+    Map<String, String>? membersBalance,
   }) {
     return Group(
       gid: gid ?? this.gid,
@@ -57,10 +62,10 @@ class Group {
       time: time ?? this.time,
       description: description ?? this.description,
       totalAmount: totalAmount ?? this.totalAmount,
-      // transactionIds: transactionIds ?? this.transactionIds,
       listOfTransactions: listOfTransactions ?? this.listOfTransactions,
       memberIds: memberIds ?? this.memberIds,
-      memberPfpics: memberPfpics ?? this.memberPfpics,
+      listOfMembers: listOfMembers ?? this.listOfMembers,
+      membersBalance: membersBalance ?? this.membersBalance,
     );
   }
 
@@ -82,18 +87,18 @@ class Group {
           : "description",
       totalAmount:
           map['totalAmount'] != null ? map['totalAmount'] as String : "0.0",
-      // transactionIds: map['transactionIds'] != null
-      //     ? List<String>.from((map['transactionIds'] ?? []))
-      //     : [],
       listOfTransactions: map['listOfTransactions'] != null
           ? List<Transaction>.from((map['listOfTransactions'] ?? []))
           : [],
       memberIds: map['memberIds'] != null
           ? List<String>.from((map['memberIds'] ?? []))
           : [],
-      memberPfpics: map['memberPfpics'] != null
-          ? List<String>.from((map['memberPfpics'] ?? []))
+      listOfMembers: map['listOfMembers'] != null
+          ? List<UserData>.from((map['listOfMembers'] ?? []))
           : [],
+      membersBalance: map['membersBalance'] != null
+          ? Map<String, String>.from((map['membersBalance'] ?? {}))
+          : {},
     );
   }
 
@@ -107,10 +112,10 @@ class Group {
       'time': '${time?.hour}:${time?.minute}',
       'description': description,
       'totalAmount': totalAmount,
-      // 'transactionIds': transactionIds,
       'listOfTransactions': listOfTransactions,
       'memberIds': memberIds,
-      'memberPfpics': memberPfpics,
+      'listOfMembers': listOfMembers,
+      'membersBalance': membersBalance,
     };
   }
 }
