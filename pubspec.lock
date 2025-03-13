@@ -574,6 +574,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.70.1"
+  floating_expandable_menu:
+    dependency: "direct main"
+    description:
+      name: floating_expandable_menu
+      sha256: "3634a3d5106c2b1494cf72e6526edb4707fb65eb503582f36a0303da27c4cad2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
   flutter:
     dependency: "direct main"
     description: flutter

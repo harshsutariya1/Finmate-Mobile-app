@@ -251,6 +251,7 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 20,
           children: [
             Text(
               "Create Group",
@@ -261,7 +262,7 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
               ),
             ),
             (isLoading)
-                ? CircularProgressIndicator.adaptive()
+                ? CircularProgressIndicator.adaptive(valueColor: AlwaysStoppedAnimation<Color>(Colors.white),)
                 : SizedBox.shrink(),
           ],
         ),

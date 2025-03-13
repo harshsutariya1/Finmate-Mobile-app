@@ -280,15 +280,27 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> deleteGroupProfile({required Group group}) async {
     print("uid: ${group.creatorId}, gid: ${group.gid}");
     try {
-      await groupsCollection.doc(group.gid).delete().then((value) {
-        state = UserFinanceData(
-          listOfGroups:
-              state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
-          listOfUserTransactions: state.listOfUserTransactions,
-          cash: state.cash,
-        );
-        logger.i("✅ Group: ${group.name} removed successfully.");
-      });
+      await groupsCollection.doc(group.gid).delete();
+      // Delete all transactions associated with the group
+      final groupTransactionsSnapshot =
+          await groupTansactionCollection(group.gid!).get();
+      for (var doc in groupTransactionsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      // Delete all chats associated with the group
+      final groupChatCollectionSnapshot =
+          await groupChatCollection(group.gid ?? "").get();
+      for (var doc in groupChatCollectionSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      state = UserFinanceData(
+        listOfGroups:
+            state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
+        listOfUserTransactions: state.listOfUserTransactions,
+        cash: state.cash,
+      );
+      logger.i("✅ Group: ${group.name} removed successfully.");
 
       return true;
     } catch (e) {

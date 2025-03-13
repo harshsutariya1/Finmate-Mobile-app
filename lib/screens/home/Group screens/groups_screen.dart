@@ -179,7 +179,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               ],
             ),
             sbh20,
-            // Group Description
+            // Group Amount
             Text(
               "${group.totalAmount ?? 0.0} ₹",
               style: TextStyle(
@@ -212,7 +212,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                             outerRadius: 23,
                             innerRadius: 20,
                             isNumber: true,
-                            textNumber: "+${sortMembersPfpics.length - 4}",
+                            textNumber: "+${sortMembersPfpics.length - 3}",
                           )
                         : SizedBox(),
                   ],

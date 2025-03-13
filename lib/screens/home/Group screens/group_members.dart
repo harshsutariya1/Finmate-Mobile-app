@@ -6,6 +6,7 @@ import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/Group%20screens/add_members.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
+import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,6 +49,15 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
     List<UserData> groupMembersData = const [],
     required UserData userData,
   }) {
+    groupMembersData.sort((a, b) {
+      if (a.uid == widget.group.creatorId) {
+        return -1;
+      } else if (b.uid == widget.group.creatorId) {
+        return 1;
+      }
+      return 0;
+    });
+
     return Column(
       children: [
         ...groupMembersData.map((member) {
@@ -59,14 +69,29 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
             ),
             title: Text(member.name ?? ""),
             subtitle: Text(member.email ?? ""),
-            trailing: Text(
-              (member.uid == widget.group.creatorId) ? "Admin" : "",
-              style: TextStyle(
-                color: color3,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            trailing: (member.uid == widget.group.creatorId)
+                ? Text(
+                    "Admin",
+                    style: TextStyle(
+                      color: color3,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : PopupMenuButton<String>(
+                    itemBuilder: (context) => <PopupMenuItem<String>>[
+                      PopupMenuItem(
+                        value: "Remove Member",
+                        child: Text("Remove Member"),
+                        onTap: () {
+                          snackbarToast(
+                              context: context,
+                              text: "This Feature is in development❗",
+                              icon: Icons.developer_mode_rounded);
+                        },
+                      ),
+                    ],
+                  ),
           );
         }),
       ],

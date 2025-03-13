@@ -315,6 +315,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text("Select Group"),
+                                Text(
+                                  "Your Groups = 🟢",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                               ],
                             ),
                             sbh10,
@@ -323,10 +330,20 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               children: groupList.map((group) {
                                 return ChoiceChip(
                                   label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     spacing: 20,
                                     children: [
                                       Text(group.name.toString()),
+                                      (group.creatorId == userData.uid)
+                                          ? Text(
+                                              "🟢",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.grey,
+                                              ),
+                                            )
+                                          : SizedBox.shrink(),
                                     ],
                                   ),
                                   selected: _groupController.text ==
@@ -481,7 +498,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _floatingButton(UserData userData, UserFinanceData userFinanceData) {
+  Widget _floatingButton(UserData userData, UserFinanceData userFinanceData,
+      {bool isTransferSec = false}) {
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 30,
@@ -503,81 +521,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         onPressed: isButtonDisabled
             ? null
             : () {
-                setState(() {
-                  isButtonDisabled = true;
-                  isButtonLoading = true;
-                });
-                final amount =
-                    "${(isIncomeSelected) ? "" : "-"}${_amountController.text.replaceAll('-', '').trim()}";
-                final date = _selectedDate;
-                final time = _selectedTime;
-                final description = _descriptionController.text.trim();
-                final category = _categoryController.text;
-                final paymentMode = _paymentModeController.text;
-                final groupId = selectedGroup?.gid;
-                if (indexOfTabbar == 0) {
-                  // Expense / Income
-                  if (amount.isEmpty ||
-                      category.isEmpty ||
-                      (paymentMode.isEmpty && groupId == null)) {
-                    snackbarToast(
-                      context: context,
-                      text: "Please Check all the fields.",
-                      icon: Icons.error,
-                    );
-                    setState(() {
-                      isButtonDisabled = false;
-                      isButtonLoading = false;
-                    });
-                    return;
-                  } else if (double.parse(amount) == 0) {
-                    snackbarToast(
-                      context: context,
-                      text: "Amount can't be zero",
-                      icon: Icons.error,
-                    );
-                    setState(() {
-                      isButtonDisabled = false;
-                      isButtonLoading = false;
-                    });
-                  } else if (double.parse(amount) < 0 &&
-                      paymentMode == "Cash" &&
-                      double.parse(amount).abs() >
-                          (double.parse(userFinanceData.cash!.amount ?? '0'))) {
-                    snackbarToast(
-                      context: context,
-                      text: "Insufficient cash balance",
-                      icon: Icons.error,
-                    );
-                    setState(() {
-                      isButtonDisabled = false;
-                      isButtonLoading = false;
-                    });
-                  } else {
-                    addTransaction(
-                      userData.uid ?? '',
-                      Transaction(
-                        uid: userData.uid ?? "",
-                        amount: amount,
-                        category: category,
-                        date: date,
-                        time: time,
-                        description:
-                            description.isEmpty ? category : description,
-                        methodOfPayment: paymentMode,
-                        isGroupTransaction: _groupController.text.isNotEmpty,
-                        gid: groupId ?? '',
-                        type: (isIncomeSelected)
-                            ? TransactionType.income
-                            : TransactionType.expense,
-                      ),
-                      ref,
-                      userFinanceData,
-                    );
-                  }
-                } else {
-                  // Transfer fields
-                }
+                addTransaction(
+                    userData.uid ?? '', userData, ref, userFinanceData);
               },
         child: (isButtonLoading)
             ? CircularProgressIndicator.adaptive(
@@ -594,30 +539,155 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       ),
     );
   }
+  
+  void addTransaction(String uid, UserData userData, WidgetRef ref,
+      UserFinanceData userFinanceData,
+      {bool isTransferSec = false}) async {
+    setState(() {
+      isButtonDisabled = true;
+      isButtonLoading = true;
+    });
 
-  void addTransaction(
-    String uid,
-    Transaction transactionData,
-    WidgetRef ref,
-    UserFinanceData userFinanceData,
-  ) async {
-    await ref
+    // Validate inputs
+    final validationError = _validateInputs(userFinanceData);
+    if (validationError != null) {
+      snackbarToast(
+        context: context,
+        text: validationError,
+        icon: Icons.error,
+      );
+      _resetButtonState();
+      return;
+    }
+
+    // Prepare transaction data
+    final transactionData = _prepareTransactionData(userData);
+
+    if (transactionData == null) {
+      snackbarToast(
+        context: context,
+        text: "Failed to prepare transaction data.",
+        icon: Icons.error,
+      );
+      _resetButtonState();
+      return;
+    }
+
+    // Add transaction to user data
+    final success =
+        await _saveTransaction(uid, transactionData, ref, userFinanceData);
+
+    if (success) {
+      snackbarToast(
+        context: context,
+        text: "Transaction Added",
+        icon: Icons.check_circle,
+      );
+      Navigate().toAndRemoveUntil(BnbPages());
+    } else {
+      snackbarToast(
+        context: context,
+        text: "Error adding transaction",
+        icon: Icons.error,
+      );
+    }
+
+    _resetButtonState();
+  }
+
+  String? _validateInputs(UserFinanceData userFinanceData) {
+    final amountText = _amountController.text.trim();
+    final description = _descriptionController.text.trim();
+    final category = _categoryController.text.trim();
+    final paymentMode = _paymentModeController.text.trim();
+    final groupId = selectedGroup?.gid;
+
+    // Amount validation
+    if (amountText.isEmpty) return "Amount cannot be empty.";
+    final amount = double.tryParse(amountText);
+    if (amount == null) return "Invalid amount entered.";
+    if (amount == 0) return "Amount cannot be zero.";
+    if (!isIncomeSelected &&
+        paymentMode == "Cash" &&
+        amount > double.parse(userFinanceData.cash?.amount ?? '0')) {
+      return "Insufficient cash balance.";
+    }
+
+    // Category validation
+    if (category.isEmpty) return "Please select a category.";
+
+    // Payment mode validation
+    if (paymentMode.isEmpty && groupId == null) {
+      return "Please select a payment mode.";
+    }
+
+    // Date and time validation
+    final now = DateTime.now();
+    final selectedDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+    if (selectedDateTime.isAfter(now)) {
+      return "Date and time cannot be in the future.";
+    }
+
+    return null; // No validation errors
+  }
+
+  Transaction? _prepareTransactionData(UserData userData) {
+    final amount =
+        "${(isIncomeSelected) ? "" : "-"}${_amountController.text.replaceAll('-', '').trim()}";
+    final description = _descriptionController.text.trim();
+    final category = _categoryController.text.trim();
+    final paymentMode = _paymentModeController.text.trim();
+    final groupId = selectedGroup?.gid;
+
+    return Transaction(
+      uid: userData.uid ?? "",
+      amount: amount,
+      category: category,
+      date: _selectedDate,
+      time: _selectedTime,
+      description: description.isEmpty ? category : description,
+      methodOfPayment: paymentMode,
+      isGroupTransaction: _groupController.text.isNotEmpty,
+      gid: groupId ?? '',
+      type:
+          (isIncomeSelected) ? TransactionType.income : TransactionType.expense,
+    );
+  }
+
+  Future<bool> _saveTransaction(String uid, Transaction transactionData,
+      WidgetRef ref, UserFinanceData userFinanceData) async {
+    final success = await ref
         .read(userFinanceDataNotifierProvider.notifier)
         .addTransactionToUserData(
           uid: uid,
           transactionData: transactionData,
           ref: ref,
-        )
-        .then((value) {
+        );
+
+    if (success) {
+      // Update cash balance if payment mode is "Cash"
       if (transactionData.methodOfPayment == "Cash") {
-        ref.read(userFinanceDataNotifierProvider.notifier).updateUserCashAmount(
-            uid: uid,
-            amount: (double.parse(transactionData.amount ?? "0") +
-                    (double.parse(userFinanceData.cash!.amount ?? '0')))
-                .toString());
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateUserCashAmount(
+              uid: uid,
+              amount: (double.parse(transactionData.amount ?? "0") +
+                      (double.parse(userFinanceData.cash!.amount ?? '0')))
+                  .toString(),
+            );
       }
+
+      // Update group amount if it's a group transaction
       if (transactionData.isGroupTransaction) {
-        ref.read(userFinanceDataNotifierProvider.notifier).updateGroupAmount(
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
               gid: transactionData.gid,
               amount: (double.parse(transactionData.amount ?? "0") +
                       (double.parse(userFinanceData.listOfGroups
@@ -629,21 +699,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   .toString(),
             );
       }
-      if (value) {
-        snackbarToast(
-          context: context,
-          text: "Transaction Added",
-          icon: Icons.check_circle,
-        );
-        Navigate().toAndRemoveUntil(BnbPages());
-      } else {
-        snackbarToast(
-          context: context,
-          text: "Error adding transaction",
-          icon: Icons.error,
-        );
-      }
-    });
+    }
+
+    return success;
+  }
+
+  void _resetButtonState() {
     setState(() {
       isButtonDisabled = false;
       isButtonLoading = false;

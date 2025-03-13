@@ -1,5 +1,7 @@
 class UserData {
   String? uid;
+  String? firstName;
+  String? lastName;
   String? name;
   String? userName;
   String? pfpURL;
@@ -12,6 +14,8 @@ class UserData {
   UserData({
     required this.uid,
     required this.name,
+    this.firstName = "",
+    this.lastName = "",
     this.userName = "",
     this.pfpURL = "",
     this.email = "",
@@ -23,6 +27,8 @@ class UserData {
 
   UserData copyWith({
     String? uid,
+    String? firstName,
+    String? lastName,
     String? name,
     String? userName,
     String? pfpURL,
@@ -34,6 +40,8 @@ class UserData {
   }) {
     return UserData(
       uid: uid ?? this.uid,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       name: name ?? this.name,
       userName: userName ?? this.userName,
       pfpURL: pfpURL ?? this.pfpURL,
@@ -48,6 +56,8 @@ class UserData {
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
       uid: json['uid'] as String,
+      firstName: json['firstName'] as String? ?? "",
+      lastName: json['lastName'] as String? ?? "",
       name: json['name'] as String,
       userName: json['userName'] as String? ?? "",
       pfpURL: json['pfpURL'] as String? ?? "",
@@ -62,6 +72,8 @@ class UserData {
   Map<String, dynamic> toJson() {
     return {
       'uid': uid,
+      'firstName': firstName,
+      'lastName': lastName,
       'name': name,
       'userName': userName,
       'pfpURL': pfpURL,

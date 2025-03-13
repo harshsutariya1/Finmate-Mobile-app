@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 const Map<String, IconData> transactionCategoriesAndIcons = {
-  'Food': Icons.fastfood,
+  'Food & Drink': Icons.fastfood,
   'Transport': Icons.directions_bus,
   'Entertainment': Icons.movie,
   'Utilities': Icons.lightbulb,

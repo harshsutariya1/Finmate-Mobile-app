@@ -71,6 +71,7 @@ dependencies:
   dotted_border: ^2.1.0
   persistent_bottom_nav_bar: ^6.2.1
   flutter_expandable_fab: ^2.3.0
+  floating_expandable_menu: ^0.0.2
 
 dev_dependencies:
   flutter_test:

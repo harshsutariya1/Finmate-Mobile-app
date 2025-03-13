@@ -134,6 +134,7 @@ Widget transactionTile(
                       child: Icon(
                         transactionCategoriesAndIcons[transaction.category],
                         color: color3,
+                        size: 30,
                       ),
                     ),
                   ),

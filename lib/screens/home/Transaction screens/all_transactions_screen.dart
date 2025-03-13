@@ -49,11 +49,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             ? Center(
                 child: Text("No Transactions found!"),
               )
-            : Column(
-                children: transactionsList
-                    .map((transaction) =>
-                        transactionTile(context, transaction, ref))
-                    .toList(),
+            : SingleChildScrollView(
+                child: Column(
+                  children: transactionsList
+                      .map((transaction) =>
+                          transactionTile(context, transaction, ref))
+                      .toList(),
+                ),
               ),
       ),
     );
