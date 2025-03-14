@@ -14,10 +14,76 @@ const Map<String, IconData> transactionCategoriesAndIcons = {
   'Balance Adjustment': Icons.account_balance_wallet_rounded,
 };
 
+enum TransactionCategory {
+  foodAndDrinks,
+  transport,
+  entertainment,
+  utilities,
+  health,
+  shopping,
+  education,
+  salary,
+  investment,
+  others,
+  balanceAdjustment,
+}
+
+extension TransactionCategoryExtension on TransactionCategory {
+  String get displayName {
+    switch (this) {
+      case TransactionCategory.foodAndDrinks:
+        return 'Food & Drinks';
+      case TransactionCategory.transport:
+        return 'Transport';
+      case TransactionCategory.entertainment:
+        return 'Entertainment';
+      case TransactionCategory.utilities:
+        return 'Utilities';
+      case TransactionCategory.health:
+        return 'Health';
+      case TransactionCategory.shopping:
+        return 'Shopping';
+      case TransactionCategory.education:
+        return 'Education';
+      case TransactionCategory.salary:
+        return 'Salary';
+      case TransactionCategory.investment:
+        return 'Investment';
+      case TransactionCategory.others:
+        return 'Others';
+      case TransactionCategory.balanceAdjustment:
+        return 'Balance Adjustment';
+    }
+  }
+
+  IconData get icon {
+    return transactionCategoriesAndIcons[displayName] ?? Icons.category;
+  }
+}
+
 enum TransactionType {
   expense,
   income,
   transfer,
+}
+
+enum PaymentModes {
+  cash,
+  bankAccount,
+  wallet,
+}
+
+extension PaymentModeExtension on PaymentModes {
+  String get displayName {
+    switch (this) {
+      case PaymentModes.cash:
+        return 'Cash';
+      case PaymentModes.bankAccount:
+        return 'Bank Account';
+      case PaymentModes.wallet:
+        return 'Wallet';
+    }
+  }
 }
 
 class Transaction {

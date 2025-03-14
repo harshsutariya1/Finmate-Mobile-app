@@ -180,14 +180,22 @@ Widget bankAccountContainer({
               return accountTile(
                 icon: Icons.account_balance_rounded,
                 title: bankAccount.bankAccountName ?? "Bank Account",
-                subtitle: "Total Balance: ${bankAccount.totalBalance ?? "0.0"} ₹",
+                subtitle:
+                    "Total Balance: ${bankAccount.totalBalance ?? "0.0"} ₹",
                 trailingWidget: IconButton(
                   onPressed: (isSelectable)
                       ? () {
                           onTapBank!(bankAccount);
                         }
                       : () {
-                          //
+                          showEditAmountBottomSheet(
+                            context,
+                            ref!,
+                            userdata!,
+                            amount: bankAccount.totalBalance ?? "0.0",
+                            isBank: true,
+                            bankAccount: bankAccount,
+                          );
                         },
                   icon: (isSelectable)
                       ? Icon(
@@ -289,7 +297,14 @@ Widget walletsContainer({
                           onTapWallet!(wallet);
                         }
                       : () {
-                          //
+                          showEditAmountBottomSheet(
+                            context,
+                            ref!,
+                            userdata!,
+                            isWallet: true,
+                            amount: wallet.balance ?? "0.0",
+                            wallet: wallet,
+                          );
                         },
                   icon: (isSelectable)
                       ? Icon(
@@ -333,12 +348,9 @@ Widget cashContainer({
         onPressed: (isSelectable)
             ? onTap
             : () {
-                showCashBottomSheet(
-                  context!,
-                  ref!,
-                  userData!,
-                  cashAmountController!,
-                );
+                showEditAmountBottomSheet(context!, ref!, userData!,
+                    isCash: true,
+                    amount: userFinanceData?.cash?.amount ?? "0.0");
               },
         icon: (isSelectable)
             ? Icon(
@@ -360,12 +372,19 @@ Widget cashContainer({
 
 // ________________________________________________________________________ //
 
-void showCashBottomSheet(
+void showEditAmountBottomSheet(
   BuildContext context,
   WidgetRef ref,
-  UserData userdata,
-  TextEditingController cashAmountController,
-) {
+  UserData userdata, {
+  bool isCash = false,
+  bool isBank = false,
+  bool isWallet = false,
+  String amount = "0.0",
+  BankAccount? bankAccount,
+  Wallet? wallet,
+}) {
+  final TextEditingController amountController =
+      TextEditingController(text: amount);
   showModalBottomSheet(
     context: context,
     builder: (contextt) {
@@ -376,7 +395,7 @@ void showCashBottomSheet(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              "Edit Cash amount",
+              "Edit ${(isCash) ? "Cash" : (isBank) ? "Bank" : (isWallet) ? "Wallet" : ""} Balance",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -385,31 +404,55 @@ void showCashBottomSheet(
             ),
             sbh20,
             _textfield(
-              controller: cashAmountController,
+              controller: amountController,
               lableText: "Amount",
               prefixIconData: Icons.currency_rupee_sharp,
             ),
             InkWell(
               onTap: () async {
                 // update cash amount
-                if (cashAmountController.text.isEmpty) {
+                if (amountController.text.isEmpty) {
                   snackbarToast(
                       context: contextt,
                       text: "Enter Amount❗",
                       icon: Icons.error_outline);
-                } else if (double.parse(cashAmountController.text).isNegative) {
+                } else if (double.parse(amountController.text).isNegative) {
                   snackbarToast(
                       context: contextt,
-                      text: "Cash Amount can not be Negative❗",
+                      text: "Amount can not be Negative❗",
                       icon: Icons.error_outline);
                 } else {
-                  await ref
-                      .read(userFinanceDataNotifierProvider.notifier)
-                      .updateUserCashAmount(
-                        uid: userdata.uid ?? '',
-                        amount: cashAmountController.text,
-                        isCashBalanceAdjustment: true,
-                      );
+                  if (isCash) {
+                    await ref
+                        .read(userFinanceDataNotifierProvider.notifier)
+                        .updateUserCashAmount(
+                          uid: userdata.uid ?? '',
+                          amount: amountController.text,
+                          isCashBalanceAdjustment: true,
+                        );
+                  }
+                  if (isBank) {
+                    await ref
+                        .read(userFinanceDataNotifierProvider.notifier)
+                        .updateBankAccountBalance(
+                          uid: userdata.uid ?? "",
+                          bankAccountId: bankAccount?.bid ?? '',
+                          newBalance: amountController.text,
+                          bankAccount: bankAccount,
+                          isBalanceAdjustment: true,
+                        );
+                  }
+                  if (isWallet) {
+                    await ref
+                        .read(userFinanceDataNotifierProvider.notifier)
+                        .updateWalletBalance(
+                          uid: userdata.uid ?? "",
+                          walletId: wallet?.wid ?? "",
+                          newBalance: amountController.text,
+                          wallet: wallet,
+                          isBalanceAdjustment: true,
+                        );
+                  }
                   Navigate().goBack();
                 }
               },

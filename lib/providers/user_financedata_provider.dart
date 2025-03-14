@@ -105,16 +105,14 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         final String adjustmentAmount =
             (double.parse(amount) - double.parse(state.cash?.amount ?? '0'))
                 .toString();
-        logger.i(
-            "newCash: $amount, currentCash: ${state.cash?.amount}, \nadjustmentAmount: $adjustmentAmount");
         await addTransactionToUserData(
           uid: uid,
           transactionData: Transaction(
             uid: uid,
             amount: adjustmentAmount,
             description: "Cash Balance Adjustment",
-            category: "Balance Adjustment",
-            methodOfPayment: "Cash",
+            category: TransactionCategory.balanceAdjustment.displayName,
+            methodOfPayment: PaymentModes.cash.displayName,
             type: (double.parse(adjustmentAmount).isNegative)
                 ? TransactionType.expense
                 : TransactionType.income,
@@ -140,8 +138,31 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String uid,
     required String bankAccountId,
     required String newBalance,
+    BankAccount? bankAccount,
+    bool isBalanceAdjustment = false,
   }) async {
     try {
+      if (isBalanceAdjustment) {
+        // adjustmentAmount = newAmount - currentAmount
+        final String adjustmentAmount = (double.parse(newBalance) -
+                double.parse(bankAccount?.totalBalance ?? '0'))
+            .toString();
+        await addTransactionToUserData(
+          uid: uid,
+          transactionData: Transaction(
+            uid: uid,
+            amount: adjustmentAmount,
+            description: "Bank Balance Adjustment",
+            category: TransactionCategory.balanceAdjustment.displayName,
+            methodOfPayment: PaymentModes.bankAccount.displayName,
+            bankAccountId: bankAccount?.bid,
+            type: (double.parse(adjustmentAmount).isNegative)
+                ? TransactionType.expense
+                : TransactionType.income,
+          ),
+        );
+      }
+
       // Update the balance in Firestore
       await bankAccountsCollectionReference(uid)
           .doc(bankAccountId)
@@ -172,8 +193,31 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String uid,
     required String walletId,
     required String newBalance,
+    Wallet? wallet,
+    bool isBalanceAdjustment = false,
   }) async {
     try {
+      if (isBalanceAdjustment) {
+        // adjustmentAmount = newAmount - currentAmount
+        final String adjustmentAmount =
+            (double.parse(newBalance) - double.parse(wallet?.balance ?? '0'))
+                .toString();
+        await addTransactionToUserData(
+          uid: uid,
+          transactionData: Transaction(
+            uid: uid,
+            amount: adjustmentAmount,
+            description: "Wallet Balance Adjustment",
+            category: TransactionCategory.balanceAdjustment.displayName,
+            methodOfPayment: PaymentModes.wallet.displayName,
+            bankAccountId: walletId,
+            type: (double.parse(adjustmentAmount).isNegative)
+                ? TransactionType.expense
+                : TransactionType.income,
+          ),
+        );
+      }
+
       // Update the balance in Firestore
       await walletCollectionReference(uid)
           .doc(walletId)
@@ -211,10 +255,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             return oldGroup.gid == gid ? updatedGroup : oldGroup;
           }).toList();
 
-          state = UserFinanceData(
+          state = state.copyWith(
             listOfGroups: updatedGroupsList,
-            listOfUserTransactions: state.listOfUserTransactions,
-            cash: state.cash,
           );
           logger.i("Group amount updated successfully.");
         }
@@ -318,8 +360,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> deleteTransaction(String uid, String tid) async {
     try {
       userTransactionsCollection(uid).doc(tid).delete().then((value) {
-        state = UserFinanceData(
-          listOfGroups: state.listOfGroups,
+        state = state.copyWith(
           listOfUserTransactions: state.listOfUserTransactions
               ?.where((transaction) => transaction.tid != tid)
               .toList(),
@@ -343,11 +384,9 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             .add(groupProfile.copyWith(listOfMembers: []));
         await result.update({'gid': result.id});
 
-        state = UserFinanceData(
+        state = state.copyWith(
           listOfGroups: state.listOfGroups!
             ..add(groupProfile.copyWith(gid: result.id)),
-          listOfUserTransactions: state.listOfUserTransactions,
-          cash: state.cash,
         );
       } else {
         Logger().w("❗groupProfile.creatorId is null");
@@ -378,11 +417,9 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         await doc.reference.delete();
       }
 
-      state = UserFinanceData(
+      state = state.copyWith(
         listOfGroups:
             state.listOfGroups?.where((g) => g.gid != group.gid).toList(),
-        listOfUserTransactions: state.listOfUserTransactions,
-        cash: state.cash,
       );
       logger.i("✅ Group: ${group.name} removed successfully.");
 

@@ -262,7 +262,9 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
               ),
             ),
             (isLoading)
-                ? CircularProgressIndicator.adaptive(valueColor: AlwaysStoppedAnimation<Color>(Colors.white),)
+                ? CircularProgressIndicator.adaptive(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  )
                 : SizedBox.shrink(),
           ],
         ),
@@ -278,43 +280,50 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
     final groupDescription = _descriptionController.text;
     final groupAmount = _amountController.text;
     if (groupName.isNotEmpty && groupAmount.isNotEmpty) {
-      Map<String, String> calculateMembersBalance() {
-        final double totalAmount = double.parse(groupAmount);
-        final int memberCount = listOfSelectedUsers.length;
-        final double distributedAmount = totalAmount / memberCount;
-        return {
-          for (var user in listOfSelectedUsers)
-            user.uid!: distributedAmount.toStringAsFixed(2)
-        };
-      }
-
-      final Map<String, String> membersBalance = calculateMembersBalance();
-
-      await ref
-          .read(userFinanceDataNotifierProvider.notifier)
-          .createGroupProfile(
-            groupProfile: Group(
-              creatorId: userData.uid,
-              name: groupName,
-              description: groupDescription,
-              totalAmount: groupAmount,
-              memberIds: selectedUserUid,
-              listOfMembers: listOfSelectedUsers,
-              membersBalance: membersBalance,
-            ),
-          )
-          .then((value) {
-        if (value) {
-          snackbarToast(
-              context: context, text: "Group Created!", icon: Icons.done_all);
-          Navigate().goBack();
-        } else {
-          snackbarToast(
-              context: context,
-              text: "Error creating group",
-              icon: Icons.error_outline);
+      if (listOfSelectedUsers.length > 1) {
+        Map<String, String> calculateMembersBalance() {
+          final double totalAmount = double.parse(groupAmount);
+          final int memberCount = listOfSelectedUsers.length;
+          final double distributedAmount = totalAmount / memberCount;
+          return {
+            for (var user in listOfSelectedUsers)
+              user.uid!: distributedAmount.toStringAsFixed(2)
+          };
         }
-      });
+
+        final Map<String, String> membersBalance = calculateMembersBalance();
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .createGroupProfile(
+              groupProfile: Group(
+                creatorId: userData.uid,
+                name: groupName,
+                description: groupDescription,
+                totalAmount: groupAmount,
+                memberIds: selectedUserUid,
+                listOfMembers: listOfSelectedUsers,
+                membersBalance: membersBalance,
+              ),
+            )
+            .then((value) {
+          if (value) {
+            snackbarToast(
+                context: context, text: "Group Created!", icon: Icons.done_all);
+            Navigate().goBack();
+          } else {
+            snackbarToast(
+                context: context,
+                text: "Error creating group",
+                icon: Icons.error_outline);
+          }
+        });
+      } else {
+        snackbarToast(
+            context: context,
+            text: "Select minimum two members ⚠️",
+            icon: Icons.warning_amber_rounded);
+      }
     } else {
       snackbarToast(
           context: context,
