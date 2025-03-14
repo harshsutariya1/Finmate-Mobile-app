@@ -98,6 +98,9 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
               alignment: Alignment.topRight,
               child: InkWell(
                 onTap: () {
+                  setState(() {
+                    isExpanded = !isExpanded;
+                  });
                   Navigate().push(AddTransactionScreen());
                 },
                 child: Container(
@@ -133,6 +136,9 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
                       context: context,
                       text: "This function is in development.",
                       icon: Icons.developer_mode_rounded);
+                  setState(() {
+                    isExpanded = !isExpanded;
+                  });
                 },
                 child: Container(
                   width: 60,

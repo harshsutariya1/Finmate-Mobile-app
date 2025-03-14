@@ -31,7 +31,8 @@ CollectionReference<transaction_model.Transaction> userTransactionsCollection(
       );
 }
 
-CollectionReference<transaction_model.Transaction> groupTansactionCollection(String gid) {
+CollectionReference<transaction_model.Transaction> groupTansactionCollection(
+    String gid) {
   return groupsCollection
       .doc(gid)
       .collection("group_transactions")
@@ -43,13 +44,24 @@ CollectionReference<transaction_model.Transaction> groupTansactionCollection(Str
 }
 
 DocumentReference<Cash> userCashDocument(String uid) {
-  return userCollection
-      .doc(uid)
-      .collection("payment_modes")
-      .doc("Cash")
-      .withConverter(
+  return userCollection.doc(uid).collection("Cash").doc("Cash").withConverter(
         fromFirestore: (snapshot, options) => Cash.fromJson(snapshot.data()!),
         toFirestore: (cash, options) => cash.toJson(),
+      );
+}
+
+CollectionReference<BankAccount> bankAccountsCollectionReference(String uid) {
+  return userCollection.doc(uid).collection("BankAccounts").withConverter(
+        fromFirestore: (snapshot, options) =>
+            BankAccount.fromJson(snapshot.data()!),
+        toFirestore: (bankAccount, options) => bankAccount.toJson(),
+      );
+}
+
+CollectionReference<Wallet> walletCollectionReference(String uid) {
+  return userCollection.doc(uid).collection("Wallets").withConverter(
+        fromFirestore: (snapshot, options) => Wallet.fromJson(snapshot.data()!),
+        toFirestore: (wallet, options) => wallet.toJson(),
       );
 }
 

@@ -18,59 +18,71 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   UserFinanceDataNotifier() : super(UserFinanceData());
   var logger = Logger();
 
-  Future<bool> fetchUserFinanceData(
-    String uid,
-  ) async {
+  Future<bool> fetchUserFinanceData(String uid) async {
     List<Transaction> transactions = [];
     List<Group> groups = [];
-    // List<BankAccount> bankAccounts = [];
+    List<BankAccount> bankAccounts = [];
+    List<Wallet> wallets = [];
     Cash? cash = Cash();
     try {
+      // fetch user transactions data
       await userTransactionsCollection(uid).get().then((value) {
-        // fetch user transactions
         for (var element in value.docs) {
           transactions.add(element.data());
         }
-      }).then((value) async {
-        await userCashDocument(uid).get().then((value) {
-          cash = value.data();
-        }).then((value) async {
-          await groupsCollection.get().then((value) async {
-            // fetch all the groups
-            for (var element in value.docs) {
-              if (element.data().memberIds?.contains(uid) ?? false) {
-                final currentGroup = element.data();
-                // fetch group transactions
-                await groupTansactionCollection(currentGroup.gid!)
-                    .get()
-                    .then((transactionSnapshot) async {
-                  for (var transaction in transactionSnapshot.docs) {
-                    currentGroup.listOfTransactions?.add(transaction.data());
-                  }
-                  // fetch members data
-                  final List<String>? groupMembersIds = currentGroup.memberIds;
-                  List<UserData> appUsers = await getAllAppUsers();
-                  currentGroup.listOfMembers?.addAll(
-                    appUsers
-                        .where((user) => groupMembersIds!.contains(user.uid))
-                        .toList(),
-                  );
-                });
-                // Logger().i(
-                //     "Current GroupName: ${currentGroup.name},\nGroup Transactions: ${currentGroup.listOfTransactions?.length} \nGroupMembers: ${currentGroup.listOfMembers?.length}");
-                groups.add(currentGroup);
+      });
+      // fetch cash data
+      await userCashDocument(uid).get().then((value) {
+        cash = value.data();
+      });
+
+      // fetch bank accounts data
+      await bankAccountsCollectionReference(uid).get().then((value) {
+        for (var doc in value.docs) {
+          bankAccounts.add(doc.data());
+        }
+      });
+
+      // fetch wallets data
+      await walletCollectionReference(uid).get().then((value) {
+        for (var doc in value.docs) {
+          wallets.add(doc.data());
+        }
+      });
+
+      await groupsCollection.get().then((value) async {
+        for (var group in value.docs) {
+          if (group.data().memberIds?.contains(uid) ?? false) {
+            final currentGroup = group.data();
+            // fetch group transactions
+            await groupTansactionCollection(currentGroup.gid!)
+                .get()
+                .then((transactionSnapshot) async {
+              for (var transaction in transactionSnapshot.docs) {
+                currentGroup.listOfTransactions?.add(transaction.data());
               }
-            }
-          }).then((value) {
-            state = UserFinanceData(
-              listOfGroups: groups,
-              listOfUserTransactions: transactions,
-              cash: cash,
-            );
-            logger.i(
-                "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfUserTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length}");
-          });
-        });
+              // fetch group members data
+              final List<String>? groupMembersIds = currentGroup.memberIds;
+              List<UserData> appUsers = await getAllAppUsers();
+              currentGroup.listOfMembers?.addAll(
+                appUsers
+                    .where((user) => groupMembersIds!.contains(user.uid))
+                    .toList(),
+              );
+            });
+            groups.add(currentGroup);
+          }
+        }
+      }).then((value) {
+        state = UserFinanceData(
+          listOfGroups: groups,
+          listOfUserTransactions: transactions,
+          listOfBankAccounts: bankAccounts,
+          listOfWallets: wallets,
+          cash: cash,
+        );
+        logger.i(
+            "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfUserTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length} \nBank Accounts: ${state.listOfBankAccounts?.length} \nWallets: ${state.listOfWallets?.length}");
       });
 
       return true;
@@ -82,22 +94,105 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
 // __________________________________________________________________________ //
 
-  Future<bool> updateUserCashAmount(
-      {required String uid, required String amount}) async {
+  Future<bool> updateUserCashAmount({
+    required String uid,
+    required String amount,
+    bool isCashBalanceAdjustment = false,
+  }) async {
     try {
+      if (isCashBalanceAdjustment) {
+        // adjustmentAmount = newAmount - currentAmount
+        final String adjustmentAmount =
+            (double.parse(amount) - double.parse(state.cash?.amount ?? '0'))
+                .toString();
+        logger.i(
+            "newCash: $amount, currentCash: ${state.cash?.amount}, \nadjustmentAmount: $adjustmentAmount");
+        await addTransactionToUserData(
+          uid: uid,
+          transactionData: Transaction(
+            uid: uid,
+            amount: adjustmentAmount,
+            description: "Cash Balance Adjustment",
+            category: "Balance Adjustment",
+            methodOfPayment: "Cash",
+            type: (double.parse(adjustmentAmount).isNegative)
+                ? TransactionType.expense
+                : TransactionType.income,
+          ),
+        );
+      }
+
       await userCashDocument(uid).update({
         'amount': amount,
       }).then((value) {
-        state = UserFinanceData(
-          listOfGroups: state.listOfGroups,
-          listOfUserTransactions: state.listOfUserTransactions,
-          cash: Cash(amount: amount),
-        );
+        state = state.copyWith(cash: Cash(amount: amount));
         logger.i("Cash amount updated successfully.");
       });
+
       return true;
     } catch (e) {
       logger.w("Error while updating cash amount: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateBankAccountBalance({
+    required String uid,
+    required String bankAccountId,
+    required String newBalance,
+  }) async {
+    try {
+      // Update the balance in Firestore
+      await bankAccountsCollectionReference(uid)
+          .doc(bankAccountId)
+          .update({'availableBalance': newBalance, 'totalBalance': newBalance});
+
+      // Update the balance in the local state
+      final updatedBankAccounts = state.listOfBankAccounts?.map((bankAccount) {
+        if (bankAccount.bid == bankAccountId) {
+          return bankAccount.copyWith(
+            availableBalance: newBalance,
+            totalBalance: newBalance,
+          );
+        }
+        return bankAccount;
+      }).toList();
+
+      state = state.copyWith(listOfBankAccounts: updatedBankAccounts);
+
+      logger.i("✅ Bank account balance updated successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error updating bank account balance: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateWalletBalance({
+    required String uid,
+    required String walletId,
+    required String newBalance,
+  }) async {
+    try {
+      // Update the balance in Firestore
+      await walletCollectionReference(uid)
+          .doc(walletId)
+          .update({'balance': newBalance});
+
+      // Update the balance in the local state
+      final updatedWallets = state.listOfWallets?.map((wallet) {
+        if (wallet.wid == walletId) {
+          return wallet.copyWith(balance: newBalance);
+        }
+        return wallet;
+      }).toList();
+
+      state = state.copyWith(listOfWallets: updatedWallets);
+
+      logger.i("✅ Wallet balance updated successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error updating wallet balance: $e");
       return false;
     }
   }
@@ -160,14 +255,13 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> addTransactionToUserData({
     required String uid,
     required Transaction transactionData,
-    required WidgetRef ref,
   }) async {
     try {
       final result = (transactionData.isGroupTransaction)
-          ? await groupTansactionCollection(transactionData.gid)
+          ? await groupTansactionCollection(transactionData.gid ?? "")
               .add(transactionData)
           : await userTransactionsCollection(uid).add(transactionData);
-      await updateTransactionTidData(
+      await updateTransactionTidDataAndState(
         uid: uid,
         tid: result.id,
         transaction: transactionData,
@@ -181,7 +275,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  Future<bool> updateTransactionTidData({
+  Future<bool> updateTransactionTidDataAndState({
     required String uid,
     required String tid,
     required Transaction transaction,
@@ -190,34 +284,27 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     try {
       // adding tid to transaction doc in firestore
       ((tempTransaction.isGroupTransaction)
-              ? groupTansactionCollection(tempTransaction.gid).doc(tid)
+              ? groupTansactionCollection(tempTransaction.gid ?? "").doc(tid)
               : userTransactionsCollection(uid).doc(tid))
           .update({
         'tid': tid,
       }).then((value) async {
         tempTransaction.tid = tid;
         if (!tempTransaction.isGroupTransaction) {
-          // updating transation in user transactions
+          // updating transation in user transactions state
           final List<Transaction>? listOfUserTransactions =
-              state.listOfUserTransactions;
+              state.listOfUserTransactions?.toList();
           listOfUserTransactions?.add(tempTransaction);
-          state = UserFinanceData(
-            listOfGroups: state.listOfGroups,
-            listOfUserTransactions: listOfUserTransactions,
-            cash: state.cash,
-          );
+          state =
+              state.copyWith(listOfUserTransactions: listOfUserTransactions);
         } else {
-          // updating transation in group transactionsList
+          // updating transation in group transactionsList state
           final List<Group>? listOfGroups = state.listOfGroups;
           listOfGroups
               ?.firstWhere((group) => group.gid == tempTransaction.gid)
               .listOfTransactions
               ?.add(tempTransaction);
-          state = UserFinanceData(
-            listOfGroups: listOfGroups,
-            listOfUserTransactions: state.listOfUserTransactions,
-            cash: state.cash,
-          );
+          state = state.copyWith(listOfGroups: listOfGroups);
         }
       });
 
@@ -249,10 +336,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
 // __________________________________________________________________________ //
 
-  Future<bool> createGroupProfile({
-    required Group groupProfile,
-    required WidgetRef ref,
-  }) async {
+  Future<bool> createGroupProfile({required Group groupProfile}) async {
     try {
       if (groupProfile.creatorId != null) {
         final result = await groupsCollection
@@ -305,6 +389,65 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return true;
     } catch (e) {
       logger.w("❗Error while removing Group: ${group.name}: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addBankAccount(
+      String uid, BankAccount bankAccount, WidgetRef ref) async {
+    try {
+      if (bankAccount.bankAccountName != null) {
+        if (uid.isNotEmpty && bankAccount.bankAccountName!.isNotEmpty) {
+          // add bank account to firestore
+          final bankAccountColRef = bankAccountsCollectionReference(uid);
+          await bankAccountColRef
+              .doc(bankAccount.bankAccountName)
+              .set(bankAccount);
+          // add bank account to state provider
+          state = state.copyWith(
+            listOfBankAccounts: [
+              ...?state.listOfBankAccounts,
+              bankAccount,
+            ],
+          );
+        } else {
+          throw Exception("Uid or Bank Name fields are empty");
+        }
+      } else {
+        Logger().w("❗Error bank account name cannot be null");
+        throw ArgumentError("Bank account name cannot be null");
+      }
+      return true;
+    } catch (e) {
+      Logger().w("❗Error adding Bank Account: $e");
+      return false;
+    }
+  }
+
+  Future<bool> addWallet(String uid, Wallet wallet, WidgetRef ref) async {
+    try {
+      if (wallet.walletName != null) {
+        if (uid.isNotEmpty && wallet.walletName!.isNotEmpty) {
+          // add wallet to firestore
+          final walletColRef = walletCollectionReference(uid);
+          await walletColRef.doc(wallet.walletName).set(wallet);
+          // add wallet to state provider
+          state = state.copyWith(
+            listOfWallets: [
+              ...?state.listOfWallets,
+              wallet,
+            ],
+          );
+        } else {
+          throw Exception("Uid or Wallet Name fields are empty");
+        }
+      } else {
+        Logger().w("❗Error wallet name cannot be null");
+        throw ArgumentError("Wallet name cannot be null");
+      }
+      return true;
+    } catch (e) {
+      Logger().w("❗Error adding Wallet: $e");
       return false;
     }
   }

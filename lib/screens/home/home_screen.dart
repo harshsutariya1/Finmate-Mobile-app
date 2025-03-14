@@ -118,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 15, top: 10),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
+        duration: Duration(milliseconds: 200),
         height: (isExtendedAppbar) ? size.height * .55 : 60,
         width: (isExtendedAppbar) ? size.width * .7 : 60,
         padding: EdgeInsets.symmetric(
@@ -186,12 +186,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: borderedContainer(
                   [
                     settingsTile(
-                      iconData: Icons.person_pin_rounded,
-                      text: "Profile",
-                      onTap: () => Navigate().push(EditUserDetails(
-                        userData: userData,
-                      )),
-                    )
+                        iconData: Icons.person_pin_rounded,
+                        text: "Profile",
+                        onTap: () {
+                          setState(() {
+                            onTapClose();
+                          });
+                          Navigate().push(EditUserDetails(
+                            userData: userData,
+                          ));
+                        })
                   ],
                   customMargin: EdgeInsets.all(0),
                 ),
@@ -202,7 +206,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     settingsTile(
                       iconData: Icons.account_balance_rounded,
                       text: "Accounts",
-                      onTap: () => Navigate().push(AccountsScreen()),
+                      onTap: () {
+                        setState(() {
+                          onTapClose();
+                        });
+                        Navigate().push(AccountsScreen());
+                      },
                     )
                   ],
                   customMargin: EdgeInsets.all(0),

@@ -302,7 +302,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
               listOfMembers: listOfSelectedUsers,
               membersBalance: membersBalance,
             ),
-            ref: ref,
           )
           .then((value) {
         if (value) {

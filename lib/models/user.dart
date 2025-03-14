@@ -8,8 +8,10 @@ class UserData {
   String? email;
   String? gender;
   DateTime? dob;
-  List<String>? transactionIds;
-  List<String>? groupIds;
+  // List<String>? groupIds;
+  // List<String>? bankAccountIds;
+  // List<String>? walletIds;
+  // List<String>? cardIds;
 
   UserData({
     required this.uid,
@@ -21,8 +23,10 @@ class UserData {
     this.email = "",
     this.gender = "",
     this.dob,
-    this.transactionIds = const [],
-    this.groupIds = const [],
+    // this.groupIds = const [],
+    // this.bankAccountIds = const [],
+    // this.walletIds = const [],
+    // this.cardIds = const [],
   });
 
   UserData copyWith({
@@ -35,8 +39,10 @@ class UserData {
     String? email,
     String? gender,
     DateTime? dob,
-    List<String>? transactionIds,
     List<String>? groupIds,
+    List<String>? bankAccountIds,
+    List<String>? walletIds,
+    List<String>? cardIds,
   }) {
     return UserData(
       uid: uid ?? this.uid,
@@ -48,8 +54,10 @@ class UserData {
       email: email ?? this.email,
       gender: gender ?? this.gender,
       dob: dob ?? this.dob,
-      transactionIds: transactionIds ?? this.transactionIds,
-      groupIds: groupIds ?? this.groupIds,
+      // groupIds: groupIds ?? this.groupIds,
+      // bankAccountIds: bankAccountIds ?? this.bankAccountIds,
+      // walletIds: walletIds ?? this.walletIds,
+      // cardIds: cardIds ?? this.cardIds,
     );
   }
 
@@ -64,8 +72,10 @@ class UserData {
       email: json['email'] as String,
       gender: json['gender'] as String? ?? "",
       dob: json['dob'] == null ? null : DateTime.parse(json['dob']),
-      transactionIds: List<String>.from(json['transactionIds'] ?? []),
-      groupIds: List<String>.from(json['groupIds'] ?? []),
+      // groupIds: List<String>.from(json['groupIds'] ?? []),
+      // bankAccountIds: List<String>.from(json['bankAccountIds'] ?? []),
+      // walletIds: List<String>.from(json['walletIds'] ?? []),
+      // cardIds: List<String>.from(json['cardIds'] ?? []),
     );
   }
 
@@ -80,8 +90,10 @@ class UserData {
       'email': email,
       'gender': gender,
       'dob': dob?.toIso8601String(),
-      'transactionIds': transactionIds,
-      'groupIds': groupIds,
+      // 'groupIds': groupIds,
+      // 'bankAccountIds': bankAccountIds,
+      // 'walletIds': walletIds,
+      // 'cardIds': cardIds,
     };
   }
 }

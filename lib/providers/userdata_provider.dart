@@ -28,7 +28,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
       if (docSnapshot.exists) {
         state = docSnapshot.data()!;
         logger.i(
-            "✅ User data loaded successfully for $uid. \nUserName: ${state.userName} \nName: ${state.name} \nEmail: ${state.email} \nImage: ${state.pfpURL} \nNo of Transactios: ${state.transactionIds?.length}");
+            "✅ User data loaded successfully for $uid. \nUserName: ${state.userName} \nName: ${state.name} \nEmail: ${state.email} \nImage: ${state.pfpURL}");
 
         return true;
       } else {
@@ -44,21 +44,31 @@ class UserDataNotifier extends StateNotifier<UserData> {
   }
 
   Future<bool> updateCurrentUserData({
+    String? firstName,
+    String? lastName,
     String? name,
     String? userName,
     String? pfpURL,
     String? email,
     String? gender,
-    // int? cash,
     DateTime? dob,
-    List<String>? transactionIds,
-    List<String>? groupIds,
+    // List<String>? groupIds,
+    // List<String>? bankAccountIds,
+    // List<String>? walletIds,
+    // List<String>? cardIds,
   }) async {
     try {
       final userRef = userCollection.doc(state.uid);
 
       Map<String, dynamic> updatedData = {};
 
+      // Update fields if provided
+      if (firstName != null) {
+        updatedData['firstName'] = firstName;
+      }
+      if (lastName != null) {
+        updatedData['lastName'] = lastName;
+      }
       if (name != null) {
         updatedData['name'] = name;
       }
@@ -74,36 +84,43 @@ class UserDataNotifier extends StateNotifier<UserData> {
       if (gender != null) {
         updatedData['gender'] = gender;
       }
-      // if (cash != null) {
-      //   updatedData['cash'] = cash;
-      // }
       if (dob != null) {
         updatedData['dob'] = dob.toIso8601String();
       }
-      if (transactionIds != null) {
-        updatedData['transactionIds'] = transactionIds;
-      }
-      if (groupIds != null) {
-        updatedData['groupIds'] = groupIds;
-      }
+      // if (groupIds != null) {
+      //   updatedData['groupIds'] = groupIds;
+      // }
+      // if (bankAccountIds != null) {
+      //   updatedData['bankAccountIds'] = bankAccountIds;
+      // }
+      // if (walletIds != null) {
+      //   updatedData['walletIds'] = walletIds;
+      // }
+      // if (cardIds != null) {
+      //   updatedData['cardIds'] = cardIds;
+      // }
 
+      // Update Firestore document
       await userRef.update(updatedData).then((value) {
+        // Update local state
         state = UserData(
           uid: state.uid,
+          firstName: firstName ?? state.firstName,
+          lastName: lastName ?? state.lastName,
           name: name ?? state.name,
           userName: userName ?? state.userName,
           pfpURL: pfpURL ?? state.pfpURL,
           email: email ?? state.email,
           gender: gender ?? state.gender,
-          // cash: cash ?? state.cash,
           dob: dob ?? state.dob,
-          transactionIds: transactionIds ?? state.transactionIds,
-          groupIds: groupIds ?? state.groupIds,
+          // groupIds: groupIds ?? state.groupIds,
+          // bankAccountIds: bankAccountIds ?? state.bankAccountIds,
+          // walletIds: walletIds ?? state.walletIds,
+          // cardIds: cardIds ?? state.cardIds,
         );
         logger.i('✅ User data updated successfully!');
-      }).then((value) {
-        return true;
       });
+
       return true;
     } catch (e) {
       logger.w("❌ Error updating user data: $e");
@@ -126,13 +143,12 @@ final FutureProvider<List<UserData>> allAppUsers =
 
 final FutureProviderFamily<UserData, String> userDataProvider =
     FutureProvider.family<UserData, String>((ref, uid) async {
-  final UserDataNotifier userNotifier =
-      ref.read(userDataNotifierProvider.notifier);
-  final UserFinanceDataNotifier userFinanceNotifier =
-      ref.read(userFinanceDataNotifierProvider.notifier);
-  await userNotifier.fetchCurrentUserData(uid);
-  await userFinanceNotifier.fetchUserFinanceData(uid);
+  await ref.read(userDataNotifierProvider.notifier).fetchCurrentUserData(uid);
+  await ref
+      .read(userFinanceDataNotifierProvider.notifier)
+      .fetchUserFinanceData(uid);
   ref.read(allAppUsers);
+  final UserData userData = ref.watch(userDataNotifierProvider);
 
-  return ref.read(userDataNotifierProvider);
+  return userData;
 });

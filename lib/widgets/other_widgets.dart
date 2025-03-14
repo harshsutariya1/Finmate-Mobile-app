@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
-import 'package:finmate/services/database_services.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
@@ -62,8 +62,9 @@ Widget transactionTile(
           contentWidget: SizedBox(),
           onTapYes: () async {
             if (transaction.uid != null && transaction.tid != null) {
-              if (await deleteTransactionFromUserData(
-                  uid: transaction.uid!, tid: transaction.tid!, ref: ref)) {
+              if (await ref
+                  .read(userFinanceDataNotifierProvider.notifier)
+                  .deleteTransaction(transaction.uid!, transaction.tid!)) {
                 snackbarToast(
                   context: context,
                   text: "Transaction Deleted!",

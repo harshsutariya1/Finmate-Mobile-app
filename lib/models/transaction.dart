@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 const Map<String, IconData> transactionCategoriesAndIcons = {
-  'Food & Drink': Icons.fastfood,
+  'Food & Drinks': Icons.fastfood,
   'Transport': Icons.directions_bus,
   'Entertainment': Icons.movie,
   'Utilities': Icons.lightbulb,
@@ -11,30 +11,8 @@ const Map<String, IconData> transactionCategoriesAndIcons = {
   'Salary': Icons.attach_money,
   'Investment': Icons.trending_up,
   'Others': Icons.category,
+  'Balance Adjustment': Icons.account_balance_wallet_rounded,
 };
-
-const List<String> transactionCategories = [
-  'Food',
-  'Transport',
-  'Entertainment',
-  'Utilities',
-  'Health',
-  'Shopping',
-  'Education',
-  'Salary',
-  'Investment',
-  'Others',
-];
-
-const List<String> paymentModes = [
-  'Cash',
-  'Wallet',
-  'UPI Payment',
-  'Credit Card',
-  'Debit Card',
-  'Bank Transfer',
-  'Others',
-];
 
 enum TransactionType {
   expense,
@@ -53,7 +31,9 @@ class Transaction {
   String? description;
   TransactionType? type;
   bool isGroupTransaction;
-  String gid;
+  String? gid;
+  String? bankAccountId; // New field for bank account ID
+  String? walletId; // New field for wallet ID
 
   Transaction({
     this.tid = "",
@@ -66,7 +46,9 @@ class Transaction {
     this.description = "",
     this.type,
     this.isGroupTransaction = false,
-    this.gid = "",
+    this.gid,
+    this.bankAccountId, // Initialize as null
+    this.walletId, // Initialize as null
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
@@ -92,7 +74,9 @@ class Transaction {
         orElse: () => TransactionType.expense,
       ),
       isGroupTransaction: json['isGroupTransaction'] as bool? ?? false,
-      gid: json['gid'] as String? ?? "",
+      gid: json['gid'] as String?,
+      bankAccountId: json['bankAccountId'] as String?, // Parse bank account ID
+      walletId: json['walletId'] as String?, // Parse wallet ID
     );
   }
 
@@ -109,6 +93,8 @@ class Transaction {
       'type': type?.toString().split('.').last,
       'isGroupTransaction': isGroupTransaction,
       'gid': gid,
+      'bankAccountId': bankAccountId, // Add bank account ID to JSON
+      'walletId': walletId, // Add wallet ID to JSON
     };
   }
 }

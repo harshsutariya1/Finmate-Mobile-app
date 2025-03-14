@@ -1,5 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
@@ -28,11 +29,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _groupController = TextEditingController();
   Group? selectedGroup;
+  BankAccount? selectedBank;
+  Wallet? selectedWallet;
   final TextEditingController _paymentModeController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   int indexOfTabbar = 0;
-  bool isIncomeSelected = true;
+  bool isIncomeSelected = false;
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
   @override
@@ -199,6 +202,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               Wrap(
                                 spacing: 8.0,
                                 children: categoryList.map((category) {
+                                  if (category == "Balance Adjustment") {
+                                    return SizedBox.shrink();
+                                  }
                                   return ChoiceChip(
                                     label: Row(
                                       mainAxisAlignment:
@@ -248,42 +254,76 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     return Container(
                       width: double.infinity,
                       padding: EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          bankAccountContainer(
-                            context: context,
-                            userFinanceData: userFinanceData,
-                            isSelectable: true,
-                            onTap: () {},
-                          ),
-                          walletsContainer(
-                            context: context,
-                            userFinanceData: userFinanceData,
-                            isSelectable: true,
-                            onTap: () {},
-                          ),
-                          cashContainer(
-                            isSelectable: true,
-                            isSelected: _paymentModeController.text == "Cash",
-                            userFinanceData: userFinanceData,
-                            onTap: () {
-                              setState(() {
-                                _paymentModeController.text =
-                                    (_paymentModeController.text == "Cash")
-                                        ? ""
-                                        : "Cash";
-                                if (userData.uid != selectedGroup?.creatorId) {
-                                  _groupController.text =
-                                      (_paymentModeController.text.isNotEmpty)
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            bankAccountContainer(
+                              context: context,
+                              userFinanceData: userFinanceData,
+                              isSelectable: true,
+                              selectedBank: selectedBank?.bankAccountName ?? '',
+                              onTapBank: (BankAccount bankAccount) {
+                                setState(() {
+                                  _paymentModeController.text =
+                                      (_paymentModeController.text ==
+                                              "Bank Account")
                                           ? ""
-                                          : _groupController.text;
-                                }
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ],
+                                          : "Bank Account";
+                                  selectedBank = (_paymentModeController.text ==
+                                          "Bank Account")
+                                      ? bankAccount
+                                      : null;
+                                  selectedWallet = null;
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                            walletsContainer(
+                              context: context,
+                              userFinanceData: userFinanceData,
+                              isSelectable: true,
+                              selectedWallet: selectedWallet?.walletName ?? "",
+                              onTapWallet: (Wallet wallet) {
+                                setState(() {
+                                  _paymentModeController.text =
+                                      (_paymentModeController.text == "Wallet")
+                                          ? ""
+                                          : "Wallet";
+                                  selectedWallet =
+                                      (_paymentModeController.text == "Wallet")
+                                          ? wallet
+                                          : null;
+                                  selectedBank = null;
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                            cashContainer(
+                              isSelectable: true,
+                              isSelected: _paymentModeController.text == "Cash",
+                              userFinanceData: userFinanceData,
+                              onTap: () {
+                                setState(() {
+                                  _paymentModeController.text =
+                                      (_paymentModeController.text == "Cash")
+                                          ? ""
+                                          : "Cash";
+                                  selectedBank = null;
+                                  selectedWallet = null;
+                                  if (userData.uid !=
+                                      selectedGroup?.creatorId) {
+                                    _groupController.text =
+                                        (_paymentModeController.text.isNotEmpty)
+                                            ? ""
+                                            : _groupController.text;
+                                  }
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -539,7 +579,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       ),
     );
   }
-  
+
+// __________________________________________________________________________ //
+
   void addTransaction(String uid, UserData userData, WidgetRef ref,
       UserFinanceData userFinanceData,
       {bool isTransferSec = false}) async {
@@ -580,14 +622,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (success) {
       snackbarToast(
         context: context,
-        text: "Transaction Added",
+        text: "Transaction Added ✅",
         icon: Icons.check_circle,
       );
       Navigate().toAndRemoveUntil(BnbPages());
     } else {
       snackbarToast(
         context: context,
-        text: "Error adding transaction",
+        text: "Error adding transaction ❗",
         icon: Icons.error,
       );
     }
@@ -597,29 +639,41 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   String? _validateInputs(UserFinanceData userFinanceData) {
     final amountText = _amountController.text.trim();
-    final description = _descriptionController.text.trim();
     final category = _categoryController.text.trim();
     final paymentMode = _paymentModeController.text.trim();
-    final groupId = selectedGroup?.gid;
 
     // Amount validation
     if (amountText.isEmpty) return "Amount cannot be empty.";
     final amount = double.tryParse(amountText);
     if (amount == null) return "Invalid amount entered.";
     if (amount == 0) return "Amount cannot be zero.";
-    if (!isIncomeSelected &&
-        paymentMode == "Cash" &&
+
+    // Payment mode validation
+    if (paymentMode.isEmpty) {
+      return "Please select a payment mode.";
+    }
+
+    // Check for sufficient balance in the selected payment mode
+    if (paymentMode == "Cash" &&
+        !isIncomeSelected &&
         amount > double.parse(userFinanceData.cash?.amount ?? '0')) {
       return "Insufficient cash balance.";
     }
 
+    if (paymentMode == "Bank Account" &&
+        !isIncomeSelected &&
+        amount > double.parse(selectedBank?.availableBalance ?? '0')) {
+      return "Insufficient bank account balance.";
+    }
+
+    if (paymentMode == "Wallet" &&
+        !isIncomeSelected &&
+        amount > double.parse(selectedWallet?.balance ?? '0')) {
+      return "Insufficient wallet balance.";
+    }
+
     // Category validation
     if (category.isEmpty) return "Please select a category.";
-
-    // Payment mode validation
-    if (paymentMode.isEmpty && groupId == null) {
-      return "Please select a payment mode.";
-    }
 
     // Date and time validation
     final now = DateTime.now();
@@ -654,9 +708,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       description: description.isEmpty ? category : description,
       methodOfPayment: paymentMode,
       isGroupTransaction: _groupController.text.isNotEmpty,
-      gid: groupId ?? '',
+      gid: groupId,
       type:
           (isIncomeSelected) ? TransactionType.income : TransactionType.expense,
+      bankAccountId: selectedBank?.bid,
+      walletId: selectedWallet?.wid,
     );
   }
 
@@ -667,7 +723,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         .addTransactionToUserData(
           uid: uid,
           transactionData: transactionData,
-          ref: ref,
         );
 
     if (success) {
@@ -683,12 +738,43 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             );
       }
 
+      // Update bank account balance if payment mode is "Bank Account"
+      if (transactionData.methodOfPayment == "Bank Account" &&
+          transactionData.bankAccountId != null) {
+        final updatedBalance =
+            (double.parse(selectedBank?.availableBalance ?? '0') +
+                    double.parse(transactionData.amount ?? "0"))
+                .toString();
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+              uid: transactionData.uid ?? "",
+              bankAccountId: transactionData.bankAccountId!,
+              newBalance: updatedBalance,
+            );
+      }
+
+      // Update wallet balance if payment mode is "Wallet"
+      if (transactionData.methodOfPayment == "Wallet" &&
+          transactionData.walletId != null) {
+        final updatedBalance = (double.parse(selectedWallet?.balance ?? '0') +
+                double.parse(transactionData.amount ?? "0"))
+            .toString();
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateWalletBalance(
+              uid: transactionData.uid ?? "",
+              walletId: transactionData.walletId!,
+              newBalance: updatedBalance,
+            );
+      }
+
       // Update group amount if it's a group transaction
       if (transactionData.isGroupTransaction) {
         await ref
             .read(userFinanceDataNotifierProvider.notifier)
             .updateGroupAmount(
-              gid: transactionData.gid,
+              gid: transactionData.gid ?? '',
               amount: (double.parse(transactionData.amount ?? "0") +
                       (double.parse(userFinanceData.listOfGroups
                               ?.where(
