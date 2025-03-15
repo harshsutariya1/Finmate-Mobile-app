@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 
 const Map<String, IconData> transactionCategoriesAndIcons = {
@@ -12,6 +13,7 @@ const Map<String, IconData> transactionCategoriesAndIcons = {
   'Investment': Icons.trending_up,
   'Others': Icons.category,
   'Balance Adjustment': Icons.account_balance_wallet_rounded,
+  'Transfer': Icons.swap_horiz,
 };
 
 enum TransactionCategory {
@@ -94,12 +96,17 @@ class Transaction {
   String? uid;
   String? category;
   String? methodOfPayment;
+  String? methodOfPayment2;
   String? description;
   TransactionType? type;
   bool isGroupTransaction;
   String? gid;
-  String? bankAccountId; // New field for bank account ID
-  String? walletId; // New field for wallet ID
+  String? bankAccountId;
+  String? walletId;
+  bool isTransferTransaction;
+  String? gid2;
+  String? bankAccountId2;
+  String? walletId2;
 
   Transaction({
     this.tid = "",
@@ -109,12 +116,17 @@ class Transaction {
     this.uid = "",
     this.category = "Others",
     this.methodOfPayment = "Cash",
+    this.methodOfPayment2,
     this.description = "",
     this.type,
     this.isGroupTransaction = false,
     this.gid,
-    this.bankAccountId, // Initialize as null
-    this.walletId, // Initialize as null
+    this.bankAccountId,
+    this.walletId,
+    this.isTransferTransaction = false,
+    this.gid2,
+    this.bankAccountId2,
+    this.walletId2,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
@@ -135,14 +147,19 @@ class Transaction {
       uid: json['uid'] as String? ?? "",
       category: json['category'] as String? ?? "Others",
       methodOfPayment: json['methodOfPayment'] as String? ?? "Cash",
+      methodOfPayment2: json['methodOfPayment2'] as String?,
       type: TransactionType.values.firstWhere(
         (e) => e.toString() == 'TransactionType.${json['type']}',
         orElse: () => TransactionType.expense,
       ),
       isGroupTransaction: json['isGroupTransaction'] as bool? ?? false,
       gid: json['gid'] as String?,
-      bankAccountId: json['bankAccountId'] as String?, // Parse bank account ID
-      walletId: json['walletId'] as String?, // Parse wallet ID
+      bankAccountId: json['bankAccountId'] as String?,
+      walletId: json['walletId'] as String?,
+      isTransferTransaction: json['isTransferTransaction'] as bool? ?? false,
+      gid2: json['gid2'] as String?,
+      bankAccountId2: json['bankAccountId2'] as String?,
+      walletId2: json['walletId2'] as String?,
     );
   }
 
@@ -156,11 +173,57 @@ class Transaction {
       'uid': uid,
       'category': category,
       'methodOfPayment': methodOfPayment,
+      'methodOfPayment2': methodOfPayment2,
       'type': type?.toString().split('.').last,
       'isGroupTransaction': isGroupTransaction,
       'gid': gid,
-      'bankAccountId': bankAccountId, // Add bank account ID to JSON
-      'walletId': walletId, // Add wallet ID to JSON
+      'bankAccountId': bankAccountId,
+      'walletId': walletId,
+      'isTransferTransaction': isTransferTransaction,
+      'gid2': gid2,
+      'bankAccountId2': bankAccountId2,
+      'walletId2': walletId2,
     };
+  }
+
+  Transaction copyWith({
+    String? tid,
+    String? amount,
+    DateTime? date,
+    TimeOfDay? time,
+    String? uid,
+    String? category,
+    String? methodOfPayment,
+    String? methodOfPayment2,
+    String? description,
+    bool? isGroupTransaction,
+    String? gid,
+    String? bankAccountId,
+    String? walletId,
+    bool? isTransferTransaction,
+    String? gid2,
+    String? bankAccountId2,
+    String? walletId2,
+  }) {
+    return Transaction(
+      tid: tid ?? this.tid,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      uid: uid ?? this.uid,
+      category: category ?? this.category,
+      methodOfPayment: methodOfPayment ?? this.methodOfPayment,
+      methodOfPayment2: methodOfPayment2 ?? this.methodOfPayment2,
+      description: description ?? this.description,
+      isGroupTransaction: isGroupTransaction ?? this.isGroupTransaction,
+      gid: gid ?? this.gid,
+      bankAccountId: bankAccountId ?? this.bankAccountId,
+      walletId: walletId ?? this.walletId,
+      isTransferTransaction:
+          isTransferTransaction ?? this.isTransferTransaction,
+      gid2: gid2 ?? this.gid2,
+      bankAccountId2: bankAccountId2 ?? this.bankAccountId2,
+      walletId2: walletId2 ?? this.walletId2,
+    );
   }
 }
