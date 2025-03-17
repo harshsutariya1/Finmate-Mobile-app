@@ -1,4 +1,5 @@
 // Provider for UserFinanceDataNotifier
+import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
@@ -129,7 +130,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
       return true;
     } catch (e) {
-      logger.w("Error while updating cash amount: $e");
+      logger.w(
+          "Error while updating cash amount: $e\nStack Trace: ${StackTrace.current}");
       return false;
     }
   }
@@ -241,16 +243,32 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  Future<bool> updateGroupAmount(
-      {required String gid, required String amount}) async {
+  Future<bool> updateGroupAmount({
+    required String gid,
+    required String amount,
+    required String memberAmount,
+    required String uid,
+  }) async {
     try {
+      // updating group in firestore
       await groupsCollection.doc(gid).update({
         'totalAmount': amount,
+        'membersBalance': state.listOfGroups
+            ?.firstWhere((group) => group.gid == gid)
+            .membersBalance
+            ?.map((key, value) {
+          return MapEntry(key, key == uid ? memberAmount : value);
+        }),
       }).then((value) {
+        // updating group in provider state
         final group =
             state.listOfGroups?.firstWhere((group) => group.gid == gid);
         if (group != null) {
-          final updatedGroup = group.copyWith(totalAmount: amount);
+          final updatedGroup =
+              group.copyWith(totalAmount: amount, membersBalance: {
+            ...group.membersBalance!,
+            uid: memberAmount,
+          });
           final updatedGroupsList = state.listOfGroups?.map((oldGroup) {
             return oldGroup.gid == gid ? updatedGroup : oldGroup;
           }).toList();
@@ -357,6 +375,105 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+  Future<bool> addTransferTransactionToUserData({
+    required String uid,
+    required Transaction transactionData,
+  }) async {
+    try {
+      final batch = firestore.FirebaseFirestore.instance.batch();
+      final Transaction userTransactionIndividual = transactionData;
+      final userTransaction1 = transactionData.copyWith(
+        amount: transactionData.amount,
+      );
+      final groupTransaction1 = transactionData.copyWith(
+        amount: (-double.parse(transactionData.amount ?? "0.0")).toString(),
+      );
+      final userTransaction2 = transactionData.copyWith(
+        amount: (-double.parse(transactionData.amount ?? "0.0")).toString(),
+      );
+      final groupTransaction2 = transactionData.copyWith(
+        amount: transactionData.amount,
+      );
+      if (!transactionData.isGroupTransaction) {
+        final userTransactionRef = userTransactionsCollection(uid).doc();
+        batch.set(userTransactionRef, userTransactionIndividual);
+        batch.update(userTransactionRef, {'tid': userTransactionRef.id});
+        userTransactionIndividual.tid = userTransactionRef.id;
+      } else {
+        if (transactionData.methodOfPayment == PaymentModes.group.displayName) {
+          final groupTransactionRef =
+              groupTansactionCollection(transactionData.gid ?? "").doc();
+          batch.set(groupTransactionRef, groupTransaction1);
+          batch.update(groupTransactionRef, {'tid': groupTransactionRef.id});
+          groupTransaction1.tid = groupTransactionRef.id;
+
+          final userTransactionRef = userTransactionsCollection(uid).doc();
+          batch.set(userTransactionRef, userTransaction1);
+          batch.update(userTransactionRef, {'tid': userTransactionRef.id});
+          userTransaction1.tid = userTransactionRef.id;
+        } else if (transactionData.methodOfPayment2 ==
+            PaymentModes.group.displayName) {
+          final userTransactionRef = userTransactionsCollection(uid).doc();
+          batch.set(userTransactionRef, userTransaction2);
+          batch.update(userTransactionRef, {'tid': userTransactionRef.id});
+          userTransaction2.tid = userTransactionRef.id;
+          final groupTransactionRef =
+              groupTansactionCollection(transactionData.gid2 ?? "").doc();
+          batch.set(groupTransactionRef, transactionData);
+          batch.update(groupTransactionRef, {'tid': groupTransactionRef.id});
+
+          groupTransaction2.tid = groupTransactionRef.id;
+        }
+      }
+
+      // Commit the batch
+      await batch.commit();
+
+      if (!transactionData.isGroupTransaction) {
+        // Update provider state
+        final List<Transaction>? listOfUserTransactions =
+            state.listOfUserTransactions?.toList();
+        listOfUserTransactions?.add(userTransactionIndividual);
+        state = state.copyWith(listOfUserTransactions: listOfUserTransactions);
+      } else {
+        if (transactionData.methodOfPayment == PaymentModes.group.displayName) {
+          final List<Transaction>? listOfUserTransactions =
+              state.listOfUserTransactions?.toList();
+          listOfUserTransactions?.add(userTransaction1);
+          state =
+              state.copyWith(listOfUserTransactions: listOfUserTransactions);
+          final List<Group>? listOfGroups = state.listOfGroups;
+          listOfGroups
+              ?.firstWhere((group) => group.gid == transactionData.gid)
+              .listOfTransactions
+              ?.add(groupTransaction1);
+          state = state.copyWith(listOfGroups: listOfGroups);
+        } else if (transactionData.methodOfPayment2 ==
+            PaymentModes.group.displayName) {
+          final List<Transaction>? listOfUserTransactions =
+              state.listOfUserTransactions?.toList();
+          listOfUserTransactions?.add(userTransaction2);
+          state =
+              state.copyWith(listOfUserTransactions: listOfUserTransactions);
+
+          final List<Group>? listOfGroups = state.listOfGroups;
+          listOfGroups
+              ?.firstWhere((group) => group.gid == transactionData.gid2)
+              .listOfTransactions
+              ?.add(groupTransaction2);
+          state = state.copyWith(listOfGroups: listOfGroups);
+        }
+      }
+
+      logger.i("Transaction added to user ✅");
+      return true;
+    } catch (e) {
+      logger.w(
+          "❗Error adding transaction to user: $e\nStack Trace: ${StackTrace.current}");
+      return false;
+    }
+  }
+
   Future<bool> deleteTransaction(String uid, String tid) async {
     try {
       userTransactionsCollection(uid).doc(tid).delete().then((value) {
@@ -370,7 +487,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
       return true;
     } catch (e) {
-      logger.w("Error while removing transaction with tid $tid: $e");
+      logger.w(
+          "Error while removing transaction with tid $tid: $e\nStack Trace: ${StackTrace.current}");
       return false;
     }
   }

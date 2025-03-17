@@ -13,6 +13,7 @@ import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 class TransferFields extends ConsumerStatefulWidget {
   const TransferFields({super.key});
@@ -207,22 +208,71 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
         ? _paymentModeOneController
         : _paymentModeTwoController;
 
-    return textfield(
-      controller: controller,
-      hintText: "Select ${isGroup ? "Group" : "Payment Mode"}",
-      lableText: "Select ${isGroup ? "Group" : "Payment Mode"}",
-      prefixIconData: Icons.payments_rounded,
-      readOnly: true,
-      sufixIconData: Icons.arrow_drop_down_circle_outlined,
-      onTap: () {
-        if (isGroup) {
-          _showGroupSelectionBottomSheet(
-              userData, userFinanceData, isPaymentModeOne);
-        } else {
-          _showPaymentModeSelectionBottomSheet(
-              userData, userFinanceData, isPaymentModeOne);
-        }
-      },
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        textfield(
+          controller: controller,
+          hintText: "Select ${isGroup ? "Group" : "Payment Mode"}",
+          lableText: "Select ${isGroup ? "Group" : "Payment Mode"}",
+          prefixIconData: Icons.payments_rounded,
+          readOnly: true,
+          sufixIconData: Icons.arrow_drop_down_circle_outlined,
+          onTap: () {
+            if (isGroup) {
+              _showGroupSelectionBottomSheet(
+                  userData, userFinanceData, isPaymentModeOne);
+            } else {
+              _showPaymentModeSelectionBottomSheet(
+                  userData, userFinanceData, isPaymentModeOne);
+            }
+          },
+        ),
+        if (isGroup) ...[
+          if (isPaymentModeOne && selectedGroup1 != null)
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: Text(selectedGroup1!.name ?? "Group"),
+              subtitle: Text(
+                  "Total Balance: ${selectedGroup1!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup1!.membersBalance?[userData.uid] ?? '0'}"),
+            ),
+          if (!isPaymentModeOne && selectedGroup2 != null)
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: Text(selectedGroup2!.name ?? "Group"),
+              subtitle: Text(
+                  "Total Balance: ${selectedGroup2!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup2!.membersBalance?[userData.uid] ?? '0'}"),
+            ),
+        ] else ...[
+          // is Account
+          if (isPaymentModeOne && selectedBank1 != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance),
+              title: Text(selectedBank1!.bankAccountName ?? "Bank Account"),
+              subtitle: Text(
+                  "Total Balance: ${selectedBank1!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank1!.availableBalance ?? '0'}"),
+            ),
+          if (!isPaymentModeOne && selectedBank2 != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance),
+              title: Text(selectedBank2!.bankAccountName ?? "Bank Account"),
+              subtitle: Text(
+                  "Total Balance: ${selectedBank2!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank2!.availableBalance ?? '0'}"),
+            ),
+          if (isPaymentModeOne && selectedWallet1 != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: Text(selectedWallet1!.walletName ?? "Wallet"),
+              subtitle: Text("Balance: ${selectedWallet1!.balance ?? '0'}"),
+            ),
+          if (!isPaymentModeOne && selectedWallet2 != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: Text(selectedWallet2!.walletName ?? "Wallet"),
+              subtitle: Text("Balance: ${selectedWallet2!.balance ?? '0'}"),
+            ),
+        ],
+      ],
     );
   }
 
@@ -338,6 +388,10 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     UserFinanceData userFinanceData,
     bool isPaymentModeOne,
   ) {
+    // final List<Group> listOfUserGroups = userFinanceData.listOfGroups
+    //         ?.where((group) => group.creatorId == userData.uid)
+    //         .toList() ??
+    //     [];
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -347,7 +401,8 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           padding: const EdgeInsets.all(20),
           child: Wrap(
             spacing: 8.0,
-            children: groupList.map((group) {
+            children: /*((isPaymentModeOne) ? listOfUserGroups : groupList)*/
+                groupList.map((group) {
               return ChoiceChip(
                 label: Text(group.name ?? ""),
                 selected: isPaymentModeOne
@@ -358,11 +413,11 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                     if (isPaymentModeOne) {
                       selectedGroup1 = selected ? group : null;
                       _paymentModeOneController.text =
-                          selected ? group.name ?? "" : "";
+                          selected ? PaymentModes.group.displayName : "";
                     } else {
                       selectedGroup2 = selected ? group : null;
                       _paymentModeTwoController.text =
-                          selected ? group.name ?? "" : "";
+                          selected ? PaymentModes.group.displayName : "";
                     }
                   });
                   Navigator.pop(context);
@@ -459,6 +514,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
   }
 
   String? _validateInputs(UserFinanceData userFinanceData) {
+    UserData userData = ref.watch(userDataNotifierProvider);
     final amountText = _amountController.text.trim();
     final paymentMode1 = _paymentModeOneController.text.trim();
     final paymentMode2 = _paymentModeTwoController.text.trim();
@@ -475,9 +531,9 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
 
     // Ensure selected payment modes are not the same entity
     if (isPaymentModeOneGroup && isPaymentModeTwoGroup) {
-      if (selectedGroup1?.gid == selectedGroup2?.gid) {
-        return "Selected groups cannot be the same.";
-      }
+      // if (selectedGroup1?.gid == selectedGroup2?.gid) {
+      return "Can not Transfer from one group to another.";
+      // }
     } else if (!isPaymentModeOneGroup && !isPaymentModeTwoGroup) {
       if (paymentMode1 == "Cash" && paymentMode2 == "Cash") {
         return "Both payment modes cannot be Cash.";
@@ -511,6 +567,26 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     }
 
     // add validation for groups here
+    if (isPaymentModeOneGroup) {
+      final group1 = selectedGroup1;
+      if (group1 == null) return "Please select a valid group for 'From'.";
+
+      final userBalance = double.parse((userData.uid == group1.creatorId)
+          ? group1.totalAmount ?? "0.0"
+          : group1.membersBalance?[userData.uid] ?? '0.0');
+      if (amount > userBalance) {
+        return "Insufficient balance in the selected group for 'From'.";
+      }
+    }
+
+    if (isPaymentModeTwoGroup) {
+      final group2 = selectedGroup2;
+      if (group2 == null) return "Please select a valid group for 'To'.";
+
+      if (isPaymentModeOneGroup && selectedGroup1?.gid == group2.gid) {
+        return "Cannot transfer within the same group.";
+      }
+    }
 
     return null; // No validation errors
   }
@@ -526,7 +602,26 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     final walletId1 = selectedWallet1?.wid;
     final walletId2 = selectedWallet2?.wid;
     final groupId1 = selectedGroup1?.gid;
+    final groupName = selectedGroup1?.name;
     final groupId2 = selectedGroup2?.gid;
+    final groupName2 = selectedGroup2?.name;
+
+    Logger().i("Transaction Data:\n"
+        "Amount: $amount\n"
+        "Description: $description\n"
+        "Category: $category\n"
+        "Payment Mode 1: $paymentMode1\n"
+        "Payment Mode 2: $paymentMode2\n"
+        "Bank Account ID 1: $bankAccountId1\n"
+        "Bank Account ID 2: $bankAccountId2\n"
+        "Wallet ID 1: $walletId1\n"
+        "Wallet ID 2: $walletId2\n"
+        "Group ID 1: $groupId1\n"
+        "Group Name 1: $groupName\n"
+        "Group ID 2: $groupId2\n"
+        "Group Name 2: $groupName2\n"
+        "Date: $_selectedDate\n"
+        "Time: $_selectedTime");
 
     return Transaction(
       uid: userData.uid ?? "",
@@ -539,13 +634,15 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
       methodOfPayment2: paymentMode2,
       isGroupTransaction: isPaymentModeOneGroup || isPaymentModeTwoGroup,
       gid: isPaymentModeOneGroup ? groupId1 : null,
+      groupName: groupName,
       type: TransactionType.transfer,
-      bankAccountId: selectedBank1?.bid,
-      walletId: selectedWallet1?.wid,
+      bankAccountId: bankAccountId1,
+      walletId: walletId1,
       isTransferTransaction: true,
       gid2: isPaymentModeTwoGroup ? groupId2 : null,
-      bankAccountId2: selectedBank2?.bid,
-      walletId2: selectedWallet2?.wid,
+      groupName2: groupName2,
+      bankAccountId2: bankAccountId2,
+      walletId2: walletId2,
     );
   }
 
@@ -555,9 +652,10 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     WidgetRef ref,
     UserFinanceData userFinanceData,
   ) async {
+    // save transaction to firestore and provider state
     final success = await ref
         .read(userFinanceDataNotifierProvider.notifier)
-        .addTransactionToUserData(
+        .addTransferTransactionToUserData(
           uid: uid,
           transactionData: transactionData,
         );
@@ -579,42 +677,99 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     final amount = double.parse(transactionData.amount ?? "0");
 
     // Update balance for Payment Mode 1
-    if (transactionData.methodOfPayment == "Cash") {
+    await _updatePaymentModeBalance(
+      uid: uid,
+      paymentMode: transactionData.methodOfPayment,
+      bankAccountId: transactionData.bankAccountId,
+      walletId: transactionData.walletId,
+      groupId: transactionData.gid,
+      amount: -amount, // Deduct amount for Payment Mode 1
+      ref: ref,
+      userFinanceData: userFinanceData,
+    );
+
+    // Update balance for Payment Mode 2
+    await _updatePaymentModeBalance(
+      uid: uid,
+      paymentMode: transactionData.methodOfPayment2,
+      bankAccountId: transactionData.bankAccountId2,
+      walletId: transactionData.walletId2,
+      groupId: transactionData.gid2,
+      amount: amount, // Add amount for Payment Mode 2
+      ref: ref,
+      userFinanceData: userFinanceData,
+    );
+  }
+
+  Future<void> _updatePaymentModeBalance({
+    required String uid,
+    required String? paymentMode,
+    required String? bankAccountId,
+    required String? walletId,
+    required String? groupId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    if (paymentMode == "Cash") {
+      // Update cash balance
+      final updatedCashAmount =
+          (double.parse(userFinanceData.cash?.amount ?? '0') + amount)
+              .toString();
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateUserCashAmount(
             uid: uid,
-            amount: (double.parse(userFinanceData.cash?.amount ?? '0') - amount)
-                .toString(),
+            amount: updatedCashAmount,
           );
-    } else if (transactionData.methodOfPayment == "Bank Account" &&
-        transactionData.bankAccountId != null) {
+    } else if (paymentMode == "Bank Account" && bankAccountId != null) {
+      // Update bank account balance
+      final bankAccount = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
       final updatedBalance =
-          (double.parse(selectedBank1?.availableBalance ?? '0') - amount)
+          (double.parse(bankAccount?.availableBalance ?? '0') + amount)
               .toString();
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateBankAccountBalance(
             uid: uid,
-            bankAccountId: transactionData.bankAccountId!,
+            bankAccountId: bankAccountId,
             newBalance: updatedBalance,
           );
-    } else if (transactionData.methodOfPayment == "Wallet" &&
-        transactionData.walletId != null) {
+    } else if (paymentMode == "Wallet" && walletId != null) {
+      // Update wallet balance
+      final wallet = userFinanceData.listOfWallets
+          ?.firstWhere((wallet) => wallet.wid == walletId);
       final updatedBalance =
-          (double.parse(selectedWallet1?.balance ?? '0') - amount).toString();
+          (double.parse(wallet?.balance ?? '0') + amount).toString();
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateWalletBalance(
             uid: uid,
-            walletId: transactionData.walletId!,
+            walletId: walletId,
             newBalance: updatedBalance,
           );
+    } else if (paymentMode == "Group" && groupId != null) {
+      // Update group balance
+      final group = userFinanceData.listOfGroups
+          ?.firstWhere((group) => group.gid == groupId);
+      final updatedGroupAmount =
+          (double.parse(group?.totalAmount ?? '0') + amount).toString();
+      final updatedMemberAmount =
+          (double.parse(group?.membersBalance?[uid] ?? '0') + amount)
+              .toString();
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateGroupAmount(
+            gid: groupId,
+            amount: updatedGroupAmount,
+            uid: uid,
+            memberAmount: updatedMemberAmount,
+          );
     }
-
-    // Update balance for Payment Mode 2 (if applicable)
-    // Add logic here if Payment Mode 2 requires balance updates
   }
+
+// __________________________________________________________________________ //
 
   void _showSnackbar(String message, IconData icon) {
     snackbarToast(

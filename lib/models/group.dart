@@ -17,6 +17,7 @@ class Group {
   List<String>? memberIds;
   List<UserData>? listOfMembers;
   Map<String, String>? membersBalance;
+  String? linkedBankAccountId;
 
   Group({
     this.gid = "",
@@ -31,6 +32,7 @@ class Group {
     this.memberIds,
     this.listOfMembers,
     this.membersBalance,
+    this.linkedBankAccountId,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
     listOfTransactions = listOfTransactions ?? [];
@@ -52,6 +54,7 @@ class Group {
     List<String>? memberIds,
     List<UserData>? listOfMembers,
     Map<String, String>? membersBalance,
+    String? linkedBankAccountId,
   }) {
     return Group(
       gid: gid ?? this.gid,
@@ -66,6 +69,7 @@ class Group {
       memberIds: memberIds ?? this.memberIds,
       listOfMembers: listOfMembers ?? this.listOfMembers,
       membersBalance: membersBalance ?? this.membersBalance,
+      linkedBankAccountId: linkedBankAccountId ?? this.linkedBankAccountId,
     );
   }
 
@@ -99,6 +103,7 @@ class Group {
       membersBalance: map['membersBalance'] != null
           ? Map<String, String>.from((map['membersBalance'] ?? {}))
           : {},
+      linkedBankAccountId: map['linkedBankAccountId'] as String?,
     );
   }
 
@@ -116,6 +121,7 @@ class Group {
       'memberIds': memberIds,
       'listOfMembers': listOfMembers,
       'membersBalance': membersBalance,
+      'linkedBankAccountId': linkedBankAccountId,
     };
   }
 }

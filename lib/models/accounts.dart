@@ -25,7 +25,7 @@ class BankAccount {
   String? bid;
   String? bankAccountName;
   String? totalBalance;
-  String? availableBalance;
+  String? availableBalance; // users available to use balance
   List<String>? upiIds;
   List<String>? linkedGroupIds;
   Map<String, String>? groupsBalance;

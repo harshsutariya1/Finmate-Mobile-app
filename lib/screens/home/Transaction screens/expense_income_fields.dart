@@ -62,45 +62,43 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
             spacing: 20,
             children: [
               _dateTimePicker(),
-              textfield(
-                controller: _amountController,
-                hintText: "00.00",
-                lableText: "Amount",
-                prefixIconData: Icons.currency_rupee_sharp,
-                isSufixWidget: true,
-                sufixWidget: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 10,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: color3.withAlpha(150),
+              Row(
+                children: [
+                  // income / expense button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10, left: 10),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Row(
-                          spacing: 5,
-                          children: [
-                            Icon(
-                              (isIncomeSelected) ? Icons.add : Icons.remove,
-                              color: color4,
-                            ),
-                            Text(
-                              (isIncomeSelected) ? "Income" : "Expense",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: color4,
-                              ),
-                            ),
-                          ],
-                        ),
-                        onPressed: () => setState(() {
-                          isIncomeSelected = !isIncomeSelected;
-                        }),
+                        backgroundColor: (isIncomeSelected)
+                            ? color3.withAlpha(150)
+                            : Colors.redAccent,
+                        minimumSize: Size(
+                            double.minPositive, 50), // Set width and height
                       ),
+                      child: Text(
+                        (isIncomeSelected) ? "Income" : "Expense",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: color4,
+                        ),
+                      ),
+                      onPressed: () => setState(() {
+                        isIncomeSelected = !isIncomeSelected;
+                      }),
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: textfield(
+                      controller: _amountController,
+                      hintText: "00.00",
+                      lableText: "Amount",
+                      prefixIconData: Icons.currency_rupee_sharp,
+                    ),
+                  ),
+                ],
               ),
               textfield(
                 controller: _descriptionController,
@@ -150,7 +148,13 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                 Wrap(
                                   spacing: 8.0,
                                   children: categoryList.map((category) {
-                                    if (category == "Balance Adjustment") {
+                                    if (category ==
+                                            TransactionCategory
+                                                .balanceAdjustment
+                                                .displayName ||
+                                        category ==
+                                            TransactionCategory
+                                                .transfer.displayName) {
                                       return SizedBox.shrink();
                                     }
                                     return ChoiceChip(
@@ -216,12 +220,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                   setState(() {
                                     _paymentModeController.text =
                                         "Bank Account";
-                                    selectedBank =
-                                        (_paymentModeController.text ==
-                                                "Bank Account")
-                                            ? bankAccount
-                                            : null;
+                                    selectedBank = bankAccount;
                                     selectedWallet = null;
+
+                                    // Clear group selection
+                                    _groupController.clear();
+                                    selectedGroup = null;
                                   });
                                   Navigator.pop(context);
                                 },
@@ -235,12 +239,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                 onTapWallet: (Wallet wallet) {
                                   setState(() {
                                     _paymentModeController.text = "Wallet";
-                                    selectedWallet =
-                                        (_paymentModeController.text ==
-                                                "Wallet")
-                                            ? wallet
-                                            : null;
+                                    selectedWallet = wallet;
                                     selectedBank = null;
+
+                                    // Clear group selection
+                                    _groupController.clear();
+                                    selectedGroup = null;
                                   });
                                   Navigator.pop(context);
                                 },
@@ -255,14 +259,10 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                     _paymentModeController.text = "Cash";
                                     selectedBank = null;
                                     selectedWallet = null;
-                                    if (userData.uid !=
-                                        selectedGroup?.creatorId) {
-                                      _groupController.text =
-                                          (_paymentModeController
-                                                  .text.isNotEmpty)
-                                              ? ""
-                                              : _groupController.text;
-                                    }
+
+                                    // Clear group selection
+                                    _groupController.clear();
+                                    selectedGroup = null;
                                   });
                                   Navigator.pop(context);
                                 },
@@ -275,6 +275,19 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                   );
                 },
               ),
+              if (selectedBank != null)
+                ListTile(
+                  leading: const Icon(Icons.account_balance),
+                  title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
+                  subtitle: Text(
+                      "Total Balance: ${selectedBank!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+                ),
+              if (selectedWallet != null)
+                ListTile(
+                  leading: const Icon(Icons.account_balance_wallet),
+                  title: Text(selectedWallet!.walletName ?? "Wallet"),
+                  subtitle: Text("Balance: ${selectedWallet!.balance ?? '0'}"),
+                ),
               textfield(
                 controller: _groupController,
                 prefixIconData: Icons.group_add_rounded,
@@ -341,15 +354,13 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                             : '';
                                         selectedGroup =
                                             groupSelected ? group : null;
-                                        if (userData.uid !=
-                                            selectedGroup?.creatorId) {
-                                          _paymentModeController.text =
-                                              groupSelected
-                                                  ? ""
-                                                  : _paymentModeController.text;
-                                        }
-                                        Navigator.pop(context);
+
+                                        // Clear payment mode selection
+                                        _paymentModeController.clear();
+                                        selectedBank = null;
+                                        selectedWallet = null;
                                       });
+                                      Navigator.pop(context);
                                     },
                                   );
                                 }).toList(),
@@ -362,6 +373,13 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                   );
                 },
               ),
+              if (selectedGroup != null)
+                ListTile(
+                  leading: const Icon(Icons.group),
+                  title: Text(selectedGroup!.name ?? "Group"),
+                  subtitle: Text(
+                      "Total Amount: ${selectedGroup!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup!.membersBalance?[userData.uid] ?? '0'}"),
+                ),
             ],
           ),
         ),
@@ -527,6 +545,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     final amountText = _amountController.text.trim();
     final category = _categoryController.text.trim();
     final paymentMode = _paymentModeController.text.trim();
+    final group = _groupController.text.trim();
 
     // Amount validation
     if (amountText.isEmpty) return "Amount cannot be empty.";
@@ -534,9 +553,14 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     if (amount == null) return "Invalid amount entered.";
     if (amount == 0) return "Amount cannot be zero.";
 
+    // Ensure only one of payment mode or group is selected
+    if (paymentMode.isNotEmpty && group.isNotEmpty) {
+      return "You cannot select both a payment mode and a group.";
+    }
+
     // Payment mode validation
-    if (paymentMode.isEmpty) {
-      return "Please select a payment mode.";
+    if (paymentMode.isEmpty && group.isEmpty) {
+      return "Please select a payment mode or a group.";
     }
 
     // Check for sufficient balance in the selected payment mode
@@ -584,6 +608,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     final category = _categoryController.text.trim();
     final paymentMode = _paymentModeController.text.trim();
     final groupId = selectedGroup?.gid;
+    final groupName = selectedGroup?.name;
 
     return Transaction(
       uid: userData.uid ?? "",
@@ -598,7 +623,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       type:
           (isIncomeSelected) ? TransactionType.income : TransactionType.expense,
       bankAccountId: selectedBank?.bid,
-      walletId: selectedWallet?.wid,
+      walletId: selectedWallet?.wid,groupName: groupName,
     );
   }
 
@@ -657,6 +682,13 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
 
       // Update group amount if it's a group transaction
       if (transactionData.isGroupTransaction) {
+        final String updatedMemberAmount =
+            (double.parse(transactionData.amount ?? "0") +
+                    (double.parse(userFinanceData.listOfGroups!
+                        .where((group) => group.gid == transactionData.gid)
+                        .first
+                        .membersBalance![uid]!)))
+                .toString();
         await ref
             .read(userFinanceDataNotifierProvider.notifier)
             .updateGroupAmount(
@@ -669,6 +701,8 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                               .totalAmount ??
                           '0')))
                   .toString(),
+              uid: uid,
+              memberAmount: updatedMemberAmount,
             );
       }
     }

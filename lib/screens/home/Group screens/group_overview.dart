@@ -9,6 +9,7 @@ import 'package:finmate/screens/home/Group%20screens/group_members.dart';
 import 'package:finmate/screens/home/Group%20screens/group_settings.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
+import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

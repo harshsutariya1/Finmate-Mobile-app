@@ -11,6 +11,7 @@ const Map<String, IconData> transactionCategoriesAndIcons = {
   'Education': Icons.school,
   'Salary': Icons.attach_money,
   'Investment': Icons.trending_up,
+  'Refund or Bonus': Icons.refresh_rounded,
   'Others': Icons.category,
   'Balance Adjustment': Icons.account_balance_wallet_rounded,
   'Transfer': Icons.swap_horiz,
@@ -26,8 +27,10 @@ enum TransactionCategory {
   education,
   salary,
   investment,
+  refundOrBonus,
   others,
   balanceAdjustment,
+  transfer,
 }
 
 extension TransactionCategoryExtension on TransactionCategory {
@@ -51,10 +54,14 @@ extension TransactionCategoryExtension on TransactionCategory {
         return 'Salary';
       case TransactionCategory.investment:
         return 'Investment';
+      case TransactionCategory.refundOrBonus:
+        return 'Refund or Bonus';
       case TransactionCategory.others:
         return 'Others';
       case TransactionCategory.balanceAdjustment:
         return 'Balance Adjustment';
+      case TransactionCategory.transfer:
+        return 'Transfer';
     }
   }
 
@@ -73,6 +80,7 @@ enum PaymentModes {
   cash,
   bankAccount,
   wallet,
+  group,
 }
 
 extension PaymentModeExtension on PaymentModes {
@@ -84,6 +92,8 @@ extension PaymentModeExtension on PaymentModes {
         return 'Bank Account';
       case PaymentModes.wallet:
         return 'Wallet';
+      case PaymentModes.group:
+        return 'Group';
     }
   }
 }
@@ -101,12 +111,15 @@ class Transaction {
   TransactionType? type;
   bool isGroupTransaction;
   String? gid;
+  String? groupName;
   String? bankAccountId;
   String? walletId;
   bool isTransferTransaction;
   String? gid2;
+  String? groupName2;
   String? bankAccountId2;
   String? walletId2;
+  String? vpaId;
 
   Transaction({
     this.tid = "",
@@ -121,12 +134,15 @@ class Transaction {
     this.type,
     this.isGroupTransaction = false,
     this.gid,
+    this.groupName,
     this.bankAccountId,
     this.walletId,
     this.isTransferTransaction = false,
     this.gid2,
+    this.groupName2,
     this.bankAccountId2,
     this.walletId2,
+    this.vpaId,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
   }
@@ -154,12 +170,15 @@ class Transaction {
       ),
       isGroupTransaction: json['isGroupTransaction'] as bool? ?? false,
       gid: json['gid'] as String?,
+      groupName: json['groupName'] as String?,
       bankAccountId: json['bankAccountId'] as String?,
       walletId: json['walletId'] as String?,
       isTransferTransaction: json['isTransferTransaction'] as bool? ?? false,
       gid2: json['gid2'] as String?,
+      groupName2: json['groupName2'] as String?,
       bankAccountId2: json['bankAccountId2'] as String?,
       walletId2: json['walletId2'] as String?,
+      vpaId: json['vpaId'] as String? ?? "",
     );
   }
 
@@ -177,12 +196,15 @@ class Transaction {
       'type': type?.toString().split('.').last,
       'isGroupTransaction': isGroupTransaction,
       'gid': gid,
+      'groupName': groupName,
       'bankAccountId': bankAccountId,
       'walletId': walletId,
       'isTransferTransaction': isTransferTransaction,
       'gid2': gid2,
+      'groupName2': groupName2,
       'bankAccountId2': bankAccountId2,
       'walletId2': walletId2,
+      'vpaId': vpaId,
     };
   }
 
@@ -198,12 +220,15 @@ class Transaction {
     String? description,
     bool? isGroupTransaction,
     String? gid,
+    String? groupName,
     String? bankAccountId,
     String? walletId,
     bool? isTransferTransaction,
     String? gid2,
+    String? groupName2,
     String? bankAccountId2,
     String? walletId2,
+    String? vpaId,
   }) {
     return Transaction(
       tid: tid ?? this.tid,
@@ -217,13 +242,16 @@ class Transaction {
       description: description ?? this.description,
       isGroupTransaction: isGroupTransaction ?? this.isGroupTransaction,
       gid: gid ?? this.gid,
+      groupName: groupName ?? this.groupName,
       bankAccountId: bankAccountId ?? this.bankAccountId,
       walletId: walletId ?? this.walletId,
       isTransferTransaction:
           isTransferTransaction ?? this.isTransferTransaction,
       gid2: gid2 ?? this.gid2,
+      groupName2: groupName2 ?? this.groupName2,
       bankAccountId2: bankAccountId2 ?? this.bankAccountId2,
       walletId2: walletId2 ?? this.walletId2,
+      vpaId: vpaId ?? this.vpaId,
     );
   }
 }
