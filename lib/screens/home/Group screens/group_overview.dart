@@ -118,6 +118,13 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
     UserData userData,
     List<UserData>? groupMembersData,
   ) {
+    rightMarginAmount(UserData member) {
+      return (1 -
+              (double.parse(groupData.membersBalance?[member.uid] ?? "0.0") /
+                  double.parse(groupData.totalAmount ?? "0.0"))) *
+          (MediaQuery.of(context).size.width * .8);
+    }
+
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(
@@ -165,43 +172,53 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               children: [
                 ...groupMembersData!.map((member) {
                   // member horizontal bars
-                  return Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: groupMemberBarColor.withAlpha(104),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: color4),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          margin: EdgeInsets.only(right: 100),
-                          decoration: BoxDecoration(
-                            color: groupMemberBarColor,
-                            borderRadius: BorderRadius.circular(30),
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      height: 60,
+                      width: double.infinity,
+                      padding: EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: groupMemberBarColor.withAlpha(104),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: color4),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // balance bar
+                          Container(
+                            height: double.infinity,
+                            width: double.infinity,
+                            alignment: Alignment.centerLeft,
+                            margin: EdgeInsets.only(
+                              right: rightMarginAmount(member),
+                              left: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: groupMemberBarColor,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
                           ),
                           // member image
-                          child: Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: userProfilePicInCircle(
                               imageUrl: member.pfpURL ?? '',
-                              outerRadius: 22,
-                              innerRadius: 20,
+                              outerRadius: 28,
+                              innerRadius: 25,
                             ),
                           ),
-                        ),
-                        // member balance
-                        Text(
-                          "${groupData.membersBalance?[member.uid] ?? "0.0"} ₹",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          // member balance
+                          Text(
+                            "${groupData.membersBalance?[member.uid] ?? "0.0"} ₹",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 }),

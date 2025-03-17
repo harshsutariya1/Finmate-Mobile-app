@@ -1,5 +1,5 @@
 import 'package:finmate/constants/colors.dart';
-import 'package:finmate/screens/home/Group%20screens/groups_screen.dart';
+import 'package:finmate/screens/home/Group%20screens/all_groups_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytical%20screens/analytics_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';

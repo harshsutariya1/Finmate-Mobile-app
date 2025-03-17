@@ -55,334 +55,331 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
           left: 20,
           bottom: 0,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            spacing: 20,
+        child: _bodyForm(
+          userData: userData,
+          userFinanceData: userFinanceData,
+        ),
+      ),
+    );
+  }
+
+  Widget _bodyForm(
+      {required UserData userData, required UserFinanceData userFinanceData}) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        spacing: 20,
+        children: [
+          _dateTimePicker(),
+          Row(
             children: [
-              _dateTimePicker(),
-              Row(
-                children: [
-                  // income / expense button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10, left: 10),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        backgroundColor: (isIncomeSelected)
-                            ? color3.withAlpha(150)
-                            : Colors.redAccent,
-                        minimumSize: Size(
-                            double.minPositive, 50), // Set width and height
-                      ),
-                      child: Text(
-                        (isIncomeSelected) ? "Income" : "Expense",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color4,
-                        ),
-                      ),
-                      onPressed: () => setState(() {
-                        isIncomeSelected = !isIncomeSelected;
-                      }),
+              // income / expense button
+              Padding(
+                padding: const EdgeInsets.only(right: 10, left: 10),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    backgroundColor: (isIncomeSelected)
+                        ? color3.withAlpha(150)
+                        : Colors.redAccent,
+                    minimumSize:
+                        Size(double.minPositive, 50), // Set width and height
+                  ),
+                  child: Text(
+                    (isIncomeSelected) ? "Income" : "Expense",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color4,
                     ),
                   ),
-                  Expanded(
-                    child: textfield(
-                      controller: _amountController,
-                      hintText: "00.00",
-                      lableText: "Amount",
-                      prefixIconData: Icons.currency_rupee_sharp,
-                    ),
-                  ),
-                ],
-              ),
-              textfield(
-                controller: _descriptionController,
-                hintText: "Description",
-                lableText: "Description",
-                prefixIconData: Icons.description_outlined,
-              ),
-              textfield(
-                  controller: _categoryController,
-                  prefixIconData: Icons.category_rounded,
-                  hintText: "Select Category",
-                  lableText: "Category",
-                  readOnly: true,
-                  sufixIconData: Icons.arrow_drop_down_circle_outlined,
-                  onTap: () {
-                    // show modal bottom sheet to select category
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (context) {
-                        Iterable<String> categoryList =
-                            transactionCategoriesAndIcons.keys;
-                        return Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(20),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text("Select Category"),
-                                    IconButton(
-                                      onPressed: () {
-                                        snackbarToast(
-                                            context: context,
-                                            text:
-                                                "This Function is in development",
-                                            icon:
-                                                Icons.developer_mode_outlined);
-                                      },
-                                      icon: Icon(Icons.add),
-                                      color: color3,
-                                    )
-                                  ],
-                                ),
-                                Wrap(
-                                  spacing: 8.0,
-                                  children: categoryList.map((category) {
-                                    if (category ==
-                                            TransactionCategory
-                                                .balanceAdjustment
-                                                .displayName ||
-                                        category ==
-                                            TransactionCategory
-                                                .transfer.displayName) {
-                                      return SizedBox.shrink();
-                                    }
-                                    return ChoiceChip(
-                                      label: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        spacing: 20,
-                                        children: [
-                                          Icon(
-                                            transactionCategoriesAndIcons[
-                                                category],
-                                            color: color1,
-                                          ),
-                                          Text(category),
-                                        ],
-                                      ),
-                                      // showCheckmark: false,
-                                      selected:
-                                          _categoryController.text == category,
-                                      onSelected: (selected) {
-                                        setState(() {
-                                          _categoryController.text =
-                                              selected ? category : '';
-                                          Navigator.pop(context);
-                                        });
-                                      },
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                  onPressed: () => setState(() {
+                    isIncomeSelected = !isIncomeSelected;
                   }),
-              textfield(
-                controller: _paymentModeController,
-                prefixIconData: Icons.payments_rounded,
-                hintText: "Select Payment Mode",
-                lableText: "Payment Mode",
-                readOnly: true,
-                sufixIconData: Icons.arrow_drop_down_circle_outlined,
-                onTap: () {
-                  // show modal bottom sheet to select payment mode
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) {
-                      return Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(20),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              bankAccountContainer(
-                                context: context,
-                                userFinanceData: userFinanceData,
-                                isSelectable: true,
-                                selectedBank:
-                                    selectedBank?.bankAccountName ?? '',
-                                onTapBank: (BankAccount bankAccount) {
-                                  setState(() {
-                                    _paymentModeController.text =
-                                        "Bank Account";
-                                    selectedBank = bankAccount;
-                                    selectedWallet = null;
-
-                                    // Clear group selection
-                                    _groupController.clear();
-                                    selectedGroup = null;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              walletsContainer(
-                                context: context,
-                                userFinanceData: userFinanceData,
-                                isSelectable: true,
-                                selectedWallet:
-                                    selectedWallet?.walletName ?? "",
-                                onTapWallet: (Wallet wallet) {
-                                  setState(() {
-                                    _paymentModeController.text = "Wallet";
-                                    selectedWallet = wallet;
-                                    selectedBank = null;
-
-                                    // Clear group selection
-                                    _groupController.clear();
-                                    selectedGroup = null;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              cashContainer(
-                                isSelectable: true,
-                                isSelected:
-                                    _paymentModeController.text == "Cash",
-                                userFinanceData: userFinanceData,
-                                onTap: () {
-                                  setState(() {
-                                    _paymentModeController.text = "Cash";
-                                    selectedBank = null;
-                                    selectedWallet = null;
-
-                                    // Clear group selection
-                                    _groupController.clear();
-                                    selectedGroup = null;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                ),
               ),
-              if (selectedBank != null)
-                ListTile(
-                  leading: const Icon(Icons.account_balance),
-                  title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
-                  subtitle: Text(
-                      "Total Balance: ${selectedBank!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+              Expanded(
+                child: textfield(
+                  controller: _amountController,
+                  hintText: "00.00",
+                  lableText: "Amount",
+                  prefixIconData: Icons.currency_rupee_sharp,
                 ),
-              if (selectedWallet != null)
-                ListTile(
-                  leading: const Icon(Icons.account_balance_wallet),
-                  title: Text(selectedWallet!.walletName ?? "Wallet"),
-                  subtitle: Text("Balance: ${selectedWallet!.balance ?? '0'}"),
-                ),
-              textfield(
-                controller: _groupController,
-                prefixIconData: Icons.group_add_rounded,
-                hintText: "Add Group Transaction",
-                lableText: "Group Transaction",
-                readOnly: true,
-                sufixIconData: Icons.arrow_drop_down_circle_outlined,
-                onTap: () {
-                  // show modal bottom sheet to select payment mode
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) {
-                      List<Group> groupList =
-                          userFinanceData.listOfGroups!.toList();
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 50),
-                        width: double.infinity,
-                        padding: EdgeInsets.all(20),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("Select Group"),
-                                  Text(
-                                    "Your Groups = 🟢",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              sbh10,
-                              Wrap(
-                                spacing: 8.0,
-                                children: groupList.map((group) {
-                                  return ChoiceChip(
-                                    label: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      spacing: 20,
-                                      children: [
-                                        Text(group.name.toString()),
-                                        (group.creatorId == userData.uid)
-                                            ? Text(
-                                                "🟢",
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: Colors.grey,
-                                                ),
-                                              )
-                                            : SizedBox.shrink(),
-                                      ],
-                                    ),
-                                    selected: _groupController.text ==
-                                        group.name.toString(),
-                                    onSelected: (groupSelected) {
-                                      setState(() {
-                                        _groupController.text = groupSelected
-                                            ? group.name.toString()
-                                            : '';
-                                        selectedGroup =
-                                            groupSelected ? group : null;
-
-                                        // Clear payment mode selection
-                                        _paymentModeController.clear();
-                                        selectedBank = null;
-                                        selectedWallet = null;
-                                      });
-                                      Navigator.pop(context);
-                                    },
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
               ),
-              if (selectedGroup != null)
-                ListTile(
-                  leading: const Icon(Icons.group),
-                  title: Text(selectedGroup!.name ?? "Group"),
-                  subtitle: Text(
-                      "Total Amount: ${selectedGroup!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup!.membersBalance?[userData.uid] ?? '0'}"),
-                ),
             ],
           ),
-        ),
+          textfield(
+            controller: _descriptionController,
+            hintText: "Description",
+            lableText: "Description",
+            prefixIconData: Icons.description_outlined,
+          ),
+          textfield(
+              controller: _categoryController,
+              prefixIconData: Icons.category_rounded,
+              hintText: "Select Category",
+              lableText: "Category",
+              readOnly: true,
+              sufixIconData: Icons.arrow_drop_down_circle_outlined,
+              onTap: () {
+                // show modal bottom sheet to select category
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    Iterable<String> categoryList =
+                        transactionCategoriesAndIcons.keys;
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Select Category"),
+                                IconButton(
+                                  onPressed: () {
+                                    snackbarToast(
+                                        context: context,
+                                        text: "This Function is in development",
+                                        icon: Icons.developer_mode_outlined);
+                                  },
+                                  icon: Icon(Icons.add),
+                                  color: color3,
+                                )
+                              ],
+                            ),
+                            Wrap(
+                              spacing: 8.0,
+                              children: categoryList.map((category) {
+                                if (category ==
+                                        TransactionCategory
+                                            .balanceAdjustment.displayName ||
+                                    category ==
+                                        TransactionCategory
+                                            .transfer.displayName) {
+                                  return SizedBox.shrink();
+                                }
+                                return ChoiceChip(
+                                  label: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    spacing: 20,
+                                    children: [
+                                      Icon(
+                                        transactionCategoriesAndIcons[category],
+                                        color: color1,
+                                      ),
+                                      Text(category),
+                                    ],
+                                  ),
+                                  // showCheckmark: false,
+                                  selected:
+                                      _categoryController.text == category,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _categoryController.text =
+                                          selected ? category : '';
+                                      Navigator.pop(context);
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+          textfield(
+            controller: _paymentModeController,
+            prefixIconData: Icons.payments_rounded,
+            hintText: "Select Payment Mode",
+            lableText: "Payment Mode",
+            readOnly: true,
+            sufixIconData: Icons.arrow_drop_down_circle_outlined,
+            onTap: () {
+              // show modal bottom sheet to select payment mode
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          bankAccountContainer(
+                            context: context,
+                            userFinanceData: userFinanceData,
+                            isSelectable: true,
+                            selectedBank: selectedBank?.bankAccountName ?? '',
+                            onTapBank: (BankAccount bankAccount) {
+                              setState(() {
+                                _paymentModeController.text = "Bank Account";
+                                selectedBank = bankAccount;
+                                selectedWallet = null;
+
+                                // Clear group selection
+                                _groupController.clear();
+                                selectedGroup = null;
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          walletsContainer(
+                            context: context,
+                            userFinanceData: userFinanceData,
+                            isSelectable: true,
+                            selectedWallet: selectedWallet?.walletName ?? "",
+                            onTapWallet: (Wallet wallet) {
+                              setState(() {
+                                _paymentModeController.text = "Wallet";
+                                selectedWallet = wallet;
+                                selectedBank = null;
+
+                                // Clear group selection
+                                _groupController.clear();
+                                selectedGroup = null;
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          cashContainer(
+                            isSelectable: true,
+                            isSelected: _paymentModeController.text == "Cash",
+                            userFinanceData: userFinanceData,
+                            onTap: () {
+                              setState(() {
+                                _paymentModeController.text = "Cash";
+                                selectedBank = null;
+                                selectedWallet = null;
+
+                                // Clear group selection
+                                _groupController.clear();
+                                selectedGroup = null;
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          if (selectedBank != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance),
+              title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
+              subtitle: Text(
+                  "Total Balance: ${selectedBank!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+            ),
+          if (selectedWallet != null)
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: Text(selectedWallet!.walletName ?? "Wallet"),
+              subtitle: Text("Balance: ${selectedWallet!.balance ?? '0'}"),
+            ),
+          textfield(
+            controller: _groupController,
+            prefixIconData: Icons.group_add_rounded,
+            hintText: "Add Group Transaction",
+            lableText: "Group Transaction",
+            readOnly: true,
+            sufixIconData: Icons.arrow_drop_down_circle_outlined,
+            onTap: () {
+              // show modal bottom sheet to select payment mode
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  List<Group> groupList =
+                      userFinanceData.listOfGroups!.toList();
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 50),
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Select Group"),
+                              Text(
+                                "Your Groups = 🟢",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          sbh10,
+                          Wrap(
+                            spacing: 8.0,
+                            children: groupList.map((group) {
+                              return ChoiceChip(
+                                label: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  spacing: 20,
+                                  children: [
+                                    Text(group.name.toString()),
+                                    (group.creatorId == userData.uid)
+                                        ? Text(
+                                            "🟢",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey,
+                                            ),
+                                          )
+                                        : SizedBox.shrink(),
+                                  ],
+                                ),
+                                selected: _groupController.text ==
+                                    group.name.toString(),
+                                onSelected: (groupSelected) {
+                                  setState(() {
+                                    _groupController.text = groupSelected
+                                        ? group.name.toString()
+                                        : '';
+                                    selectedGroup =
+                                        groupSelected ? group : null;
+
+                                    // Clear payment mode selection
+                                    _paymentModeController.clear();
+                                    selectedBank = null;
+                                    selectedWallet = null;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          if (selectedGroup != null)
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: Text(selectedGroup!.name ?? "Group"),
+              subtitle: Text(
+                  "Total Amount: ${selectedGroup!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup!.membersBalance?[userData.uid] ?? '0'}"),
+            ),
+        ],
       ),
     );
   }
@@ -623,7 +620,8 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       type:
           (isIncomeSelected) ? TransactionType.income : TransactionType.expense,
       bankAccountId: selectedBank?.bid,
-      walletId: selectedWallet?.wid,groupName: groupName,
+      walletId: selectedWallet?.wid,
+      groupName: groupName,
     );
   }
 
