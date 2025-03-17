@@ -1,9 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
-import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
-import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +17,6 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
 class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   @override
   Widget build(BuildContext context) {
-    UserData userData = ref.watch(userDataNotifierProvider);
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
     List<Transaction>? transactionsList =

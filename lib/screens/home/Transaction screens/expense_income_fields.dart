@@ -27,13 +27,15 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _groupController = TextEditingController();
+  final TextEditingController _paymentModeController = TextEditingController();
+
   Group? selectedGroup;
   BankAccount? selectedBank;
   Wallet? selectedWallet;
-  final TextEditingController _paymentModeController = TextEditingController();
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  int indexOfTabbar = 0;
+
   bool isIncomeSelected = false;
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
@@ -492,7 +494,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     });
 
     // Validate inputs
-    final validationError = _validateInputs(userFinanceData);
+    final validationError = _validateInputs(userFinanceData, userData);
     if (validationError != null) {
       snackbarToast(
         context: context,
@@ -538,7 +540,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     _resetButtonState();
   }
 
-  String? _validateInputs(UserFinanceData userFinanceData) {
+  String? _validateInputs(UserFinanceData userFinanceData, UserData userData) {
     final amountText = _amountController.text.trim();
     final category = _categoryController.text.trim();
     final paymentMode = _paymentModeController.text.trim();
@@ -581,6 +583,25 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
 
     // Category validation
     if (category.isEmpty) return "Please select a category.";
+
+    // Group validation
+    if (group.isNotEmpty) {
+      if (selectedGroup == null) {
+        return "Invalid group selected.";
+      }
+      final memberBalance =
+          double.parse(selectedGroup!.membersBalance?[userData.uid] ?? '0');
+      final groupBalance = double.parse(selectedGroup!.totalAmount ?? '0');
+      if (!isIncomeSelected &&
+          memberBalance < amount &&
+          (selectedGroup?.creatorId != userData.uid)) {
+        return "Insufficient member balance in the group.";
+      } else if (!isIncomeSelected &&
+          (selectedGroup?.creatorId == userData.uid) &&
+          groupBalance < amount) {
+        return "Insufficient group balance.";
+      }
+    }
 
     // Date and time validation
     final now = DateTime.now();
@@ -650,8 +671,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       // Update bank account balance if payment mode is "Bank Account"
       if (transactionData.methodOfPayment == "Bank Account" &&
           transactionData.bankAccountId != null) {
-        final updatedBalance =
+        final updatedAvailableBalance =
             (double.parse(selectedBank?.availableBalance ?? '0') +
+                    double.parse(transactionData.amount ?? "0"))
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(selectedBank?.totalBalance ?? '0') +
                     double.parse(transactionData.amount ?? "0"))
                 .toString();
         await ref
@@ -659,7 +684,8 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
             .updateBankAccountBalance(
               uid: transactionData.uid ?? "",
               bankAccountId: transactionData.bankAccountId!,
-              newBalance: updatedBalance,
+              availableBalance: updatedAvailableBalance,
+              totalBalance: updatedTotalBalance,
             );
       }
 

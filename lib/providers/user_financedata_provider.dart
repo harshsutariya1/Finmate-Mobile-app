@@ -139,16 +139,21 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> updateBankAccountBalance({
     required String uid,
     required String bankAccountId,
-    required String newBalance,
+    required String totalBalance,
+    required String availableBalance,
     BankAccount? bankAccount,
     bool isBalanceAdjustment = false,
+     bool isTransferField = false,
   }) async {
     try {
+      // adjustmentAmount = newAmount - currentAmount
+      final String adjustmentAmount = (double.parse(availableBalance) -
+              double.parse(bankAccount?.totalBalance ?? '0'))
+          .toString();
+      final String adjustmentTotalAmount =
+          (double.parse(totalBalance) + double.parse(adjustmentAmount))
+              .toString();
       if (isBalanceAdjustment) {
-        // adjustmentAmount = newAmount - currentAmount
-        final String adjustmentAmount = (double.parse(newBalance) -
-                double.parse(bankAccount?.totalBalance ?? '0'))
-            .toString();
         await addTransactionToUserData(
           uid: uid,
           transactionData: Transaction(
@@ -166,16 +171,19 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       }
 
       // Update the balance in Firestore
-      await bankAccountsCollectionReference(uid)
-          .doc(bankAccountId)
-          .update({'availableBalance': newBalance, 'totalBalance': newBalance});
+      await bankAccountsCollectionReference(uid).doc(bankAccountId).update({
+        'availableBalance': availableBalance,
+        'totalBalance':
+            (isBalanceAdjustment) ? adjustmentTotalAmount : totalBalance
+      });
 
       // Update the balance in the local state
       final updatedBankAccounts = state.listOfBankAccounts?.map((bankAccount) {
         if (bankAccount.bid == bankAccountId) {
           return bankAccount.copyWith(
-            availableBalance: newBalance,
-            totalBalance: newBalance,
+            availableBalance: availableBalance,
+            totalBalance:
+                (isBalanceAdjustment) ? adjustmentTotalAmount : totalBalance,
           );
         }
         return bankAccount;
@@ -506,6 +514,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           listOfGroups: state.listOfGroups!
             ..add(groupProfile.copyWith(gid: result.id)),
         );
+
+        // Add the group balance to user's bank account
       } else {
         Logger().w("❗groupProfile.creatorId is null");
         throw ArgumentError("❗groupProfile.creatorId cannot be null");

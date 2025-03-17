@@ -1,8 +1,11 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/home/Group%20screens/add_members.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
@@ -23,9 +26,14 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  bool isLoading = false;
+  final TextEditingController _paymentModeController = TextEditingController();
+
   List<String> selectedUserUid = [];
   List<UserData> listOfSelectedUsers = [];
+
+  BankAccount? selectedBank;
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +95,15 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
               hintText: "Description",
               prefixIconData: Icons.description_outlined,
             ),
+            _paymentModeField(userData, ref),
+            if (selectedBank != null)
+              ListTile(
+                leading: const Icon(Icons.account_balance),
+                title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
+                subtitle: Text(
+                    "Total Balance: ${selectedBank!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+              ),
+            // group members selection section
             borderedContainer(
               [
                 // title
@@ -126,7 +143,7 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                spacing: 5,
+                                spacing: 10,
                                 children: [
                                   userProfilePicInCircle(
                                     imageUrl: user.pfpURL.toString(),
@@ -237,6 +254,55 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
     );
   }
 
+  Widget _paymentModeField(UserData userData, WidgetRef ref) {
+    return _textfield(
+      controller: _paymentModeController,
+      prefixIconData: Icons.payments_rounded,
+      hintText: "Select Payment Mode",
+      lableText: "Payment Mode",
+      readOnly: true,
+      sufixIconData: Icons.arrow_drop_down_circle_outlined,
+      onTap: () {
+        // show modal bottom sheet to select payment mode
+        _showPaymentModeSelectionBottomSheet(userData, ref);
+      },
+    );
+  }
+
+  void _showPaymentModeSelectionBottomSheet(UserData userData, WidgetRef ref) {
+    final UserFinanceData userFinanceData =
+        ref.watch(userFinanceDataNotifierProvider);
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                bankAccountContainer(
+                  context: context,
+                  userFinanceData: userFinanceData,
+                  isSelectable: true,
+                  selectedBank: selectedBank?.bankAccountName ?? '',
+                  onTapBank: (BankAccount bankAccount) {
+                    setState(() {
+                      _paymentModeController.text = "Bank Account";
+                      selectedBank = bankAccount;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget createGroupButton(UserData userData, WidgetRef ref) {
     return InkWell(
       onTap: () => onTapButton(userData, ref),
@@ -251,7 +317,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 20,
           children: [
             Text(
               "Create Group",
@@ -273,65 +338,98 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
   }
 
   void onTapButton(UserData userData, WidgetRef ref) async {
+    if (!_validateGroupDetails()) {
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
-    final groupName = _nameController.text;
-    final groupDescription = _descriptionController.text;
-    final groupAmount = _amountController.text;
-    if (groupName.isNotEmpty && groupAmount.isNotEmpty) {
-      if (listOfSelectedUsers.length > 1) {
-        Map<String, String> calculateMembersBalance() {
-          final double totalAmount = double.parse(groupAmount);
-          final int memberCount = listOfSelectedUsers.length;
-          final double distributedAmount = totalAmount / memberCount;
-          return {
-            for (var user in listOfSelectedUsers)
-              user.uid!: distributedAmount.toStringAsFixed(2)
-          };
-        }
 
-        final Map<String, String> membersBalance = calculateMembersBalance();
+    final membersBalance = _calculateMembersBalance();
+    final group = _createGroupObject(userData, membersBalance);
 
-        await ref
-            .read(userFinanceDataNotifierProvider.notifier)
-            .createGroupProfile(
-              groupProfile: Group(
-                creatorId: userData.uid,
-                name: groupName,
-                description: groupDescription,
-                totalAmount: groupAmount,
-                memberIds: selectedUserUid,
-                listOfMembers: listOfSelectedUsers,
-                membersBalance: membersBalance,
-              ),
-            )
-            .then((value) {
-          if (value) {
-            snackbarToast(
-                context: context, text: "Group Created!", icon: Icons.done_all);
-            Navigate().goBack();
-          } else {
-            snackbarToast(
-                context: context,
-                text: "Error creating group",
-                icon: Icons.error_outline);
-          }
-        });
-      } else {
-        snackbarToast(
-            context: context,
-            text: "Select minimum two members ⚠️",
-            icon: Icons.warning_amber_rounded);
-      }
+    final success = await _saveGroup(ref, group);
+
+    if (success) {
+      snackbarToast(
+        context: context,
+        text: "Group Created!",
+        icon: Icons.done_all,
+      );
+      Navigate().goBack();
     } else {
       snackbarToast(
-          context: context,
-          text: "Please Enter all the fields!",
-          icon: Icons.error_outline);
+        context: context,
+        text: "Error creating group",
+        icon: Icons.error_outline,
+      );
     }
+
     setState(() {
       isLoading = false;
     });
+  }
+
+  bool _validateGroupDetails() {
+    if (_nameController.text.isEmpty || _amountController.text.isEmpty) {
+      snackbarToast(
+        context: context,
+        text: "Please Enter all the fields!",
+        icon: Icons.error_outline,
+      );
+      return false;
+    }
+
+    if (listOfSelectedUsers.length <= 1) {
+      snackbarToast(
+        context: context,
+        text: "Select minimum two members ⚠️",
+        icon: Icons.warning_amber_rounded,
+      );
+      return false;
+    }
+
+    if (_paymentModeController.text.isEmpty) {
+      snackbarToast(
+        context: context,
+        text: "Please select a payment mode!",
+        icon: Icons.warning_amber_rounded,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  Map<String, String> _calculateMembersBalance() {
+    final double totalAmount = double.parse(_amountController.text);
+    final int memberCount = listOfSelectedUsers.length;
+    final double distributedAmount = totalAmount / memberCount;
+
+    return {
+      for (var user in listOfSelectedUsers)
+        user.uid!: distributedAmount.toStringAsFixed(2),
+    };
+  }
+
+  Group _createGroupObject(
+      UserData userData, Map<String, String> membersBalance) {
+    return Group(
+      creatorId: userData.uid,
+      name: _nameController.text,
+      description: _descriptionController.text,
+      totalAmount: _amountController.text,
+      memberIds: selectedUserUid,
+      listOfMembers: listOfSelectedUsers,
+      membersBalance: membersBalance,
+      linkedBankAccountId: selectedBank?.bid,
+    );
+  }
+
+  Future<bool> _saveGroup(WidgetRef ref, Group group) async {
+    return await ref
+        .read(userFinanceDataNotifierProvider.notifier)
+        .createGroupProfile(groupProfile: group);
   }
 }

@@ -383,6 +383,7 @@ void showEditAmountBottomSheet(
   BankAccount? bankAccount,
   Wallet? wallet,
 }) {
+  UserFinanceData userFinanceData = ref.watch(userFinanceDataNotifierProvider);
   final TextEditingController amountController =
       TextEditingController(text: amount);
   showModalBottomSheet(
@@ -437,7 +438,12 @@ void showEditAmountBottomSheet(
                         .updateBankAccountBalance(
                           uid: userdata.uid ?? "",
                           bankAccountId: bankAccount?.bid ?? '',
-                          newBalance: amountController.text,
+                          availableBalance: amountController.text,
+                          totalBalance: userFinanceData.listOfBankAccounts!
+                              .firstWhere(
+                                  (account) => account.bid == bankAccount?.bid)
+                              .totalBalance
+                              .toString(),
                           bankAccount: bankAccount,
                           isBalanceAdjustment: true,
                         );

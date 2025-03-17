@@ -726,15 +726,19 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
       // Update bank account balance
       final bankAccount = userFinanceData.listOfBankAccounts
           ?.firstWhere((account) => account.bid == bankAccountId);
-      final updatedBalance =
+      final updatedAvailableBalance =
           (double.parse(bankAccount?.availableBalance ?? '0') + amount)
+              .toString();
+      final updatedTotalBalance =
+          (double.parse(bankAccount?.totalBalance ?? '0') + amount)
               .toString();
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateBankAccountBalance(
             uid: uid,
             bankAccountId: bankAccountId,
-            newBalance: updatedBalance,
+            availableBalance: updatedAvailableBalance,
+            totalBalance: updatedTotalBalance,
           );
     } else if (paymentMode == "Wallet" && walletId != null) {
       // Update wallet balance
