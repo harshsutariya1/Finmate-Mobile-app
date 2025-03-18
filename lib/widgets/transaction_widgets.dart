@@ -136,15 +136,15 @@ Widget transactionTile(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "${paymentMode1 ?? transaction.methodOfPayment} \n🔁",
+                                    "${paymentMode1 ?? transaction.methodOfPayment}",
                                     style: TextStyle(
                                       color: color1,
                                       fontSize: 16,
                                     ),
-                                    softWrap: true,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  Text("🔁"),
                                   Text(
                                     "${paymentMode2 ?? transaction.methodOfPayment2}",
                                     style: TextStyle(
@@ -193,7 +193,7 @@ Widget transactionTile(
                   (transaction.isTransferTransaction)
                       ? (double.parse(transaction.amount.toString()) < 0)
                           ? "⇄ ${transaction.amount}"
-                          : "⇄ +${transaction.amount}"
+                          : "⇄ ${transaction.amount}"
                       : (double.parse(transaction.amount.toString()) < 0)
                           ? transaction.amount.toString()
                           : "+${transaction.amount}",

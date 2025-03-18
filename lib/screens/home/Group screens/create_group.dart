@@ -1,6 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
+import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
@@ -289,7 +290,8 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
                   selectedBank: selectedBank?.bankAccountName ?? '',
                   onTapBank: (BankAccount bankAccount) {
                     setState(() {
-                      _paymentModeController.text = "Bank Account";
+                      _paymentModeController.text =
+                          PaymentModes.bankAccount.displayName;
                       selectedBank = bankAccount;
                     });
                     Navigator.pop(context);

@@ -58,12 +58,12 @@ CollectionReference<BankAccount> bankAccountsCollectionReference(String uid) {
       );
 }
 
-CollectionReference<Wallet> walletCollectionReference(String uid) {
-  return userCollection.doc(uid).collection("Wallets").withConverter(
-        fromFirestore: (snapshot, options) => Wallet.fromJson(snapshot.data()!),
-        toFirestore: (wallet, options) => wallet.toJson(),
-      );
-}
+// CollectionReference<Wallet> walletCollectionReference(String uid) {
+//   return userCollection.doc(uid).collection("Wallets").withConverter(
+//         fromFirestore: (snapshot, options) => Wallet.fromJson(snapshot.data()!),
+//         toFirestore: (wallet, options) => wallet.toJson(),
+//       );
+// }
 
 CollectionReference<Chat> groupChatCollection(String gid) {
   final collectionref =

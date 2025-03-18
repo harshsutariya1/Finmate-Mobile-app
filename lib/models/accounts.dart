@@ -25,7 +25,7 @@ class BankAccount {
   String? bid;
   String? bankAccountName;
   String? totalBalance;
-  String? availableBalance; // users available to use balance
+  String? availableBalance;
   List<String>? upiIds;
   List<String>? linkedGroupIds;
   Map<String, String>? groupsBalance;
@@ -81,48 +81,6 @@ class BankAccount {
       upiIds: upiIds ?? this.upiIds,
       linkedGroupIds: linkedGroupIds ?? this.linkedGroupIds,
       groupsBalance: groupsBalance ?? this.groupsBalance,
-    );
-  }
-}
-
-// _________________________________________________________________________ //
-
-class Wallet {
-  String? wid;
-  String? walletName;
-  String? balance;
-
-  Wallet({
-    this.wid = "",
-    this.walletName = "",
-    this.balance = "0",
-  });
-
-  factory Wallet.fromJson(Map<String, dynamic> json) {
-    return Wallet(
-      wid: json['wid'] ?? "",
-      walletName: json['walletName'] ?? "",
-      balance: json['balance'] ?? "0",
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'wid': wid,
-      'walletName': walletName,
-      'balance': balance,
-    };
-  }
-
-  Wallet copyWith({
-    String? wid,
-    String? walletName,
-    String? balance,
-  }) {
-    return Wallet(
-      wid: wid ?? this.wid,
-      walletName: walletName ?? this.walletName,
-      balance: balance ?? this.balance,
     );
   }
 }

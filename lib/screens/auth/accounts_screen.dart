@@ -32,7 +32,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
     Logger().i(
-        "Bank Accounts: ${userFinanceData.listOfBankAccounts?.length}\nWallets: ${userFinanceData.listOfWallets?.length}");
+        "Bank Accounts: ${userFinanceData.listOfBankAccounts?.length}");
 
     return Scaffold(
       backgroundColor: color4,
@@ -76,20 +76,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   bankAccountNameController.clear();
                   bankAccountBalanceController.clear();
                 });
-              },
-            ),
-            walletsContainer(
-              context: context,
-              ref: ref,
-              userdata: userData,
-              userFinanceData: userFinanceData,
-              walletNameController: walletNameController,
-              walletBalanceController: walletBalanceController,
-              clearControllers: () {
-                // setState(() {
-                //   walletNameController.clear();
-                //   walletBalanceController.clear();
-                // });
               },
             ),
             cashContainer(
@@ -220,115 +206,6 @@ Widget bankAccountContainer({
   ]);
 }
 
-Widget walletsContainer({
-  required BuildContext context,
-  required UserFinanceData userFinanceData,
-  WidgetRef? ref,
-  UserData? userdata,
-  TextEditingController? walletNameController,
-  TextEditingController? walletBalanceController,
-  bool isSelectable = false,
-  String selectedWallet = "",
-  void Function(Wallet)? onTapWallet,
-  void Function()? clearControllers,
-}) {
-  return borderedContainer([
-    Padding(
-      padding: const EdgeInsets.only(top: 15, left: 15, right: 15, bottom: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Wallets",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color1,
-            ),
-          ),
-          InkWell(
-            onTap: () {
-              if (isSelectable) {
-                Navigate().goBack();
-                Navigate().push(AccountsScreen());
-              } else {
-                showAddBankAndWalletBottomSheet(
-                  context,
-                  ref!,
-                  userdata!,
-                  userFinanceData,
-                  walletNameController!,
-                  walletBalanceController!,
-                  () => clearControllers,
-                );
-              }
-            },
-            child: Icon(
-              Icons.add_circle_outline_rounded,
-              color: color3,
-              size: 30,
-            ),
-          ),
-        ],
-      ),
-    ),
-    Divider(),
-    (userFinanceData.listOfWallets == null ||
-            userFinanceData.listOfWallets!.isEmpty)
-        ? Center(
-            child: Text("No wallets found!"),
-          )
-        : ListView.separated(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: userFinanceData.listOfWallets!.length,
-            separatorBuilder: (BuildContext context, int index) {
-              return sbh15;
-            },
-            itemBuilder: (BuildContext context, int index) {
-              final Wallet wallet = userFinanceData.listOfWallets![index];
-              return accountTile(
-                icon: Icons.wallet,
-                title: wallet.walletName ?? "Wallet",
-                subtitle: "Balance: ${wallet.balance ?? "0.0"} ₹",
-                trailingWidget: IconButton(
-                  onPressed: (isSelectable)
-                      ? () {
-                          onTapWallet!(wallet);
-                        }
-                      : () {
-                          showEditAmountBottomSheet(
-                            context,
-                            ref!,
-                            userdata!,
-                            isWallet: true,
-                            amount: wallet.balance ?? "0.0",
-                            wallet: wallet,
-                          );
-                        },
-                  icon: (isSelectable)
-                      ? Icon(
-                          (selectedWallet == wallet.walletName)
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          color: (selectedWallet == wallet.walletName)
-                              ? color3
-                              : color2,
-                          size: 28,
-                        )
-                      : Icon(
-                          Icons.more_vert_rounded,
-                          color: color3,
-                          size: 28,
-                        ),
-                ),
-              );
-            },
-          ),
-    sbh10,
-  ]);
-}
-
 Widget cashContainer({
   BuildContext? context,
   WidgetRef? ref,
@@ -381,7 +258,6 @@ void showEditAmountBottomSheet(
   bool isWallet = false,
   String amount = "0.0",
   BankAccount? bankAccount,
-  Wallet? wallet,
 }) {
   UserFinanceData userFinanceData = ref.watch(userFinanceDataNotifierProvider);
   final TextEditingController amountController =
@@ -445,17 +321,6 @@ void showEditAmountBottomSheet(
                               .totalBalance
                               .toString(),
                           bankAccount: bankAccount,
-                          isBalanceAdjustment: true,
-                        );
-                  }
-                  if (isWallet) {
-                    await ref
-                        .read(userFinanceDataNotifierProvider.notifier)
-                        .updateWalletBalance(
-                          uid: userdata.uid ?? "",
-                          walletId: wallet?.wid ?? "",
-                          newBalance: amountController.text,
-                          wallet: wallet,
                           isBalanceAdjustment: true,
                         );
                   }
@@ -554,77 +419,40 @@ void showAddBankAndWalletBottomSheet(
                       text: "Amount can not be Negative❗",
                       icon: Icons.error_outline);
                 } else {
-                  if (isAddingBank) {
-                    // bank name checking...
-                    if (userFinanceData.listOfBankAccounts != null &&
-                        userFinanceData.listOfBankAccounts!.any(
-                            (account) => account.bankAccountName == name)) {
-                      snackbarToast(
-                          context: contextt,
-                          text: "Bank Account with this name already exists❗",
-                          icon: Icons.error_outline);
-                    } else {
-                      validation = true;
-                    }
-                    if (validation) {
-                      // add bank account
-                      final BankAccount bankAccount = BankAccount(
-                        bid: name,
-                        bankAccountName: name,
-                        totalBalance: balance,
-                        availableBalance: balance,
-                      );
-                      if (await ref
-                          .read(userFinanceDataNotifierProvider.notifier)
-                          .addBankAccount(userdata.uid!, bankAccount, ref)) {
-                        snackbarToast(
-                            context: context,
-                            text: "Bank Account Added.",
-                            icon: Icons.done_all);
-                      } else {
-                        snackbarToast(
-                            context: context,
-                            text: "Error adding Bank Account ❗",
-                            icon: Icons.error_outline_rounded);
-                      }
-                      clearControllers();
-                      Navigate().goBack();
-                    }
+                  // bank name checking...
+                  if (userFinanceData.listOfBankAccounts != null &&
+                      userFinanceData.listOfBankAccounts!
+                          .any((account) => account.bankAccountName == name)) {
+                    snackbarToast(
+                        context: contextt,
+                        text: "Bank Account with this name already exists❗",
+                        icon: Icons.error_outline);
                   } else {
-                    // wallet name checking...
-                    if (userFinanceData.listOfWallets != null &&
-                        userFinanceData.listOfWallets!
-                            .any((wallet) => wallet.walletName == name)) {
+                    validation = true;
+                  }
+                  if (validation) {
+                    // add bank account
+                    final BankAccount bankAccount = BankAccount(
+                      bid: name,
+                      bankAccountName: name,
+                      totalBalance: balance,
+                      availableBalance: balance,
+                    );
+                    if (await ref
+                        .read(userFinanceDataNotifierProvider.notifier)
+                        .addBankAccount(userdata.uid!, bankAccount, ref)) {
                       snackbarToast(
-                          context: contextt,
-                          text: "Wallet with this name already exists❗",
-                          icon: Icons.error_outline);
+                          context: context,
+                          text: "Bank Account Added.",
+                          icon: Icons.done_all);
                     } else {
-                      validation = true;
+                      snackbarToast(
+                          context: context,
+                          text: "Error adding Bank Account ❗",
+                          icon: Icons.error_outline_rounded);
                     }
-                    if (validation) {
-                      // add wallet account
-                      final Wallet wallet = Wallet(
-                        wid: name,
-                        walletName: name,
-                        balance: balance,
-                      );
-                      if (await ref
-                          .read(userFinanceDataNotifierProvider.notifier)
-                          .addWallet(userdata.uid!, wallet, ref)) {
-                        snackbarToast(
-                            context: context,
-                            text: "Wallet Added.",
-                            icon: Icons.done_all);
-                      } else {
-                        snackbarToast(
-                            context: context,
-                            text: "Error adding Wallet ❗",
-                            icon: Icons.error_outline_rounded);
-                      }
-                      clearControllers();
-                      Navigate().goBack();
-                    }
+                    clearControllers();
+                    Navigate().goBack();
                   }
                 }
                 clearControllers();

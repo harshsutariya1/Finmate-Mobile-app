@@ -33,6 +33,9 @@ Widget settingsTile({
   bool isLanguageTile = false,
   bool isThemeTile = false,
   bool isLogoutTile = false,
+  bool isSufixIcon = false,
+  IconData? sufixIcon,
+  void Function()? onSufixTap,
   void Function()? onTap,
 }) {
   return ListTile(
@@ -48,11 +51,17 @@ Widget settingsTile({
         fontWeight: (isLogoutTile) ? FontWeight.bold : null,
       ),
     ),
-    trailing: (isLanguageTile)
-        ? trailingText("English")
-        : (isThemeTile)
-            ? trailingText("Light Mode")
-            : null,
+    trailing: (isSufixIcon)
+        ? IconButton(
+            icon: Icon(sufixIcon),
+            color: color3,
+            onPressed: onSufixTap,
+          )
+        : (isLanguageTile)
+            ? trailingText("English")
+            : (isThemeTile)
+                ? trailingText("Light Mode")
+                : null,
     onTap: onTap ?? () {},
   );
 }

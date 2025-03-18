@@ -23,7 +23,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     List<Transaction> transactions = [];
     List<Group> groups = [];
     List<BankAccount> bankAccounts = [];
-    List<Wallet> wallets = [];
+    // List<Wallet> wallets = [];
     Cash? cash = Cash();
     try {
       // fetch user transactions data
@@ -41,13 +41,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       await bankAccountsCollectionReference(uid).get().then((value) {
         for (var doc in value.docs) {
           bankAccounts.add(doc.data());
-        }
-      });
-
-      // fetch wallets data
-      await walletCollectionReference(uid).get().then((value) {
-        for (var doc in value.docs) {
-          wallets.add(doc.data());
         }
       });
 
@@ -79,11 +72,11 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           listOfGroups: groups,
           listOfUserTransactions: transactions,
           listOfBankAccounts: bankAccounts,
-          listOfWallets: wallets,
+          // listOfWallets: wallets,
           cash: cash,
         );
         logger.i(
-            "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfUserTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length} \nBank Accounts: ${state.listOfBankAccounts?.length} \nWallets: ${state.listOfWallets?.length}");
+            "✅ User Finance data fetched successfully. \nTransactions: ${state.listOfUserTransactions?.length} \nCash Amount: ${state.cash?.amount} \nGroups: ${state.listOfGroups?.length} \nBank Accounts: ${state.listOfBankAccounts?.length}");
       });
 
       return true;
@@ -142,8 +135,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String totalBalance,
     required String availableBalance,
     BankAccount? bankAccount,
+    Map<String, String>? groupsBalance,
     bool isBalanceAdjustment = false,
-     bool isTransferField = false,
   }) async {
     try {
       // adjustmentAmount = newAmount - currentAmount
@@ -153,6 +146,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       final String adjustmentTotalAmount =
           (double.parse(totalBalance) + double.parse(adjustmentAmount))
               .toString();
+
       if (isBalanceAdjustment) {
         await addTransactionToUserData(
           uid: uid,
@@ -174,7 +168,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       await bankAccountsCollectionReference(uid).doc(bankAccountId).update({
         'availableBalance': availableBalance,
         'totalBalance':
-            (isBalanceAdjustment) ? adjustmentTotalAmount : totalBalance
+            (isBalanceAdjustment) ? adjustmentTotalAmount : totalBalance,
+        'groupsBalance': groupsBalance ?? bankAccount?.groupsBalance,
       });
 
       // Update the balance in the local state
@@ -184,6 +179,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             availableBalance: availableBalance,
             totalBalance:
                 (isBalanceAdjustment) ? adjustmentTotalAmount : totalBalance,
+            groupsBalance: groupsBalance ?? bankAccount.groupsBalance,
           );
         }
         return bankAccount;
@@ -195,58 +191,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return true;
     } catch (e) {
       logger.w("❌ Error updating bank account balance: $e");
-      return false;
-    }
-  }
-
-  Future<bool> updateWalletBalance({
-    required String uid,
-    required String walletId,
-    required String newBalance,
-    Wallet? wallet,
-    bool isBalanceAdjustment = false,
-  }) async {
-    try {
-      if (isBalanceAdjustment) {
-        // adjustmentAmount = newAmount - currentAmount
-        final String adjustmentAmount =
-            (double.parse(newBalance) - double.parse(wallet?.balance ?? '0'))
-                .toString();
-        await addTransactionToUserData(
-          uid: uid,
-          transactionData: Transaction(
-            uid: uid,
-            amount: adjustmentAmount,
-            description: "Wallet Balance Adjustment",
-            category: TransactionCategory.balanceAdjustment.displayName,
-            methodOfPayment: PaymentModes.wallet.displayName,
-            bankAccountId: walletId,
-            type: (double.parse(adjustmentAmount).isNegative)
-                ? TransactionType.expense
-                : TransactionType.income,
-          ),
-        );
-      }
-
-      // Update the balance in Firestore
-      await walletCollectionReference(uid)
-          .doc(walletId)
-          .update({'balance': newBalance});
-
-      // Update the balance in the local state
-      final updatedWallets = state.listOfWallets?.map((wallet) {
-        if (wallet.wid == walletId) {
-          return wallet.copyWith(balance: newBalance);
-        }
-        return wallet;
-      }).toList();
-
-      state = state.copyWith(listOfWallets: updatedWallets);
-
-      logger.i("✅ Wallet balance updated successfully.");
-      return true;
-    } catch (e) {
-      logger.w("❌ Error updating wallet balance: $e");
       return false;
     }
   }
@@ -314,6 +258,70 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     } catch (e) {
       Logger().i("Error updating group members: $e");
+      return false;
+    }
+  }
+
+  Future<bool> linkBankAccountToGroup({
+    required String uid,
+    required String bankAccountId,
+    required String groupId,
+    required String groupBalance,
+  }) async {
+    final firestore.WriteBatch batch =
+        firestore.FirebaseFirestore.instance.batch();
+    try {
+      // Fetch the bank account from the state
+      final BankAccount? bankAccount = state.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+
+      if (bankAccount == null) {
+        logger.w("Bank account with ID $bankAccountId not found.");
+        return false;
+      }
+
+      // Update the group's balance in the bank account
+      final updatedGroupsBalance = {
+        ...?bankAccount.groupsBalance,
+        groupId: groupBalance,
+      };
+
+      // Update Firestore
+      final bankAccountDocRef =
+          bankAccountsCollectionReference(uid).doc(bankAccountId);
+      final groupDocRef = groupsCollection.doc(groupId);
+
+      batch.update(bankAccountDocRef, {'groupsBalance': updatedGroupsBalance});
+      batch.update(groupDocRef, {'linkedBankAccountId': bankAccountId});
+
+      // Commit the batch
+      await batch.commit();
+
+      // Update the bank account in the local state
+      final updatedBankAccounts = state.listOfBankAccounts?.map((account) {
+        if (account.bid == bankAccountId) {
+          return account.copyWith(groupsBalance: updatedGroupsBalance);
+        }
+        return account;
+      }).toList();
+
+      // Update the linkedBankAccountId in the Group class
+      final updatedGroups = state.listOfGroups?.map((group) {
+        if (group.gid == groupId) {
+          return group.copyWith(linkedBankAccountId: bankAccountId);
+        }
+        return group;
+      }).toList();
+
+      state = state.copyWith(
+        listOfBankAccounts: updatedBankAccounts,
+        listOfGroups: updatedGroups,
+      );
+
+      logger.i("✅ Bank account linked to group successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error linking bank account to group: $e");
       return false;
     }
   }
@@ -388,43 +396,61 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required Transaction transactionData,
   }) async {
     try {
+// Initialize a Firestore batch to perform atomic operations
       final batch = firestore.FirebaseFirestore.instance.batch();
-      final Transaction userTransactionIndividual = transactionData;
+
+      // Prepare different transaction objects for user and group collections
+      final Transaction userTransactionIndividual =
+          transactionData; // For non-group transactions
       final userTransaction1 = transactionData.copyWith(
-        amount: transactionData.amount,
+        amount: transactionData.amount, // For user collection (positive amount)
       );
       final groupTransaction1 = transactionData.copyWith(
-        amount: (-double.parse(transactionData.amount ?? "0.0")).toString(),
+        amount: (-double.parse(transactionData.amount ?? "0.0"))
+            .toString(), // For group collection (negative amount)
       );
       final userTransaction2 = transactionData.copyWith(
-        amount: (-double.parse(transactionData.amount ?? "0.0")).toString(),
+        amount: (-double.parse(transactionData.amount ?? "0.0"))
+            .toString(), // For user collection (negative amount)
       );
       final groupTransaction2 = transactionData.copyWith(
-        amount: transactionData.amount,
+        amount:
+            transactionData.amount, // For group collection (positive amount)
       );
+
+// Check if the transaction is not a group transaction
       if (!transactionData.isGroupTransaction) {
+        // Add the transaction to the user's collection
         final userTransactionRef = userTransactionsCollection(uid).doc();
         batch.set(userTransactionRef, userTransactionIndividual);
         batch.update(userTransactionRef, {'tid': userTransactionRef.id});
         userTransactionIndividual.tid = userTransactionRef.id;
       } else {
+        // Handle group transactions
         if (transactionData.methodOfPayment == PaymentModes.group.displayName) {
+          // Case 1: Payment Mode 1 is a group
+          // Add the transaction with a negative amount to the group collection
           final groupTransactionRef =
               groupTansactionCollection(transactionData.gid ?? "").doc();
           batch.set(groupTransactionRef, groupTransaction1);
           batch.update(groupTransactionRef, {'tid': groupTransactionRef.id});
           groupTransaction1.tid = groupTransactionRef.id;
 
+          // Add the transaction with a positive amount to the user's collection
           final userTransactionRef = userTransactionsCollection(uid).doc();
           batch.set(userTransactionRef, userTransaction1);
           batch.update(userTransactionRef, {'tid': userTransactionRef.id});
           userTransaction1.tid = userTransactionRef.id;
         } else if (transactionData.methodOfPayment2 ==
             PaymentModes.group.displayName) {
+          // Case 2: Payment Mode 2 is a group
+          // Add the transaction with a negative amount to the user's collection
           final userTransactionRef = userTransactionsCollection(uid).doc();
           batch.set(userTransactionRef, userTransaction2);
           batch.update(userTransactionRef, {'tid': userTransactionRef.id});
           userTransaction2.tid = userTransactionRef.id;
+
+          // Add the transaction with a positive amount to the group collection
           final groupTransactionRef =
               groupTansactionCollection(transactionData.gid2 ?? "").doc();
           batch.set(groupTransactionRef, transactionData);
@@ -434,17 +460,19 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         }
       }
 
-      // Commit the batch
+      // Commit the batch to Firestore
       await batch.commit();
 
+// Update the local state after a successful batch commit
       if (!transactionData.isGroupTransaction) {
-        // Update provider state
+        // Update the user's transaction list in the state
         final List<Transaction>? listOfUserTransactions =
             state.listOfUserTransactions?.toList();
         listOfUserTransactions?.add(userTransactionIndividual);
         state = state.copyWith(listOfUserTransactions: listOfUserTransactions);
       } else {
         if (transactionData.methodOfPayment == PaymentModes.group.displayName) {
+          // Update the user's transaction list and the group's transaction list in the state
           final List<Transaction>? listOfUserTransactions =
               state.listOfUserTransactions?.toList();
           listOfUserTransactions?.add(userTransaction1);
@@ -458,6 +486,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           state = state.copyWith(listOfGroups: listOfGroups);
         } else if (transactionData.methodOfPayment2 ==
             PaymentModes.group.displayName) {
+          // Update the user's transaction list and the group's transaction list in the state
           final List<Transaction>? listOfUserTransactions =
               state.listOfUserTransactions?.toList();
           listOfUserTransactions?.add(userTransaction2);
@@ -565,9 +594,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         if (uid.isNotEmpty && bankAccount.bankAccountName!.isNotEmpty) {
           // add bank account to firestore
           final bankAccountColRef = bankAccountsCollectionReference(uid);
-          await bankAccountColRef
-              .doc(bankAccount.bankAccountName)
-              .set(bankAccount);
+          await bankAccountColRef.doc().set(bankAccount);
           // add bank account to state provider
           state = state.copyWith(
             listOfBankAccounts: [
@@ -585,34 +612,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return true;
     } catch (e) {
       Logger().w("❗Error adding Bank Account: $e");
-      return false;
-    }
-  }
-
-  Future<bool> addWallet(String uid, Wallet wallet, WidgetRef ref) async {
-    try {
-      if (wallet.walletName != null) {
-        if (uid.isNotEmpty && wallet.walletName!.isNotEmpty) {
-          // add wallet to firestore
-          final walletColRef = walletCollectionReference(uid);
-          await walletColRef.doc(wallet.walletName).set(wallet);
-          // add wallet to state provider
-          state = state.copyWith(
-            listOfWallets: [
-              ...?state.listOfWallets,
-              wallet,
-            ],
-          );
-        } else {
-          throw Exception("Uid or Wallet Name fields are empty");
-        }
-      } else {
-        Logger().w("❗Error wallet name cannot be null");
-        throw ArgumentError("Wallet name cannot be null");
-      }
-      return true;
-    } catch (e) {
-      Logger().w("❗Error adding Wallet: $e");
       return false;
     }
   }

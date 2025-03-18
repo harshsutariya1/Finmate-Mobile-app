@@ -26,7 +26,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController =
-      TextEditingController(text: "Transfer");
+      TextEditingController(text: TransactionCategory.transfer.displayName);
   final TextEditingController _paymentModeOneController =
       TextEditingController();
   final TextEditingController _paymentModeTwoController =
@@ -40,11 +40,9 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
 
   Group? selectedGroup1;
   BankAccount? selectedBank1;
-  Wallet? selectedWallet1;
 
   Group? selectedGroup2;
   BankAccount? selectedBank2;
-  Wallet? selectedWallet2;
 
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
@@ -64,7 +62,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: 20,
+          spacing: 10,
           children: [
             _dateTimePicker(),
             _amountField(),
@@ -250,26 +248,28 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               leading: const Icon(Icons.account_balance),
               title: Text(selectedBank1!.bankAccountName ?? "Bank Account"),
               subtitle: Text(
-                  "Total Balance: ${selectedBank1!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank1!.availableBalance ?? '0'}"),
+                  "Total Balance: ${selectedBank1!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank1!.availableBalance ?? '0'} \n${(selectedGroup2 != null && (selectedGroup2?.linkedBankAccountId == selectedBank1?.bid)) ? 'Available Group Balances: ${selectedBank1!.groupsBalance?[selectedGroup2?.gid] ?? '0'}' : ''}"),
             ),
           if (!isPaymentModeOne && selectedBank2 != null)
             ListTile(
               leading: const Icon(Icons.account_balance),
               title: Text(selectedBank2!.bankAccountName ?? "Bank Account"),
               subtitle: Text(
-                  "Total Balance: ${selectedBank2!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank2!.availableBalance ?? '0'}"),
+                  "Total Balance: ${selectedBank2!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank2!.availableBalance ?? '0'} \n${(selectedGroup1 != null && (selectedGroup1?.linkedBankAccountId == selectedBank2?.bid)) ? 'Available Group Balance: ${selectedBank2!.groupsBalance?[selectedGroup1?.gid] ?? '0'}' : ''}"),
             ),
-          if (isPaymentModeOne && selectedWallet1 != null)
+          if (isPaymentModeOne &&
+              _paymentModeOneController.text == PaymentModes.cash.displayName)
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: Text(selectedWallet1!.walletName ?? "Wallet"),
-              subtitle: Text("Balance: ${selectedWallet1!.balance ?? '0'}"),
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text("Cash"),
+              subtitle: Text("Balance: ${userFinanceData.cash?.amount ?? '0'}"),
             ),
-          if (!isPaymentModeOne && selectedWallet2 != null)
+          if (!isPaymentModeOne &&
+              _paymentModeTwoController.text == PaymentModes.cash.displayName)
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: Text(selectedWallet2!.walletName ?? "Wallet"),
-              subtitle: Text("Balance: ${selectedWallet2!.balance ?? '0'}"),
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text("Cash"),
+              subtitle: Text("Balance: ${userFinanceData.cash?.amount ?? '0'}"),
             ),
         ],
       ],
@@ -306,7 +306,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                                 PaymentModes.bankAccount.displayName)
                             ? bankAccount
                             : null;
-                        selectedWallet1 = null;
                       } else {
                         _paymentModeTwoController.text =
                             PaymentModes.bankAccount.displayName;
@@ -314,37 +313,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                                 PaymentModes.bankAccount.displayName)
                             ? bankAccount
                             : null;
-                        selectedWallet2 = null;
-                      }
-                    });
-                    Navigator.pop(context);
-                  },
-                ),
-                walletsContainer(
-                  context: context,
-                  userFinanceData: userFinanceData,
-                  isSelectable: true,
-                  selectedWallet: (isPaymentModeOne)
-                      ? selectedWallet1?.walletName ?? ''
-                      : selectedWallet2?.walletName ?? '',
-                  onTapWallet: (Wallet wallet) {
-                    setState(() {
-                      if (isPaymentModeOne) {
-                        _paymentModeOneController.text =
-                            PaymentModes.wallet.displayName;
-                        selectedWallet1 = (_paymentModeOneController.text ==
-                                PaymentModes.wallet.displayName)
-                            ? wallet
-                            : null;
-                        selectedBank1 = null;
-                      } else {
-                        _paymentModeTwoController.text =
-                            PaymentModes.wallet.displayName;
-                        selectedWallet2 = (_paymentModeTwoController.text ==
-                                PaymentModes.wallet.displayName)
-                            ? wallet
-                            : null;
-                        selectedBank2 = null;
                       }
                     });
                     Navigator.pop(context);
@@ -364,12 +332,10 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                         _paymentModeOneController.text =
                             PaymentModes.cash.displayName;
                         selectedBank1 = null;
-                        selectedWallet1 = null;
                       } else {
                         _paymentModeTwoController.text =
                             PaymentModes.cash.displayName;
                         selectedBank2 = null;
-                        selectedWallet2 = null;
                       }
                     });
                     Navigator.pop(context);
@@ -388,10 +354,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     UserFinanceData userFinanceData,
     bool isPaymentModeOne,
   ) {
-    // final List<Group> listOfUserGroups = userFinanceData.listOfGroups
-    //         ?.where((group) => group.creatorId == userData.uid)
-    //         .toList() ??
-    //     [];
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -401,8 +363,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           padding: const EdgeInsets.all(20),
           child: Wrap(
             spacing: 8.0,
-            children: /*((isPaymentModeOne) ? listOfUserGroups : groupList)*/
-                groupList.map((group) {
+            children: groupList.map((group) {
               return ChoiceChip(
                 label: Text(group.name ?? ""),
                 selected: isPaymentModeOne
@@ -435,12 +396,10 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
       _paymentModeOneController.clear();
       selectedGroup1 = null;
       selectedBank1 = null;
-      selectedWallet1 = null;
     } else {
       _paymentModeTwoController.clear();
       selectedGroup2 = null;
       selectedBank2 = null;
-      selectedWallet2 = null;
     }
   }
 
@@ -531,9 +490,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
 
     // Ensure selected payment modes are not the same entity
     if (isPaymentModeOneGroup && isPaymentModeTwoGroup) {
-      // if (selectedGroup1?.gid == selectedGroup2?.gid) {
       return "Can not Transfer from one group to another.";
-      // }
     } else if (!isPaymentModeOneGroup && !isPaymentModeTwoGroup) {
       if (paymentMode1 == "Cash" && paymentMode2 == "Cash") {
         return "Both payment modes cannot be Cash.";
@@ -542,11 +499,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           paymentMode2 == "Bank Account" &&
           selectedBank1?.bid == selectedBank2?.bid) {
         return "Selected bank accounts cannot be the same.";
-      }
-      if (paymentMode1 == "Wallet" &&
-          paymentMode2 == "Wallet" &&
-          selectedWallet1?.wid == selectedWallet2?.wid) {
-        return "Selected wallets cannot be the same.";
       }
     }
 
@@ -559,11 +511,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     if (paymentMode1 == "Bank Account" &&
         amount > double.parse(selectedBank1?.availableBalance ?? '0')) {
       return "Insufficient bank account balance.";
-    }
-
-    if (paymentMode1 == "Wallet" &&
-        amount > double.parse(selectedWallet1?.balance ?? '0')) {
-      return "Insufficient wallet balance.";
     }
 
     // add validation for groups here
@@ -599,8 +546,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     final paymentMode2 = _paymentModeTwoController.text.trim();
     final bankAccountId1 = selectedBank1?.bid;
     final bankAccountId2 = selectedBank2?.bid;
-    final walletId1 = selectedWallet1?.wid;
-    final walletId2 = selectedWallet2?.wid;
     final groupId1 = selectedGroup1?.gid;
     final groupName = selectedGroup1?.name;
     final groupId2 = selectedGroup2?.gid;
@@ -614,8 +559,6 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
         "Payment Mode 2: $paymentMode2\n"
         "Bank Account ID 1: $bankAccountId1\n"
         "Bank Account ID 2: $bankAccountId2\n"
-        "Wallet ID 1: $walletId1\n"
-        "Wallet ID 2: $walletId2\n"
         "Group ID 1: $groupId1\n"
         "Group Name 1: $groupName\n"
         "Group ID 2: $groupId2\n"
@@ -637,12 +580,10 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
       groupName: groupName,
       type: TransactionType.transfer,
       bankAccountId: bankAccountId1,
-      walletId: walletId1,
       isTransferTransaction: true,
       gid2: isPaymentModeTwoGroup ? groupId2 : null,
       groupName2: groupName2,
       bankAccountId2: bankAccountId2,
-      walletId2: walletId2,
     );
   }
 
@@ -652,124 +593,731 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     WidgetRef ref,
     UserFinanceData userFinanceData,
   ) async {
-    // save transaction to firestore and provider state
-    final success = await ref
-        .read(userFinanceDataNotifierProvider.notifier)
-        .addTransferTransactionToUserData(
+    try {
+      // Save transaction to Firestore and provider state
+      final success = await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .addTransferTransactionToUserData(
+            uid: uid,
+            transactionData: transactionData,
+          );
+
+      if (success) {
+        // Update balances based on payment modes
+        await _updateBalances(
           uid: uid,
           transactionData: transactionData,
+          ref: ref,
+          userFinanceData: userFinanceData,
         );
+      }
 
-    if (success) {
-      // Update balances based on payment modes
-      await _updateBalances(uid, transactionData, ref, userFinanceData);
+      return success;
+    } catch (e, stackTrace) {
+      Logger()
+          .e("Error in _saveTransaction:", error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to save transaction.", Icons.error);
+      return false;
     }
-
-    return success;
   }
 
-  Future<void> _updateBalances(
-    String uid,
-    Transaction transactionData,
-    WidgetRef ref,
-    UserFinanceData userFinanceData,
-  ) async {
-    final amount = double.parse(transactionData.amount ?? "0");
+// __________________________________________________________________________ //
 
-    // Update balance for Payment Mode 1
-    await _updatePaymentModeBalance(
-      uid: uid,
-      paymentMode: transactionData.methodOfPayment,
-      bankAccountId: transactionData.bankAccountId,
-      walletId: transactionData.walletId,
-      groupId: transactionData.gid,
-      amount: -amount, // Deduct amount for Payment Mode 1
-      ref: ref,
-      userFinanceData: userFinanceData,
-    );
-
-    // Update balance for Payment Mode 2
-    await _updatePaymentModeBalance(
-      uid: uid,
-      paymentMode: transactionData.methodOfPayment2,
-      bankAccountId: transactionData.bankAccountId2,
-      walletId: transactionData.walletId2,
-      groupId: transactionData.gid2,
-      amount: amount, // Add amount for Payment Mode 2
-      ref: ref,
-      userFinanceData: userFinanceData,
-    );
-  }
-
-  Future<void> _updatePaymentModeBalance({
+  Future<void> _updateBalances({
     required String uid,
-    required String? paymentMode,
-    required String? bankAccountId,
-    required String? walletId,
-    required String? groupId,
+    required Transaction transactionData,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
+      final double amount = double.parse(transactionData.amount ?? "0");
+
+      // Determine the payment modes and call the appropriate handler
+      if (transactionData.methodOfPayment ==
+              PaymentModes.bankAccount.displayName &&
+          transactionData.methodOfPayment2 ==
+              PaymentModes.bankAccount.displayName) {
+        // Bank to Bank
+        await _handleBankToBankTransfer(
+          uid: uid,
+          bankAccountId1: transactionData.bankAccountId ?? '',
+          bankAccountId2: transactionData.bankAccountId2 ?? "",
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.bankAccount.displayName &&
+          transactionData.methodOfPayment2 == PaymentModes.cash.displayName) {
+        // Bank to Cash
+        await _handleBankToCashTransfer(
+          uid: uid,
+          bankAccountId: transactionData.bankAccountId,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.cash.displayName &&
+          transactionData.methodOfPayment2 ==
+              PaymentModes.bankAccount.displayName) {
+        // Cash to Bank
+        await _handleCashToBankTransfer(
+          uid: uid,
+          bankAccountId: transactionData.bankAccountId2,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.group.displayName &&
+          transactionData.methodOfPayment2 == PaymentModes.cash.displayName) {
+        // Group to Cash
+        await _handleGroupToCashTransfer(
+          uid: uid,
+          groupId: transactionData.gid,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.cash.displayName &&
+          transactionData.methodOfPayment2 == PaymentModes.group.displayName) {
+        // Cash to Group
+        await _handleCashToGroupTransfer(
+          uid: uid,
+          groupId: transactionData.gid2,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.bankAccount.displayName &&
+          transactionData.methodOfPayment2 == PaymentModes.group.displayName) {
+        // Bank to Group
+        await _handleBankToGroupTransfer(
+          uid: uid,
+          bankAccountId: transactionData.bankAccountId,
+          groupId: transactionData.gid2,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else if (transactionData.methodOfPayment ==
+              PaymentModes.group.displayName &&
+          transactionData.methodOfPayment2 ==
+              PaymentModes.bankAccount.displayName) {
+        // Group to Bank
+        await _handleGroupToBankTransfer(
+          uid: uid,
+          bankAccountId: transactionData.bankAccountId2,
+          groupId: transactionData.gid,
+          amount: amount,
+          ref: ref,
+          userFinanceData: userFinanceData,
+        );
+      } else {
+        throw Exception("Unsupported payment mode combination.");
+      }
+    } catch (e, stackTrace) {
+      Logger().e("Error in _updateBalances:", error: e, stackTrace: stackTrace);
+      _showSnackbar("An error occurred while updating balances.", Icons.error);
+    }
+  }
+
+  Future<void> _handleBankToBankTransfer({
+    required String uid,
+    required String bankAccountId1,
+    required String bankAccountId2,
     required double amount,
     required WidgetRef ref,
     required UserFinanceData userFinanceData,
   }) async {
-    if (paymentMode == "Cash") {
-      // Update cash balance
+    try {
+      final bankAccount1 = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId1);
+      final bankAccount2 = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId2);
+
+      if (bankAccount1 == null || bankAccount2 == null) {
+        throw Exception("Bank accounts not found.");
+      }
+
+      final updatedAvailableBalance1 =
+          (double.parse(bankAccount1.availableBalance ?? '0') - amount)
+              .toString();
+      final updatedTotalBalance1 =
+          (double.parse(bankAccount1.totalBalance ?? '0') - amount).toString();
+
+      final updatedAvailableBalance2 =
+          (double.parse(bankAccount2.availableBalance ?? '0') + amount)
+              .toString();
+      final updatedTotalBalance2 =
+          (double.parse(bankAccount2.totalBalance ?? '0') + amount).toString();
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateBankAccountBalance(
+            uid: uid,
+            bankAccountId: bankAccountId1,
+            availableBalance: updatedAvailableBalance1,
+            totalBalance: updatedTotalBalance1,
+          );
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateBankAccountBalance(
+            uid: uid,
+            bankAccountId: bankAccountId2,
+            availableBalance: updatedAvailableBalance2,
+            totalBalance: updatedTotalBalance2,
+          );
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleBankToBankTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer between bank accounts.", Icons.error);
+    }
+  }
+
+  Future<void> _handleBankToCashTransfer({
+    required String uid,
+    required String? bankAccountId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
+      final bankAccount = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+
+      if (bankAccount == null) {
+        throw Exception("Bank account not found.");
+      }
+
+      final updatedAvailableBalance =
+          (double.parse(bankAccount.availableBalance ?? '0') - amount)
+              .toString();
+      final updatedTotalBalance =
+          (double.parse(bankAccount.totalBalance ?? '0') - amount).toString();
       final updatedCashAmount =
           (double.parse(userFinanceData.cash?.amount ?? '0') + amount)
               .toString();
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateBankAccountBalance(
+            uid: uid,
+            bankAccountId: bankAccountId!,
+            availableBalance: updatedAvailableBalance,
+            totalBalance: updatedTotalBalance,
+          );
+
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateUserCashAmount(
             uid: uid,
             amount: updatedCashAmount,
           );
-    } else if (paymentMode == "Bank Account" && bankAccountId != null) {
-      // Update bank account balance
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleBankToCashTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from bank to cash.", Icons.error);
+    }
+  }
+
+  Future<void> _handleCashToBankTransfer({
+    required String uid,
+    required String? bankAccountId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
       final bankAccount = userFinanceData.listOfBankAccounts
           ?.firstWhere((account) => account.bid == bankAccountId);
+
+      if (bankAccount == null) {
+        throw Exception("Bank account not found.");
+      }
+
       final updatedAvailableBalance =
-          (double.parse(bankAccount?.availableBalance ?? '0') + amount)
+          (double.parse(bankAccount.availableBalance ?? '0') + amount)
               .toString();
       final updatedTotalBalance =
-          (double.parse(bankAccount?.totalBalance ?? '0') + amount)
+          (double.parse(bankAccount.totalBalance ?? '0') + amount).toString();
+      final updatedCashAmount =
+          (double.parse(userFinanceData.cash?.amount ?? '0') - amount)
               .toString();
+
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateBankAccountBalance(
             uid: uid,
-            bankAccountId: bankAccountId,
+            bankAccountId: bankAccountId!,
             availableBalance: updatedAvailableBalance,
             totalBalance: updatedTotalBalance,
           );
-    } else if (paymentMode == "Wallet" && walletId != null) {
-      // Update wallet balance
-      final wallet = userFinanceData.listOfWallets
-          ?.firstWhere((wallet) => wallet.wid == walletId);
-      final updatedBalance =
-          (double.parse(wallet?.balance ?? '0') + amount).toString();
+
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
-          .updateWalletBalance(
+          .updateUserCashAmount(
             uid: uid,
-            walletId: walletId,
-            newBalance: updatedBalance,
+            amount: updatedCashAmount,
           );
-    } else if (paymentMode == "Group" && groupId != null) {
-      // Update group balance
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleCashToBankTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from cash to bank.", Icons.error);
+    }
+  }
+
+  Future<void> _handleGroupToCashTransfer({
+    required String uid,
+    required String? groupId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
       final group = userFinanceData.listOfGroups
           ?.firstWhere((group) => group.gid == groupId);
-      final updatedGroupAmount =
-          (double.parse(group?.totalAmount ?? '0') + amount).toString();
-      final updatedMemberAmount =
-          (double.parse(group?.membersBalance?[uid] ?? '0') + amount)
+
+      if (group == null) {
+        throw Exception("Group not found.");
+      }
+
+      final updatedGroupTotalAmount =
+          (double.parse(group.totalAmount ?? '0') - amount).toString();
+      final updatedMemberBalance =
+          (double.parse(group.membersBalance?[uid] ?? '0') - amount).toString();
+      final updatedCashAmount =
+          (double.parse(userFinanceData.cash?.amount ?? '0') + amount)
               .toString();
+
       await ref
           .read(userFinanceDataNotifierProvider.notifier)
           .updateGroupAmount(
-            gid: groupId,
-            amount: updatedGroupAmount,
+            gid: groupId!,
+            amount: updatedGroupTotalAmount,
             uid: uid,
-            memberAmount: updatedMemberAmount,
+            memberAmount: updatedMemberBalance,
           );
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateUserCashAmount(
+            uid: uid,
+            amount: updatedCashAmount,
+          );
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleGroupToCashTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from group to cash.", Icons.error);
+    }
+  }
+
+  Future<void> _handleCashToGroupTransfer({
+    required String uid,
+    required String? groupId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
+      final group = userFinanceData.listOfGroups
+          ?.firstWhere((group) => group.gid == groupId);
+
+      if (group == null) {
+        throw Exception("Group not found.");
+      }
+
+      final updatedGroupTotalAmount =
+          (double.parse(group.totalAmount ?? '0') + amount).toString();
+      final updatedMemberBalance =
+          (double.parse(group.membersBalance?[uid] ?? '0') + amount).toString();
+      final updatedCashAmount =
+          (double.parse(userFinanceData.cash?.amount ?? '0') - amount)
+              .toString();
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateGroupAmount(
+            gid: groupId!,
+            amount: updatedGroupTotalAmount,
+            uid: uid,
+            memberAmount: updatedMemberBalance,
+          );
+
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .updateUserCashAmount(
+            uid: uid,
+            amount: updatedCashAmount,
+          );
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleCashToGroupTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from cash to group.", Icons.error);
+    }
+  }
+
+  Future<void> _handleGroupToBankTransfer({
+    required String uid,
+    required String? bankAccountId,
+    required String? groupId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
+      final bankAccount = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+      final group = userFinanceData.listOfGroups
+          ?.firstWhere((group) => group.gid == groupId);
+
+      if (bankAccount == null || group == null) {
+        throw Exception("Bank account or group not found.");
+      }
+
+      final isAdmin = group.creatorId == uid;
+      final isBankLinked =
+          bankAccount.linkedGroupIds?.contains(groupId) ?? false;
+
+      if (isBankLinked) {
+        // Case 1: Group is linked to the bank
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') - amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') - amount)
+                .toString();
+        final updatedGroupBalance =
+            (double.parse(bankAccount.groupsBalance?[groupId] ?? '0') - amount)
+                .toString();
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') + amount)
+                .toString();
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId!,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+          uid: uid,
+          bankAccountId: bankAccountId!,
+          availableBalance: updatedAvailableBalance,
+          totalBalance: bankAccount.totalBalance ?? '0',
+          groupsBalance: {
+            ...bankAccount.groupsBalance!,
+            groupId: updatedGroupBalance,
+          },
+        );
+      } else if (isAdmin) {
+        // Case 2: Group is not linked, and user is admin
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') - amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') - amount)
+                .toString();
+
+        final linkedBankAccount = userFinanceData.listOfBankAccounts
+            ?.firstWhere((account) => account.bid == group.linkedBankAccountId);
+
+        if (linkedBankAccount != null) {
+          final updatedLinkedBankTotalBalance =
+              (double.parse(linkedBankAccount.totalBalance ?? '0') - amount)
+                  .toString();
+          final updatedLinkedBankGroupBalance =
+              (double.parse(linkedBankAccount.groupsBalance?[groupId] ?? '0') -
+                      amount)
+                  .toString();
+
+          await ref
+              .read(userFinanceDataNotifierProvider.notifier)
+              .updateBankAccountBalance(
+            uid: uid,
+            bankAccountId: linkedBankAccount.bid!,
+            totalBalance: updatedLinkedBankTotalBalance,
+            availableBalance: linkedBankAccount.availableBalance ?? '0',
+            groupsBalance: {
+              ...linkedBankAccount.groupsBalance!,
+              groupId!: updatedLinkedBankGroupBalance,
+            },
+          );
+        }
+
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') + amount)
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(bankAccount.totalBalance ?? '0') + amount).toString();
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+              uid: uid,
+              bankAccountId: bankAccountId!,
+              availableBalance: updatedAvailableBalance,
+              totalBalance: updatedTotalBalance,
+            );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId!,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+      } else {
+        // Case 3: Group is not linked, and user is not admin
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') - amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') - amount)
+                .toString();
+
+        final linkedBankAccount = userFinanceData.listOfBankAccounts
+            ?.firstWhere((account) => account.bid == group.linkedBankAccountId);
+
+        if (linkedBankAccount != null) {
+          final updatedLinkedBankTotalBalance =
+              (double.parse(linkedBankAccount.totalBalance ?? '0') - amount)
+                  .toString();
+          final updatedLinkedBankGroupBalance =
+              (double.parse(linkedBankAccount.groupsBalance?[groupId] ?? '0') -
+                      amount)
+                  .toString();
+
+          await ref
+              .read(userFinanceDataNotifierProvider.notifier)
+              .updateBankAccountBalance(
+            uid: group.creatorId!,
+            bankAccountId: linkedBankAccount.bid!,
+            totalBalance: updatedLinkedBankTotalBalance,
+            availableBalance: linkedBankAccount.availableBalance ?? '0',
+            groupsBalance: {
+              ...linkedBankAccount.groupsBalance!,
+              groupId!: updatedLinkedBankGroupBalance,
+            },
+          );
+        }
+
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') + amount)
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(bankAccount.totalBalance ?? '0') + amount).toString();
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+              uid: uid,
+              bankAccountId: bankAccountId!,
+              availableBalance: updatedAvailableBalance,
+              totalBalance: updatedTotalBalance,
+            );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId!,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+      }
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleGroupToBankTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from group to bank.", Icons.error);
+    }
+  }
+
+  Future<void> _handleBankToGroupTransfer({
+    required String uid,
+    required String? bankAccountId,
+    required String? groupId,
+    required double amount,
+    required WidgetRef ref,
+    required UserFinanceData userFinanceData,
+  }) async {
+    try {
+      final bankAccount = userFinanceData.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+      final group = userFinanceData.listOfGroups
+          ?.firstWhere((group) => group.gid == groupId);
+
+      if (bankAccount == null || group == null) {
+        throw Exception("Bank account or group not found.");
+      }
+
+      final isAdmin = group.creatorId == uid;
+      final isBankLinked =
+          bankAccount.linkedGroupIds?.contains(groupId) ?? false;
+
+      if (isBankLinked) {
+        // Case 1: Bank is linked to the group
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') - amount)
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(bankAccount.totalBalance ?? '0') - amount).toString();
+
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') + amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') + amount)
+                .toString();
+        final updatedGroupBalance =
+            (double.parse(bankAccount.groupsBalance?[groupId] ?? '0') + amount)
+                .toString();
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+          uid: uid,
+          bankAccountId: bankAccountId!,
+          availableBalance: updatedAvailableBalance,
+          totalBalance: updatedTotalBalance,
+          bankAccount: bankAccount,
+          groupsBalance: {
+            ...?bankAccount.groupsBalance,
+            groupId!: updatedGroupBalance,
+          },
+        );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+      } else if (isAdmin) {
+        // Case 2: Bank is not linked, and user is admin
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') - amount)
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(bankAccount.totalBalance ?? '0') - amount).toString();
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') + amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') + amount)
+                .toString();
+
+        final linkedBankAccount = userFinanceData.listOfBankAccounts
+            ?.firstWhere((account) => account.bid == group.linkedBankAccountId);
+
+        if (linkedBankAccount != null) {
+          final updatedLinkedBankTotalBalance =
+              (double.parse(linkedBankAccount.totalBalance ?? '0') + amount)
+                  .toString();
+          final updatedLinkedBankGroupBalance =
+              (double.parse(linkedBankAccount.groupsBalance?[groupId] ?? '0') +
+                      amount)
+                  .toString();
+
+          await ref
+              .read(userFinanceDataNotifierProvider.notifier)
+              .updateBankAccountBalance(
+            uid: uid,
+            bankAccountId: linkedBankAccount.bid!,
+            totalBalance: updatedLinkedBankTotalBalance,
+            availableBalance: linkedBankAccount.availableBalance ?? '0',
+            groupsBalance: {
+              ...?linkedBankAccount.groupsBalance,
+              groupId!: updatedLinkedBankGroupBalance,
+            },
+          );
+        }
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+              uid: uid,
+              bankAccountId: bankAccountId!,
+              availableBalance: updatedAvailableBalance,
+              totalBalance: updatedTotalBalance,
+            );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId!,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+      } else {
+        // Case 3: Bank is not linked, and user is not admin
+        final updatedAvailableBalance =
+            (double.parse(bankAccount.availableBalance ?? '0') - amount)
+                .toString();
+        final updatedTotalBalance =
+            (double.parse(bankAccount.totalBalance ?? '0') - amount).toString();
+        final updatedGroupTotalAmount =
+            (double.parse(group.totalAmount ?? '0') + amount).toString();
+        final updatedMemberBalance =
+            (double.parse(group.membersBalance?[uid] ?? '0') + amount)
+                .toString();
+
+        final linkedBankAccount = userFinanceData.listOfBankAccounts
+            ?.firstWhere((account) => account.bid == group.linkedBankAccountId);
+
+        if (linkedBankAccount != null) {
+          final updatedLinkedBankTotalBalance =
+              (double.parse(linkedBankAccount.totalBalance ?? '0') + amount)
+                  .toString();
+          final updatedLinkedBankGroupBalance =
+              (double.parse(linkedBankAccount.groupsBalance?[groupId] ?? '0') +
+                      amount)
+                  .toString();
+
+          await ref
+              .read(userFinanceDataNotifierProvider.notifier)
+              .updateBankAccountBalance(
+            uid: group.creatorId!,
+            bankAccountId: linkedBankAccount.bid!,
+            totalBalance: updatedLinkedBankTotalBalance,
+            availableBalance: linkedBankAccount.availableBalance ?? '0',
+            groupsBalance: {
+              ...?linkedBankAccount.groupsBalance,
+              groupId!: updatedLinkedBankGroupBalance,
+            },
+          );
+        }
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateBankAccountBalance(
+              uid: uid,
+              bankAccountId: bankAccountId!,
+              availableBalance: updatedAvailableBalance,
+              totalBalance: updatedTotalBalance,
+            );
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupAmount(
+              gid: groupId!,
+              amount: updatedGroupTotalAmount,
+              uid: uid,
+              memberAmount: updatedMemberBalance,
+            );
+      }
+    } catch (e, stackTrace) {
+      Logger().e("Error in _handleBankToGroupTransfer:",
+          error: e, stackTrace: stackTrace);
+      _showSnackbar("Failed to transfer from bank to group.", Icons.error);
     }
   }
 
