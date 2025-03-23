@@ -1,7 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-import 'package:finmate/screens/auth/accounts_screen.dart';
+import 'package:finmate/screens/auth/account%20screens/accounts_screen.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/services/auth_services.dart';
 import 'package:finmate/services/navigation_services.dart';

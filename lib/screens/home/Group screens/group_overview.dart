@@ -22,6 +22,12 @@ class GroupOverview extends ConsumerStatefulWidget {
 }
 
 class _GroupOverviewState extends ConsumerState<GroupOverview> {
+  bool isOverviewTabSelected = true;
+  bool isChatTabSelected = false;
+  bool isMembersTabSelected = false;
+  int _selectedIndex = 0;
+  List<String> tabTitles = ["Overview", "Chats", "Members"];
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -40,28 +46,17 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
       backgroundColor: color4,
       centerTitle: true,
       title: Text(widget.group.name ?? "Group Overview"),
-      bottom: TabBar(
-        tabs: [
-          Tab(
-            text: "Overview",
-          ),
-          Tab(
-            text: "Chat",
-          ),
-          Tab(
-            text: "Members",
-          ),
-        ],
-        labelStyle: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: color3,
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: CustomTabBar(
+          selectedIndex: _selectedIndex,
+          tabTitles: tabTitles,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
         ),
-        unselectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.normal,
-          color: Colors.blueGrey,
-        ),
-        indicatorColor: color3,
       ),
       actions: [
         IconButton(
@@ -76,11 +71,14 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   }
 
   Widget _body() {
-    return TabBarView(children: [
-      GrpOverview(group: widget.group),
-      GroupChats(group: widget.group),
-      GroupMembers(group: widget.group),
-    ]);
+    return IndexedStack(
+      index: _selectedIndex,
+      children: [
+        GrpOverview(group: widget.group),
+        GroupChats(group: widget.group),
+        GroupMembers(group: widget.group),
+      ],
+    );
   }
 }
 
@@ -171,6 +169,8 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
               spacing: 10,
               children: [
                 ...groupMembersData!.map((member) {
+                  final memberBalance =
+                      groupData.membersBalance?[member.uid] ?? "0.0";
                   // member horizontal bars
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(30),
@@ -181,7 +181,10 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
                       decoration: BoxDecoration(
                         color: groupMemberBarColor.withAlpha(104),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: color4),
+                        border: Border.all(
+                            color: (double.parse(memberBalance) <= 0)
+                                ? Colors.red
+                                : color4),
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -211,9 +214,11 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
                           ),
                           // member balance
                           Text(
-                            "${groupData.membersBalance?[member.uid] ?? "0.0"} ₹",
+                            "$memberBalance ₹",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: (double.parse(memberBalance) <= 0)
+                                  ? Colors.red
+                                  : Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

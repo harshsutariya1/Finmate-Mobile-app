@@ -1,4 +1,5 @@
 import 'package:finmate/constants/colors.dart';
+import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
@@ -6,7 +7,6 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/expense_income_fields.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/navigation_services.dart';
@@ -227,6 +227,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           },
         ),
         if (isGroup) ...[
+          // is Group
           if (isPaymentModeOne && selectedGroup1 != null)
             ListTile(
               leading: const Icon(Icons.group),
@@ -242,21 +243,22 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                   "Total Balance: ${selectedGroup2!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup2!.membersBalance?[userData.uid] ?? '0'}"),
             ),
         ] else ...[
-          // is Account
+          // is Bank Account
           if (isPaymentModeOne && selectedBank1 != null)
             ListTile(
               leading: const Icon(Icons.account_balance),
               title: Text(selectedBank1!.bankAccountName ?? "Bank Account"),
               subtitle: Text(
-                  "Total Balance: ${selectedBank1!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank1!.availableBalance ?? '0'} \n${(selectedGroup2 != null && (selectedGroup2?.linkedBankAccountId == selectedBank1?.bid)) ? 'Available Group Balances: ${selectedBank1!.groupsBalance?[selectedGroup2?.gid] ?? '0'}' : ''}"),
+                  "Total Balance: ${selectedBank1!.totalBalance ?? '0'} \nAvailable Balance: ${selectedBank1!.availableBalance ?? '0'} \n${(selectedGroup2 != null && (selectedGroup2?.linkedBankAccountId == selectedBank1?.bid)) ? 'Available Group Balances: ${selectedBank1!.groupsBalance?[selectedGroup2?.gid] ?? '0'}' : ''}"),
             ),
           if (!isPaymentModeOne && selectedBank2 != null)
             ListTile(
               leading: const Icon(Icons.account_balance),
               title: Text(selectedBank2!.bankAccountName ?? "Bank Account"),
               subtitle: Text(
-                  "Total Balance: ${selectedBank2!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank2!.availableBalance ?? '0'} \n${(selectedGroup1 != null && (selectedGroup1?.linkedBankAccountId == selectedBank2?.bid)) ? 'Available Group Balance: ${selectedBank2!.groupsBalance?[selectedGroup1?.gid] ?? '0'}' : ''}"),
+                  "Total Balance: ${selectedBank2!.totalBalance ?? '0'} \nAvailable Balance: ${selectedBank2!.availableBalance ?? '0'} \n${(selectedGroup1 != null && (selectedGroup1?.linkedBankAccountId == selectedBank2?.bid)) ? 'Available Group Balance: ${selectedBank2!.groupsBalance?[selectedGroup1?.gid] ?? '0'}' : ''}"),
             ),
+          // is Cash
           if (isPaymentModeOne &&
               _paymentModeOneController.text == PaymentModes.cash.displayName)
             ListTile(
@@ -282,50 +284,138 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     bool isPaymentModeOne,
   ) {
     showModalBottomSheet(
+      isScrollControlled: true, // Allow the bottom sheet to expand
       context: context,
       builder: (context) {
         return Container(
+          height: MediaQuery.of(context).size.height *
+              0.7, // Set height to 70% of the screen
           padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                bankAccountContainer(
-                  context: context,
-                  userFinanceData: userFinanceData,
-                  isSelectable: true,
-                  selectedBank: (isPaymentModeOne)
-                      ? selectedBank1?.bankAccountName ?? ''
-                      : selectedBank2?.bankAccountName ?? '',
-                  onTapBank: (BankAccount bankAccount) {
-                    setState(() {
-                      if (isPaymentModeOne) {
-                        _paymentModeOneController.text =
-                            PaymentModes.bankAccount.displayName;
-                        selectedBank1 = (_paymentModeOneController.text ==
-                                PaymentModes.bankAccount.displayName)
-                            ? bankAccount
-                            : null;
-                      } else {
-                        _paymentModeTwoController.text =
-                            PaymentModes.bankAccount.displayName;
-                        selectedBank2 = (_paymentModeTwoController.text ==
-                                PaymentModes.bankAccount.displayName)
-                            ? bankAccount
-                            : null;
-                      }
-                    });
-                    Navigator.pop(context);
-                  },
+                // Header Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Select Payment Mode",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color3,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(
+                        Icons.close,
+                        color: color3,
+                      ),
+                    ),
+                  ],
                 ),
-                cashContainer(
-                  isSelectable: true,
-                  isSelected: (isPaymentModeOne)
-                      ? _paymentModeOneController.text ==
-                          PaymentModes.cash.displayName
-                      : _paymentModeTwoController.text ==
-                          PaymentModes.cash.displayName,
-                  userFinanceData: userFinanceData,
+                sbh10,
+                // Bank Accounts
+                ...userFinanceData.listOfBankAccounts!.map((bankAccount) {
+                  bool isSelected = (isPaymentModeOne
+                      ? selectedBank1?.bid == bankAccount.bid
+                      : selectedBank2?.bid == bankAccount.bid);
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isPaymentModeOne) {
+                          _paymentModeOneController.text =
+                              PaymentModes.bankAccount.displayName;
+                          selectedBank1 = bankAccount;
+                        } else {
+                          _paymentModeTwoController.text =
+                              PaymentModes.bankAccount.displayName;
+                          selectedBank2 = bankAccount;
+                        }
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        border: isSelected
+                            ? Border(
+                                bottom: BorderSide(
+                                  color: color3,
+                                  width: 3,
+                                ),
+                              )
+                            : null,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: whiteColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(10),
+                            topRight: const Radius.circular(10),
+                            bottomLeft: isSelected
+                                ? const Radius.circular(0)
+                                : const Radius.circular(10),
+                            bottomRight: isSelected
+                                ? const Radius.circular(0)
+                                : const Radius.circular(10),
+                          ),
+                          border: Border.all(
+                            color: color2.withAlpha(150),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              children: [
+                                Text(
+                                  "Account: ",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? color3 : color1,
+                                  ),
+                                ),
+                                Text(
+                                  bankAccount.bankAccountName ?? "Bank Account",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? color3 : color1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              "Total Balance: ${bankAccount.totalBalance}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: color1,
+                              ),
+                            ),
+                            Text(
+                              "Available Balance: ${bankAccount.availableBalance}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: color1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                sbh10,
+                // Cash Option
+                InkWell(
                   onTap: () {
                     setState(() {
                       if (isPaymentModeOne) {
@@ -340,6 +430,90 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
                     });
                     Navigator.pop(context);
                   },
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      border: (isPaymentModeOne
+                                  ? _paymentModeOneController.text
+                                  : _paymentModeTwoController.text) ==
+                              PaymentModes.cash.displayName
+                          ? Border(
+                              bottom: BorderSide(
+                                color: color3,
+                                width: 3,
+                              ),
+                            )
+                          : null,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: whiteColor,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(10),
+                          topRight: const Radius.circular(10),
+                          bottomLeft: (isPaymentModeOne
+                                      ? _paymentModeOneController.text
+                                      : _paymentModeTwoController.text) ==
+                                  PaymentModes.cash.displayName
+                              ? const Radius.circular(0)
+                              : const Radius.circular(10),
+                          bottomRight: (isPaymentModeOne
+                                      ? _paymentModeOneController.text
+                                      : _paymentModeTwoController.text) ==
+                                  PaymentModes.cash.displayName
+                              ? const Radius.circular(0)
+                              : const Radius.circular(10),
+                        ),
+                        border: Border.all(
+                          color: color2.withAlpha(150),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: (isPaymentModeOne
+                                        ? _paymentModeOneController.text
+                                        : _paymentModeTwoController.text) ==
+                                    PaymentModes.cash.displayName
+                                ? color3
+                                : color1,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Cash",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: (isPaymentModeOne
+                                                ? _paymentModeOneController.text
+                                                : _paymentModeTwoController
+                                                    .text) ==
+                                            PaymentModes.cash.displayName
+                                        ? color3
+                                        : color1,
+                                  ),
+                                ),
+                                Text(
+                                  "Balance: ${userFinanceData.cash?.amount ?? '0'}",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: color1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

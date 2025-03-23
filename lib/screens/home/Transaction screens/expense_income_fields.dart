@@ -7,7 +7,6 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-import 'package:finmate/screens/auth/accounts_screen.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
@@ -15,7 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ExpenseIncomeFields extends ConsumerStatefulWidget {
-  const ExpenseIncomeFields({super.key});
+  const ExpenseIncomeFields({super.key, this.isIncome = false});
+  final bool isIncome;
 
   @override
   ConsumerState<ExpenseIncomeFields> createState() =>
@@ -38,6 +38,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
   bool isIncomeSelected = false;
   bool isButtonDisabled = false;
   bool isButtonLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    isIncomeSelected = widget.isIncome;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,56 +210,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
             readOnly: true,
             sufixIconData: Icons.arrow_drop_down_circle_outlined,
             onTap: () {
-              // show modal bottom sheet to select payment mode
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          bankAccountContainer(
-                            context: context,
-                            userFinanceData: userFinanceData,
-                            isSelectable: true,
-                            selectedBank: selectedBank?.bankAccountName ?? '',
-                            onTapBank: (BankAccount bankAccount) {
-                              setState(() {
-                                _paymentModeController.text = "Bank Account";
-                                selectedBank = bankAccount;
-
-                                // Clear group selection
-                                _groupController.clear();
-                                selectedGroup = null;
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                          cashContainer(
-                            isSelectable: true,
-                            isSelected: _paymentModeController.text == "Cash",
-                            userFinanceData: userFinanceData,
-                            onTap: () {
-                              setState(() {
-                                _paymentModeController.text = "Cash";
-                                selectedBank = null;
-
-                                // Clear group selection
-                                _groupController.clear();
-                                selectedGroup = null;
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
+              showAccountSelection(userFinanceData);
             },
           ),
           if (selectedBank != null)
@@ -457,6 +414,258 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       ),
     );
   }
+
+  void showAccountSelection(UserFinanceData userFinanceData) {
+    // show modal bottom sheet to select payment mode
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (context) {
+        bool isCash =
+            _paymentModeController.text == PaymentModes.cash.displayName;
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          width: double.infinity,
+          padding: EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Select Account",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color3,
+                      ),
+                    ),
+                    IconButton(
+                        onPressed: () {
+                          Navigate().goBack();
+                        },
+                        icon: Icon(
+                          Icons.close,
+                          color: color3,
+                        )),
+                  ],
+                ),
+                sbh10,
+                // bank accounts options
+                ...userFinanceData.listOfBankAccounts!.map((bankAccount) {
+                  bool isBankAccount = (selectedBank?.bid == bankAccount.bid);
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _paymentModeController.text =
+                            PaymentModes.bankAccount.displayName;
+                        selectedBank = bankAccount;
+                        // Clear group selection
+                        _groupController.clear();
+                        selectedGroup = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        border: (isBankAccount)
+                            ? Border(
+                                bottom: BorderSide(
+                                color: color3,
+                                width: 3,
+                              ))
+                            : null,
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: whiteColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                            bottomLeft: (isBankAccount)
+                                ? Radius.circular(0)
+                                : Radius.circular(10),
+                            bottomRight: (isBankAccount)
+                                ? Radius.circular(0)
+                                : Radius.circular(10),
+                          ),
+                          border: Border.all(
+                            color: color2.withAlpha(150),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // name
+                            Wrap(
+                              children: [
+                                Text(
+                                  "Account: ",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: (isBankAccount) ? color3 : color1,
+                                  ),
+                                ),
+                                Text(
+                                  " ${bankAccount.bankAccountName}",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: (isBankAccount) ? color3 : color1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              "Total Balance: ${bankAccount.totalBalance}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: color1,
+                              ),
+                            ),
+                            Text(
+                              "Available Balance: ${bankAccount.availableBalance}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: color1,
+                              ),
+                            ),
+                            Text(
+                              "Linked Group Balances:",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: color1,
+                              ),
+                            ),
+                            if (bankAccount.groupsBalance == null ||
+                                bankAccount.groupsBalance!.isEmpty)
+                              Text(
+                                "No groups linked",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                ),
+                              )
+                            else
+                              ...bankAccount.groupsBalance!.entries.map(
+                                (entry) {
+                                  final key = entry.key;
+                                  final value = entry.value;
+                                  return Row(
+                                    spacing: 10,
+                                    children: [
+                                      Text(
+                                        "◗ ${userFinanceData.listOfGroups?.firstWhere((group) => group.gid == key).name}:",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: color1.withAlpha(200),
+                                        ),
+                                      ),
+                                      Text("$value ₹",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: color2,
+                                          )),
+                                    ],
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                sbh10,
+                // Cash option
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _paymentModeController.text =
+                          PaymentModes.cash.displayName;
+                      selectedBank = null;
+                      // Clear group selection
+                      _groupController.clear();
+                      selectedGroup = null;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      border: (isCash)
+                          ? Border(
+                              bottom: BorderSide(
+                              color: color3,
+                              width: 3,
+                            ))
+                          : null,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: whiteColor,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomLeft: (isCash)
+                              ? Radius.circular(0)
+                              : Radius.circular(10),
+                          bottomRight: (isCash)
+                              ? Radius.circular(0)
+                              : Radius.circular(10),
+                        ),
+                        border: Border.all(
+                          color: color2.withAlpha(150),
+                        ),
+                      ),
+                      child: Row(
+                        spacing: 15,
+                        children: [
+                          Icon(
+                            Icons.wallet,
+                            color: (isCash) ? color3 : color1,
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Cash",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: (isCash) ? color3 : color1,
+                                  ),
+                                ),
+                                Text("Balance: ${userFinanceData.cash?.amount}",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                    )),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 // __________________________________________________________________________ //
 
   void addTransaction(String uid, UserData userData, WidgetRef ref,
@@ -739,9 +948,8 @@ Widget textfield({
       focusedBorder: OutlineInputBorder(
         borderSide: BorderSide(
           color: color3,
-          width: 2,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(10),
       ),
     ),
   );

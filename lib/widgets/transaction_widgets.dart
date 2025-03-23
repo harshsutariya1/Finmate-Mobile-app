@@ -97,7 +97,7 @@ Widget transactionTile(
           border: Border.all(
             color: color2.withAlpha(150),
           ),
-          color: Colors.white,
+          color: whiteColor_2,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

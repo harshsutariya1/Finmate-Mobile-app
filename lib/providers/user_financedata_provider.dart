@@ -262,70 +262,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  Future<bool> linkBankAccountToGroup({
-    required String uid,
-    required String bankAccountId,
-    required String groupId,
-    required String groupBalance,
-  }) async {
-    final firestore.WriteBatch batch =
-        firestore.FirebaseFirestore.instance.batch();
-    try {
-      // Fetch the bank account from the state
-      final BankAccount? bankAccount = state.listOfBankAccounts
-          ?.firstWhere((account) => account.bid == bankAccountId);
-
-      if (bankAccount == null) {
-        logger.w("Bank account with ID $bankAccountId not found.");
-        return false;
-      }
-
-      // Update the group's balance in the bank account
-      final updatedGroupsBalance = {
-        ...?bankAccount.groupsBalance,
-        groupId: groupBalance,
-      };
-
-      // Update Firestore
-      final bankAccountDocRef =
-          bankAccountsCollectionReference(uid).doc(bankAccountId);
-      final groupDocRef = groupsCollection.doc(groupId);
-
-      batch.update(bankAccountDocRef, {'groupsBalance': updatedGroupsBalance});
-      batch.update(groupDocRef, {'linkedBankAccountId': bankAccountId});
-
-      // Commit the batch
-      await batch.commit();
-
-      // Update the bank account in the local state
-      final updatedBankAccounts = state.listOfBankAccounts?.map((account) {
-        if (account.bid == bankAccountId) {
-          return account.copyWith(groupsBalance: updatedGroupsBalance);
-        }
-        return account;
-      }).toList();
-
-      // Update the linkedBankAccountId in the Group class
-      final updatedGroups = state.listOfGroups?.map((group) {
-        if (group.gid == groupId) {
-          return group.copyWith(linkedBankAccountId: bankAccountId);
-        }
-        return group;
-      }).toList();
-
-      state = state.copyWith(
-        listOfBankAccounts: updatedBankAccounts,
-        listOfGroups: updatedGroups,
-      );
-
-      logger.i("✅ Bank account linked to group successfully.");
-      return true;
-    } catch (e) {
-      logger.w("❌ Error linking bank account to group: $e");
-      return false;
-    }
-  }
-
 // __________________________________________________________________________ //
 
   Future<bool> addTransactionToUserData({
@@ -587,6 +523,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+// __________________________________________________________________________ //
+
   Future<bool> addBankAccount(
       String uid, BankAccount bankAccount, WidgetRef ref) async {
     try {
@@ -612,6 +550,167 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return true;
     } catch (e) {
       Logger().w("❗Error adding Bank Account: $e");
+      return false;
+    }
+  }
+
+  Future<bool> linkBankAccountToGroup({
+    required String uid,
+    required String bankAccountId,
+    required String groupId,
+    required String groupBalance,
+  }) async {
+    final firestore.WriteBatch batch =
+        firestore.FirebaseFirestore.instance.batch();
+    try {
+      // Fetch the bank account from the state
+      final BankAccount? bankAccount = state.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+
+      if (bankAccount == null) {
+        logger.w("Bank account with ID $bankAccountId not found.");
+        return false;
+      }
+
+      // Update the group's balance in the bank account
+      final updatedGroupsBalance = {
+        ...?bankAccount.groupsBalance,
+        groupId: groupBalance,
+      };
+      final updatedBankTotalBalance =
+          (double.parse(bankAccount.totalBalance ?? '0') +
+                  double.parse(groupBalance))
+              .toString();
+
+      // Update Firestore
+      final bankAccountDocRef =
+          bankAccountsCollectionReference(uid).doc(bankAccountId);
+      final groupDocRef = groupsCollection.doc(groupId);
+
+      batch.update(bankAccountDocRef, {
+        'groupsBalance': updatedGroupsBalance,
+        'totalBalance': updatedBankTotalBalance,
+      });
+      batch.update(groupDocRef, {'linkedBankAccountId': bankAccountId});
+
+      // Commit the batch
+      await batch.commit();
+
+      // Update the bank account in the local state
+      final updatedBankAccounts = state.listOfBankAccounts?.map((account) {
+        if (account.bid == bankAccountId) {
+          return account.copyWith(
+            groupsBalance: updatedGroupsBalance,
+            totalBalance: updatedBankTotalBalance,
+          );
+        }
+        return account;
+      }).toList();
+
+      // Update the linkedBankAccountId in the Group class
+      final updatedGroups = state.listOfGroups?.map((group) {
+        if (group.gid == groupId) {
+          return group.copyWith(linkedBankAccountId: bankAccountId);
+        }
+        return group;
+      }).toList();
+
+      state = state.copyWith(
+        listOfBankAccounts: updatedBankAccounts,
+        listOfGroups: updatedGroups,
+      );
+
+      logger.i("✅ Bank account linked to group successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error linking bank account to group: $e");
+      return false;
+    }
+  }
+
+  Future<bool> unlinkBankAccountFromGroup({
+    required String uid,
+    required String bankAccountId,
+    required String groupId,
+    required String groupBalance,
+  }) async {
+    final firestore.WriteBatch batch =
+        firestore.FirebaseFirestore.instance.batch();
+    try {
+      // Fetch the bank account from the state
+      final BankAccount? bankAccount = state.listOfBankAccounts
+          ?.firstWhere((account) => account.bid == bankAccountId);
+
+      if (bankAccount == null) {
+        logger.w("Bank account with ID $bankAccountId not found.");
+        return false;
+      }
+
+      // Remove the group's balance from the bank account's groupsBalance
+      final updatedGroupsBalance =
+          Map<String, String>.from(bankAccount.groupsBalance ?? {});
+      updatedGroupsBalance.remove(groupId);
+      final updatedBankTotalBalance =
+          (double.parse(bankAccount.totalBalance ?? '0') -
+                  double.parse(groupBalance))
+              .toString();
+
+      // Update Firestore
+      final bankAccountDocRef =
+          bankAccountsCollectionReference(uid).doc(bankAccountId);
+      final groupDocRef = groupsCollection.doc(groupId);
+
+      batch.update(bankAccountDocRef, {'groupsBalance': updatedGroupsBalance});
+      batch.update(groupDocRef, {'linkedBankAccountId': null});
+
+      // Commit the batch
+      await batch.commit();
+
+      // Update the bank account in the local state
+      final updatedBankAccounts = state.listOfBankAccounts?.map((account) {
+        if (account.bid == bankAccountId) {
+          return account.copyWith(
+            groupsBalance: updatedGroupsBalance,
+            totalBalance: updatedBankTotalBalance,
+          );
+        }
+        return account;
+      }).toList();
+
+      // Update the group in the local state
+      final updatedGroups = state.listOfGroups?.map((group) {
+        if (group.gid == groupId) {
+          return group.copyWith(linkedBankAccountId: null);
+        }
+        return group;
+      }).toList();
+
+      state = state.copyWith(
+        listOfBankAccounts: updatedBankAccounts,
+        listOfGroups: updatedGroups,
+      );
+
+      logger.i("✅ Bank account unlinked from group successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error unlinking bank account from group: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteBankAccount(
+      String uid, String bankAccountId, WidgetRef ref) async {
+    try {
+      await bankAccountsCollectionReference(uid).doc(bankAccountId).delete();
+      state = state.copyWith(
+        listOfBankAccounts: state.listOfBankAccounts
+            ?.where((account) => account.bid != bankAccountId)
+            .toList(),
+      );
+      logger.i("✅ Bank account removed successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error while removing Bank Account: $e");
       return false;
     }
   }

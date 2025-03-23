@@ -10,8 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
-    super.key,
+    super.key, this.initialIndex = 0,
   });
+  final int initialIndex;
   @override
   ConsumerState<AddTransactionScreen> createState() =>
       _AddTransactionScreenState();
@@ -26,7 +27,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     return DefaultTabController(
       length: 2,
-      initialIndex: 0,
+      initialIndex: widget.initialIndex,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: color4,

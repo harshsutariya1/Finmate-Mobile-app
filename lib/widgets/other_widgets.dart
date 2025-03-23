@@ -74,3 +74,55 @@ Widget simpleBorderContainer({
     child: child,
   );
 }
+
+class CustomTabBar extends StatelessWidget {
+  const CustomTabBar({
+    super.key,
+    required this.selectedIndex,
+    required this.tabTitles,
+    required this.onTap,
+  });
+
+  final int selectedIndex;
+  final List<String> tabTitles;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: kToolbarHeight,
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: color2.withAlpha(150),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(tabTitles.length, (index) {
+          return GestureDetector(
+            onTap: () => onTap(index),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 7, horizontal: 16),
+              margin: EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                border: Border.all(color: color2),
+                color: selectedIndex == index ? color2 : Colors.transparent,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Text(
+                tabTitles[index],
+                style: TextStyle(
+                  color: selectedIndex == index ? whiteColor : color2,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}

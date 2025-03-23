@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AllTransactionsScreen extends ConsumerStatefulWidget {
-  const AllTransactionsScreen({super.key});
+  const AllTransactionsScreen({super.key, required this.transactionsList});
+  final List<Transaction> transactionsList;
 
   @override
   ConsumerState<AllTransactionsScreen> createState() =>
@@ -19,10 +20,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   Widget build(BuildContext context) {
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
-    List<Transaction>? transactionsList =
-        List.from(userFinanceData.listOfUserTransactions ?? []);
+    List<Transaction>? transactionsList = List.from(widget.transactionsList);
 
-// Sort transactions by date and time in descending order
+    // Sort transactions by date and time in descending order
     transactionsList.sort((a, b) {
       int dateComparison = b.date!.compareTo(a.date!);
       if (dateComparison != 0) {

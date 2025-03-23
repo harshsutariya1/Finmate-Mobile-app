@@ -23,26 +23,27 @@ class GroupsScreen extends ConsumerStatefulWidget {
 
 class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   bool isLoading = false;
+  final TextEditingController searchController = TextEditingController();
+  String searchQuery = ""; // Store the search query
+
   @override
   Widget build(BuildContext context) {
     final UserData userData = ref.watch(userDataNotifierProvider);
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
-    List<Group> groupsList = List.from(userFinanceData.listOfGroups ?? []);
-    // Sort transactions by date and time in descending order
-    groupsList.sort((a, b) {
-      int dateComparison = b.date!.compareTo(a.date!);
-      if (dateComparison != 0) {
-        return dateComparison;
-      } else {
-        return b.time!.format(context).compareTo(a.time!.format(context));
-      }
-    });
+
+    // Get the list of groups and filter it based on the search query
+    final List<Group> groupsList = userFinanceData.listOfGroups ?? [];
+    final List<Group> filteredGroupsList = groupsList
+        .where((group) =>
+            group.name?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+            false)
+        .toList();
 
     return Scaffold(
       backgroundColor: color4,
       appBar: _appBar(userData),
-      body: _body(userData, userFinanceData, groupsList),
+      body: _body(userData, filteredGroupsList),
     );
   }
 
@@ -76,25 +77,67 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
     );
   }
 
-  Widget _body(
-    UserData userData,
-    UserFinanceData userFinanceData,
-    List<Group> groupsList,
-  ) {
+  Widget _body(UserData userData, List<Group> filteredGroupsList) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: (groupsList.isEmpty)
-          ? Center(
-              child: Text("No groups found"),
-            )
-          : ListView.separated(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Column(
+        children: [
+          _searchField(),
+          _groupsList(filteredGroupsList, userData),
+        ],
+      ),
+    );
+  }
+
+  Widget _searchField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15, left: 30, right: 30),
+      child: TextField(
+        controller: searchController,
+        onChanged: (value) {
+          setState(() {
+            searchQuery = value; // Update the search query
+          });
+        },
+        decoration: InputDecoration(
+          hintText: "Search groups...",
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: color3),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: color2),
+          ),
+          prefixIcon: Icon(Icons.search, color: color3),
+        ),
+      ),
+    );
+  }
+
+  Widget _groupsList(List<Group> groupsList, UserData userData) {
+    return (groupsList.isEmpty)
+        ? Center(
+            child: Text(
+              "No groups found",
+              style: TextStyle(
+                color: color3,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          )
+        : Expanded(
+            child: ListView.separated(
               itemCount: groupsList.length,
               itemBuilder: (context, index) {
                 return _groupTile(groupsList[index], userData);
               },
               separatorBuilder: (context, index) => sbh15,
             ),
-    );
+          );
   }
 
   Widget _groupTile(Group group, UserData userData) {

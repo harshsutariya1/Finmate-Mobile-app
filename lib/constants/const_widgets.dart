@@ -12,3 +12,15 @@ Widget sbw20 = const SizedBox(width: 20);
 Widget sb(double? height, double? width) {
   return SizedBox(height: height ?? 0, width: width ?? 0);
 }
+
+BorderRadiusGeometry? borderRadius5 = BorderRadius.circular(5);
+BorderRadiusGeometry? borderRadius10 = BorderRadius.circular(10);
+BorderRadiusGeometry? borderRadius15 = BorderRadius.circular(15);
+BorderRadiusGeometry? borderRadius20 = BorderRadius.circular(20);
+BorderRadiusGeometry? borderRadius25 = BorderRadius.circular(25);
+BorderRadiusGeometry? borderRadius30 = BorderRadius.circular(30);
+BorderRadiusGeometry? borderRadius50 = BorderRadius.circular(50);
+
+BorderRadiusGeometry borderRadius(double? radius) {
+  return BorderRadius.circular(radius ?? 0);
+}
