@@ -7,10 +7,11 @@ void snackbarToast({
   required BuildContext context,
   required String text,
   required IconData icon,
+  bool autoDismiss = true,
 }) {
   return DelightToastBar(
     position: DelightSnackbarPosition.top,
-    autoDismiss: true,
+    autoDismiss: autoDismiss,
     snackbarDuration: const Duration(seconds: 3),
     builder: (context) => Container(
       margin: EdgeInsets.symmetric(horizontal: 30, vertical: 15),

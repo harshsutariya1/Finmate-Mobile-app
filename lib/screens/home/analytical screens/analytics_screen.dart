@@ -1,8 +1,14 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
+import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -86,7 +92,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           onTap: (index) {
             setState(() {
               _selectedIndex = index;
-              // Animate to the selected page when tab is tapped
               _pageController.animateToPage(
                 index,
                 duration: const Duration(milliseconds: 300),
@@ -104,36 +109,61 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       controller: _pageController,
       physics: const BouncingScrollPhysics(),
       onPageChanged: (index) {
-        // Update selected index when page changes via swipe
         setState(() {
           _selectedIndex = index;
         });
       },
       itemCount: monthsTabTitles.length,
       itemBuilder: (context, index) {
-        return MonthlyAnalysisCharts(month: monthsTabTitles[index]);
+        return MonthlyAnalysisCharts(
+          monthInt: index + 1,
+          monthName: monthsTabTitles[index],
+        );
       },
     );
   }
 }
 
-class MonthlyAnalysisCharts extends StatefulWidget {
-  const MonthlyAnalysisCharts({super.key, required this.month});
-  final String month;
+class MonthlyAnalysisCharts extends ConsumerStatefulWidget {
+  const MonthlyAnalysisCharts(
+      {super.key, required this.monthInt, required this.monthName});
+  final String monthName;
+  final int monthInt;
   @override
-  State<MonthlyAnalysisCharts> createState() => _MonthlyAnalysisChartsState();
+  ConsumerState<MonthlyAnalysisCharts> createState() =>
+      _MonthlyAnalysisChartsState();
 }
 
-class _MonthlyAnalysisChartsState extends State<MonthlyAnalysisCharts> {
+class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: whiteColor,
-      body: Center(
-        child: Text(
-          "Charts for ${widget.month}",
-          style: TextStyle(color: color1, fontSize: 20),
-        ),
+      backgroundColor: whiteColor_2,
+      body: _body(),
+    );
+  }
+
+  Widget _body() {
+    final UserData userData = ref.watch(userDataNotifierProvider);
+    final UserFinanceData userFinanceData =
+        ref.watch(userFinanceDataNotifierProvider);
+    final List<Transaction> listOfTransactions =
+        List.from(userFinanceData.listOfUserTransactions ?? []);
+    final List<Transaction> filteredTransactions = listOfTransactions
+        .where((transaction) =>
+            transaction.date?.month == widget.monthInt &&
+            transaction.date?.year == DateTime.now().year)
+        .toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        border: Border.all(),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Text("This Month Transactions: ${filteredTransactions.length}")
+        ],
       ),
     );
   }
