@@ -4,8 +4,8 @@ import 'package:finmate/screens/home/Transaction%20screens/add_transaction_scree
 import 'package:finmate/screens/home/analytical%20screens/analytics_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/investment%20screens/investments_screen.dart';
+import 'package:finmate/screens/home/payment%20screens/payments_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,7 +64,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
         iconSize: 30,
         onTap: (index) {
           setState(() {
-            print(index.toString());
+            isExpanded = false;
             currentIndex = (index != 2) ? index : 3;
           });
         },
@@ -132,13 +132,10 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
               alignment: Alignment.topLeft,
               child: InkWell(
                 onTap: () {
-                  snackbarToast(
-                      context: context,
-                      text: "This function is in development.",
-                      icon: Icons.developer_mode_rounded);
                   setState(() {
                     isExpanded = !isExpanded;
                   });
+                  Navigate().push(PaymentsScreen());
                 },
                 child: Container(
                   width: 60,

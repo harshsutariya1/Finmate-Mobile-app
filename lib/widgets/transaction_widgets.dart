@@ -11,12 +11,10 @@ Widget transactionTile(
   WidgetRef ref,
 ) {
   final String? accountId1 = (transaction.isTransferTransaction)
-      ? transaction.bankAccountId ??
-          transaction.groupName
+      ? transaction.bankAccountName ?? transaction.groupName
       : null;
   final String? accountId2 = (transaction.isTransferTransaction)
-      ? transaction.bankAccountId2 ??
-          transaction.groupName2
+      ? transaction.bankAccountName2 ?? transaction.groupName2
       : null;
 
   final String? paymentMode1 = (transaction.isTransferTransaction)

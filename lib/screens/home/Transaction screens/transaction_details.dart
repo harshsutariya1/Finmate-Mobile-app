@@ -165,7 +165,10 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
               backgroundColor: (transaction.transactionType ==
                       TransactionType.income.displayName)
                   ? color3
-                  : Colors.red,
+                  : (transaction.transactionType ==
+                          TransactionType.transfer.displayName)
+                      ? color2
+                      : Colors.red,
               child: CircleAvatar(
                 radius: 46,
                 backgroundColor: whiteColor,
@@ -263,23 +266,25 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
               spacing: 10,
               children: [
                 Text(
-                  (transaction.payee != null && transaction.payee!.isNotEmpty)
-                      ? "To:"
-                      : "To:",
+                  "To:",
                   style: TextStyle(
                     color: color2,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  (transaction.payee != null && transaction.payee!.isNotEmpty)
-                      ? transaction.payee!
-                      : "Unknown",
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    (transaction.payee != null && transaction.payee!.isNotEmpty)
+                        ? transaction.payee!
+                        : "Unknown",
+                    style: TextStyle(
+                      color: color2,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -290,25 +295,26 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
               spacing: 10,
               children: [
                 Text(
-                  (transaction.description != null &&
-                          transaction.description!.isNotEmpty)
-                      ? "Description:"
-                      : "Description:",
+                  "Description:",
                   style: TextStyle(
                     color: color2,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  (transaction.description != null &&
-                          transaction.description!.isNotEmpty)
-                      ? transaction.description!
-                      : "Unknown",
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    (transaction.description != null &&
+                            transaction.description!.isNotEmpty)
+                        ? transaction.description!
+                        : "Unknown",
+                    style: TextStyle(
+                      color: color2,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -326,15 +332,19 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  (transaction.category != null &&
-                          transaction.category!.isNotEmpty)
-                      ? transaction.category!
-                      : "Unknown",
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    (transaction.category != null &&
+                            transaction.category!.isNotEmpty)
+                        ? transaction.category!
+                        : "Unknown",
+                    style: TextStyle(
+                      color: color2,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -347,7 +357,6 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             sbh10,
-
             // Payment Mode
             Row(
               spacing: 10,
@@ -360,15 +369,19 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  (transaction.methodOfPayment != null &&
-                          transaction.methodOfPayment!.isNotEmpty)
-                      ? transaction.methodOfPayment!
-                      : "Unknown",
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    (transaction.methodOfPayment != null &&
+                            transaction.methodOfPayment!.isNotEmpty)
+                        ? transaction.methodOfPayment!
+                        : "Unknown",
+                    style: TextStyle(
+                      color: color2,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -386,12 +399,16 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  fromAccountName,
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    fromAccountName,
+                    style: TextStyle(
+                      color: color2,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -411,12 +428,16 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        toAccountName,
-                        style: TextStyle(
-                          color: color2,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Text(
+                          toAccountName,
+                          style: TextStyle(
+                            color: color2,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -438,15 +459,22 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  "${transaction.amount ?? 0.0} ₹",
-                  style: TextStyle(
-                    color: (transaction.transactionType ==
-                            TransactionType.income.displayName)
-                        ? color3
-                        : Colors.red,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    "${transaction.amount ?? 0.0} ₹",
+                    style: TextStyle(
+                      color: (transaction.transactionType ==
+                              TransactionType.income.displayName)
+                          ? color3
+                          : (transaction.transactionType ==
+                                  TransactionType.transfer.displayName)
+                              ? color2
+                              : Colors.red,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

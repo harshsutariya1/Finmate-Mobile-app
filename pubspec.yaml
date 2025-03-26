@@ -73,6 +73,8 @@ dependencies:
   floating_expandable_menu: ^0.0.2
   carousel_slider: ^5.0.0
   fl_chart: ^0.70.2
+  # upi_india: ^3.0.1
+  upi_pay: ^1.1.0
 
 dev_dependencies:
   flutter_test:
