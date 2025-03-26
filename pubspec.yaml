@@ -47,7 +47,6 @@ dependencies:
   flutter_widget_from_html: ^0.15.3
   delayed_tween_animation_builder: ^0.5.1
   visibility_detector: ^0.4.0+2
-  fl_chart: ^0.70.1
   logger: ^2.5.0
   auto_size_text: ^3.0.0
   skeletonizer: ^1.4.2
@@ -73,6 +72,7 @@ dependencies:
   flutter_expandable_fab: ^2.3.0
   floating_expandable_menu: ^0.0.2
   carousel_slider: ^5.0.0
+  fl_chart: ^0.70.2
 
 dev_dependencies:
   flutter_test:

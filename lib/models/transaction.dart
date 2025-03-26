@@ -76,10 +76,22 @@ enum TransactionType {
   transfer,
 }
 
+extension TransactionTypeExtension on TransactionType {
+  String get displayName {
+    switch (this) {
+      case TransactionType.expense:
+        return 'Expense';
+      case TransactionType.income:
+        return 'Income';
+      case TransactionType.transfer:
+        return 'Transfer';
+    }
+  }
+}
+
 enum PaymentModes {
   cash,
   bankAccount,
-  wallet,
   group,
 }
 
@@ -90,8 +102,7 @@ extension PaymentModeExtension on PaymentModes {
         return 'Cash';
       case PaymentModes.bankAccount:
         return 'Bank Account';
-      case PaymentModes.wallet:
-        return 'Wallet';
+
       case PaymentModes.group:
         return 'Group';
     }
@@ -107,18 +118,19 @@ class Transaction {
   String? category;
   String? methodOfPayment;
   String? methodOfPayment2;
+  String? payee;
   String? description;
-  TransactionType? type;
+  String? transactionType;
   bool isGroupTransaction;
   String? gid;
   String? groupName;
   String? bankAccountId;
-  String? walletId;
+  String? bankAccountName;
   bool isTransferTransaction;
   String? gid2;
   String? groupName2;
   String? bankAccountId2;
-  String? walletId2;
+  String? bankAccountName2;
   String? vpaId;
 
   Transaction({
@@ -130,18 +142,19 @@ class Transaction {
     this.category = "Others",
     this.methodOfPayment = "Cash",
     this.methodOfPayment2,
+    this.payee = "",
     this.description = "",
-    this.type,
+    this.transactionType,
     this.isGroupTransaction = false,
     this.gid,
     this.groupName,
     this.bankAccountId,
-    this.walletId,
+    this.bankAccountName,
     this.isTransferTransaction = false,
     this.gid2,
     this.groupName2,
     this.bankAccountId2,
-    this.walletId2,
+    this.bankAccountName2,
     this.vpaId,
   }) : date = date ?? DateTime.now() {
     time = time ?? TimeOfDay.now();
@@ -164,20 +177,18 @@ class Transaction {
       category: json['category'] as String? ?? "Others",
       methodOfPayment: json['methodOfPayment'] as String? ?? "Cash",
       methodOfPayment2: json['methodOfPayment2'] as String?,
-      type: TransactionType.values.firstWhere(
-        (e) => e.toString() == 'TransactionType.${json['type']}',
-        orElse: () => TransactionType.expense,
-      ),
+      payee: json['payee'] as String? ?? "",
+      transactionType: json['transactionType'] as String?,
       isGroupTransaction: json['isGroupTransaction'] as bool? ?? false,
       gid: json['gid'] as String?,
       groupName: json['groupName'] as String?,
       bankAccountId: json['bankAccountId'] as String?,
-      walletId: json['walletId'] as String?,
+      bankAccountName: json['bankAccountName'] as String?,
       isTransferTransaction: json['isTransferTransaction'] as bool? ?? false,
       gid2: json['gid2'] as String?,
       groupName2: json['groupName2'] as String?,
       bankAccountId2: json['bankAccountId2'] as String?,
-      walletId2: json['walletId2'] as String?,
+      bankAccountName2: json['bankAccountName2'] as String?,
       vpaId: json['vpaId'] as String? ?? "",
     );
   }
@@ -193,17 +204,18 @@ class Transaction {
       'category': category,
       'methodOfPayment': methodOfPayment,
       'methodOfPayment2': methodOfPayment2,
-      'type': type?.toString().split('.').last,
+      'payee': payee,
+      'transactionType': transactionType,
       'isGroupTransaction': isGroupTransaction,
       'gid': gid,
       'groupName': groupName,
       'bankAccountId': bankAccountId,
-      'walletId': walletId,
+      'bankAccountName': bankAccountName,
       'isTransferTransaction': isTransferTransaction,
       'gid2': gid2,
       'groupName2': groupName2,
       'bankAccountId2': bankAccountId2,
-      'walletId2': walletId2,
+      'bankAccountName2': bankAccountName2,
       'vpaId': vpaId,
     };
   }
@@ -217,17 +229,19 @@ class Transaction {
     String? category,
     String? methodOfPayment,
     String? methodOfPayment2,
+    String? payee,
+    String? transactionType,
     String? description,
     bool? isGroupTransaction,
     String? gid,
     String? groupName,
     String? bankAccountId,
-    String? walletId,
+    String? bankAccountName,
     bool? isTransferTransaction,
     String? gid2,
     String? groupName2,
     String? bankAccountId2,
-    String? walletId2,
+    String? bankAccountName2,
     String? vpaId,
   }) {
     return Transaction(
@@ -239,18 +253,18 @@ class Transaction {
       category: category ?? this.category,
       methodOfPayment: methodOfPayment ?? this.methodOfPayment,
       methodOfPayment2: methodOfPayment2 ?? this.methodOfPayment2,
+      payee: payee ?? this.payee,
+      transactionType: transactionType ?? this.transactionType,
       description: description ?? this.description,
       isGroupTransaction: isGroupTransaction ?? this.isGroupTransaction,
       gid: gid ?? this.gid,
       groupName: groupName ?? this.groupName,
       bankAccountId: bankAccountId ?? this.bankAccountId,
-      walletId: walletId ?? this.walletId,
       isTransferTransaction:
           isTransferTransaction ?? this.isTransferTransaction,
       gid2: gid2 ?? this.gid2,
       groupName2: groupName2 ?? this.groupName2,
       bankAccountId2: bankAccountId2 ?? this.bankAccountId2,
-      walletId2: walletId2 ?? this.walletId2,
       vpaId: vpaId ?? this.vpaId,
     );
   }

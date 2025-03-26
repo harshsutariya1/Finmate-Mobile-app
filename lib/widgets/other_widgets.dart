@@ -90,7 +90,9 @@ class CustomTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       height: kToolbarHeight,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -99,29 +101,35 @@ class CustomTabBar extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(tabTitles.length, (index) {
-          return GestureDetector(
-            onTap: () => onTap(index),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 7, horizontal: 16),
-              margin: EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                border: Border.all(color: color2),
-                color: selectedIndex == index ? color2 : Colors.transparent,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Text(
-                tabTitles[index],
-                style: TextStyle(
-                  color: selectedIndex == index ? whiteColor : color2,
-                  fontWeight: FontWeight.bold,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(tabTitles.length, (index) {
+            return GestureDetector(
+              onTap: () => onTap(index),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 7, horizontal: 16),
+                margin: EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: color2),
+                  color: selectedIndex == index ? color2 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  tabTitles[index],
+                  style: TextStyle(
+                    color: selectedIndex == index ? whiteColor : color2,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

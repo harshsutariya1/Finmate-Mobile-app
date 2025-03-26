@@ -719,7 +719,9 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
     final paymentMode1 = _paymentModeOneController.text.trim();
     final paymentMode2 = _paymentModeTwoController.text.trim();
     final bankAccountId1 = selectedBank1?.bid;
+    final bankAccountName = selectedBank1?.bankAccountName;
     final bankAccountId2 = selectedBank2?.bid;
+    final bankAccountName2 = selectedBank2?.bankAccountName;
     final groupId1 = selectedGroup1?.gid;
     final groupName = selectedGroup1?.name;
     final groupId2 = selectedGroup2?.gid;
@@ -752,12 +754,14 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
       isGroupTransaction: isPaymentModeOneGroup || isPaymentModeTwoGroup,
       gid: isPaymentModeOneGroup ? groupId1 : null,
       groupName: groupName,
-      type: TransactionType.transfer,
       bankAccountId: bankAccountId1,
+      bankAccountName: bankAccountName,
+      transactionType: TransactionType.transfer.displayName,
       isTransferTransaction: true,
       gid2: isPaymentModeTwoGroup ? groupId2 : null,
       groupName2: groupName2,
       bankAccountId2: bankAccountId2,
+      bankAccountName2: bankAccountName2,
     );
   }
 

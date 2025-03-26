@@ -205,13 +205,48 @@ Future showYesNoDialog(
         title: Text(title),
         content: contentWidget,
         actions: [
-          ElevatedButton(
-            onPressed: onTapYes,
-            child: const Text("Yes"),
-          ),
-          ElevatedButton(
-            onPressed: onTapNo,
-            child: const Text("No"),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: onTapNo,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text("No"),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: onTapYes,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    margin: EdgeInsets.only(left: 5),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: color3,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      "Yes",
+                      style: TextStyle(
+                        color: color3,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );

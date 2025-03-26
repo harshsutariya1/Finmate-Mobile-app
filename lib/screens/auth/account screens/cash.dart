@@ -4,7 +4,6 @@ import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/account%20screens/accounts_screen.dart';
-import 'package:finmate/widgets/settings_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +24,7 @@ class _CashScreenState extends ConsumerState<CashScreen> {
         ref.watch(userFinanceDataNotifierProvider); // User finance data
 
     return Scaffold(
+      backgroundColor: whiteColor_2,
       body: _body(ref, userData, userFinanceData),
     );
   }
@@ -41,57 +41,39 @@ class _CashScreenState extends ConsumerState<CashScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            cashContainer(
-              context: context,
-              ref: ref,
-              userData: userData,
-              cashAmountController: cashAmountController,
-              userFinanceData: userFinanceData,
+            Container(
+              padding: EdgeInsets.all(10),
+              margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              decoration: BoxDecoration(
+                color: whiteColor,
+                border: Border(
+                  top: BorderSide(color: color2.withAlpha(100)),
+                  left: BorderSide(color: color2.withAlpha(100)),
+                  right: BorderSide(color: color2.withAlpha(100)),
+                  bottom: BorderSide(color: color3, width: 5),
+                ),
+              ),
+              child: accountTile(
+                icon: Icons.account_balance_wallet_outlined,
+                title: "Cash",
+                subtitle: "Balance: ${userFinanceData.cash?.amount ?? 0.0} ₹",
+                trailingWidget: IconButton(
+                  onPressed: () {
+                    showEditAmountBottomSheet(context, ref, userData,
+                        isCash: true,
+                        amount: userFinanceData.cash?.amount ?? "0.0");
+                  },
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: color3,
+                    size: 28,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget cashContainer({
-    BuildContext? context,
-    WidgetRef? ref,
-    UserData? userData,
-    TextEditingController? cashAmountController,
-    UserFinanceData? userFinanceData,
-    bool isSelectable = false,
-    bool isSelected = false,
-    void Function()? onTap,
-  }) {
-    return borderedContainer([
-      accountTile(
-        icon: Icons.account_balance_wallet_outlined,
-        title: "Cash",
-        subtitle: "Balance: ${userFinanceData?.cash?.amount ?? 0} ₹",
-        trailingWidget: IconButton(
-          onPressed: (isSelectable)
-              ? onTap
-              : () {
-                  showEditAmountBottomSheet(context!, ref!, userData!,
-                      isCash: true,
-                      amount: userFinanceData?.cash?.amount ?? "0.0");
-                },
-          icon: (isSelectable)
-              ? Icon(
-                  (isSelected)
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: (isSelected) ? color3 : color2,
-                  size: 28,
-                )
-              : Icon(
-                  Icons.more_vert_rounded,
-                  color: color3,
-                  size: 28,
-                ),
-        ),
-      ),
-    ]);
   }
 }

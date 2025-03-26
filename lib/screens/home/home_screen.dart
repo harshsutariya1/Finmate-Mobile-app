@@ -152,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ref.watch(userFinanceDataNotifierProvider);
     final List<BankAccount> bankAccounts =
         List.from(userFinanceData.listOfBankAccounts ?? []);
-    final String cashAmount = "${userFinanceData.cash!.amount ?? 0.0}";
+    final String cashAmount = "${userFinanceData.cash?.amount ?? 0.0}";
     final double additionOfBankBalanceAndCash = bankAccounts.fold(
           0.0,
           (previousValue, account) =>
@@ -202,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ref.watch(userFinanceDataNotifierProvider);
     final List<BankAccount> bankAccounts =
         List.from(userFinanceData.listOfBankAccounts ?? []);
-    final String cashAmount = "${userFinanceData.cash!.amount ?? 0.0}";
+    final String cashAmount = "${userFinanceData.cash?.amount ?? 0.0}";
     // Sort bank accounts by total balance in descending order
     bankAccounts.sort((a, b) {
       double balanceA = double.tryParse(a.totalBalance ?? '0') ?? 0;
@@ -270,7 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             return _accountBalanceTile(
               bankAccounts,
               bankAccount,
-              index: bankAccounts.indexOf(bankAccount),
+              bankAccounts.indexOf(bankAccount),
             );
           }),
           // cash balance
@@ -280,6 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               bankAccountName: "Cash Balance",
               totalBalance: cashAmount,
             ),
+            bankAccounts.length,
             isCash: true,
           ),
         ],
@@ -288,16 +289,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _accountBalanceTile(
-      List<BankAccount> bankAccounts, BankAccount bankAccount,
-      {int? index, bool isCash = false}) {
+      List<BankAccount> bankAccounts, BankAccount bankAccount, int index,
+      {bool isCash = false}) {
+    Size size = MediaQuery.sizeOf(context);
     double rightMargin() {
-      return (isCash)
-          ? 200
-          : (index! % 3 == 0)
-              ? 70
-              : (index % 3 == 1)
-                  ? 100
-                  : 130;
+      final margin = (index * (size.width * 0.1)) + 30;
+      // print("Right Margin: $margin");
+      return margin.clamp(20, 200);
     }
 
     // Define the animation for sliding from left to right
@@ -325,11 +323,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 vertical: 10,
                 horizontal: 25,
               ),
-              margin: EdgeInsets.only(top: 10, right: rightMargin()),
+              margin: EdgeInsets.only(
+                  top: 10, right: (!isCash) ? rightMargin() : 0),
               decoration: BoxDecoration(
                 color: (isCash)
                     ? whiteColor_2
-                    : (index! % 3 == 0)
+                    : (index % 3 == 0)
                         ? color1
                         : (index % 3 == 1)
                             ? color2
@@ -346,31 +345,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: (isCash) ? MainAxisSize.min : MainAxisSize.max,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 10,
-                    children: [
-                      Text(
-                        bankAccount.bankAccountName ??
-                            ((isCash) ? "Cash Balance" : "Bank Account"),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: (isCash) ? color2 : color4,
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 10,
+                      children: [
+                        Text(
+                          bankAccount.bankAccountName ??
+                              ((isCash) ? "Cash Balance" : "Bank Account"),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: (isCash) ? color2 : color4,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        "₹ ${bankAccount.totalBalance}",
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: (isCash) ? color1 : whiteColor,
-                          fontWeight: FontWeight.bold,
+                        Text(
+                          "₹ ${bankAccount.totalBalance}",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: (isCash) ? color1 : whiteColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -435,7 +437,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           (userFinanceData.listOfUserTransactions == null ||
                   userFinanceData.listOfUserTransactions!.isEmpty)
               ? Center(
-                  child: Text("No Transactions found!"),
+                  child: Text(
+                    "No Transactions Found yet ❗",
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                 )
               : Column(
                   children: transactionsList
@@ -444,6 +451,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           transactionTile(context, transaction, ref))
                       .toList(),
                 ),
+          sbh10,
         ],
       ),
     );

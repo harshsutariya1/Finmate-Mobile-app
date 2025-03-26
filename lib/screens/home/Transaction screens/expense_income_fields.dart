@@ -24,6 +24,7 @@ class ExpenseIncomeFields extends ConsumerStatefulWidget {
 
 class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _payeeController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _groupController = TextEditingController();
@@ -116,6 +117,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                 ),
               ),
             ],
+          ),
+          textfield(
+            controller: _payeeController, // Added Payee Textfield
+            hintText: "To Payee",
+            lableText: "To Payee",
+            prefixIconData: Icons.person_outline,
           ),
           textfield(
             controller: _descriptionController,
@@ -218,7 +225,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
               leading: const Icon(Icons.account_balance),
               title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
               subtitle: Text(
-                  "Total Balance: ${selectedBank!.availableBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+                  "Total Balance: ${selectedBank!.totalBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
             ),
           textfield(
             controller: _groupController,
@@ -740,6 +747,11 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       return "You cannot select both a payment mode and a group.";
     }
 
+    // Payee validation
+    if (_payeeController.text.trim().isEmpty) {
+      return "Payee cannot be empty.";
+    }
+
     // Payment mode validation
     if (paymentMode.isEmpty && group.isEmpty) {
       return "Please select a payment mode or a group.";
@@ -804,6 +816,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     final paymentMode = _paymentModeController.text.trim();
     final groupId = selectedGroup?.gid;
     final groupName = selectedGroup?.name;
+    final payee = _payeeController.text.trim(); // Added Payee
 
     return Transaction(
       uid: userData.uid ?? "",
@@ -815,10 +828,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       methodOfPayment: paymentMode,
       isGroupTransaction: _groupController.text.isNotEmpty,
       gid: groupId,
-      type:
-          (isIncomeSelected) ? TransactionType.income : TransactionType.expense,
-      bankAccountId: selectedBank?.bid,
       groupName: groupName,
+      bankAccountId: selectedBank?.bid,
+      bankAccountName: selectedBank?.bankAccountName,
+      payee: payee, // Added Payee
+      transactionType:
+          (isIncomeSelected) ? TransactionType.income.displayName : TransactionType.expense.displayName,
     );
   }
 

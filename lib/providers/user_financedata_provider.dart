@@ -107,9 +107,9 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             description: "Cash Balance Adjustment",
             category: TransactionCategory.balanceAdjustment.displayName,
             methodOfPayment: PaymentModes.cash.displayName,
-            type: (double.parse(adjustmentAmount).isNegative)
-                ? TransactionType.expense
-                : TransactionType.income,
+            transactionType: (double.parse(adjustmentAmount).isNegative)
+                ? TransactionType.expense.displayName
+                : TransactionType.income.displayName,
           ),
         );
       }
@@ -157,9 +157,9 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             category: TransactionCategory.balanceAdjustment.displayName,
             methodOfPayment: PaymentModes.bankAccount.displayName,
             bankAccountId: bankAccount?.bid,
-            type: (double.parse(adjustmentAmount).isNegative)
-                ? TransactionType.expense
-                : TransactionType.income,
+            transactionType: (double.parse(adjustmentAmount).isNegative)
+                ? TransactionType.expense.displayName
+                : TransactionType.income.displayName,
           ),
         );
       }
@@ -531,13 +531,19 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       if (bankAccount.bankAccountName != null) {
         if (uid.isNotEmpty && bankAccount.bankAccountName!.isNotEmpty) {
           // add bank account to firestore
-          final bankAccountColRef = bankAccountsCollectionReference(uid);
-          await bankAccountColRef.doc().set(bankAccount);
+          final bankAccountRef =
+              await bankAccountsCollectionReference(uid).add(bankAccount);
+          await bankAccountRef.update({
+            'bid': bankAccountRef.id,
+          });
+
           // add bank account to state provider
           state = state.copyWith(
             listOfBankAccounts: [
               ...?state.listOfBankAccounts,
-              bankAccount,
+              bankAccount.copyWith(
+                bid: bankAccountRef.id,
+              ),
             ],
           );
         } else {

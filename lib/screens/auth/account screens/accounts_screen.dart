@@ -21,8 +21,20 @@ class AccountsScreen extends ConsumerStatefulWidget {
 
 class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   int _selectedIndex = 0;
-
+  late PageController _pageController;
   List<String> tabTitles = ["Bank Accounts", "Cards", "Cash"];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +58,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             onTap: (index) {
               setState(() {
                 _selectedIndex = index;
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
               });
             },
           ),
@@ -56,8 +73,14 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   }
 
   Widget _body() {
-    return IndexedStack(
-      index: _selectedIndex,
+    return PageView(
+      controller: _pageController,
+      physics: const BouncingScrollPhysics(), // Or ClampingScrollPhysics()
+      onPageChanged: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
       children: [
         BankAccounts(),
         CardsScreen(),
@@ -179,19 +202,18 @@ void showEditAmountBottomSheet(
   );
 }
 
-Widget textfield({
-  required TextEditingController controller,
-  String? hintText,
-  String? lableText,
-  IconData? prefixIconData,
-  IconData? sufixIconData,
-  bool readOnly = false,
-  void Function()? onTap,
-  Widget? sufixWidget,
-  void Function()? onTapSufixWidget,
-  String? Function(String?)? validator,
-  void Function(String)? onChanged
-}) {
+Widget textfield(
+    {required TextEditingController controller,
+    String? hintText,
+    String? lableText,
+    IconData? prefixIconData,
+    IconData? sufixIconData,
+    bool readOnly = false,
+    void Function()? onTap,
+    Widget? sufixWidget,
+    void Function()? onTapSufixWidget,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged}) {
   return TextFormField(
     controller: controller,
     readOnly: readOnly,

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:finmate/constants/assets.dart';
 import 'package:finmate/constants/colors.dart';
@@ -367,6 +368,11 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
       });
     } catch (e) {
       logger.e("Error while editing image: $e");
+      snackbarToast(
+        context: context,
+        text: "Error while editing image: $e",
+        icon: Icons.error_outline_rounded,
+      );
       setState(() {
         imageLoader = false;
       });

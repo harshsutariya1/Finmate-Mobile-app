@@ -1,9 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
-import 'package:finmate/providers/user_financedata_provider.dart';
+import 'package:finmate/screens/home/Transaction%20screens/transaction_details.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/auth_widgets.dart';
-import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,18 +12,15 @@ Widget transactionTile(
 ) {
   final String? accountId1 = (transaction.isTransferTransaction)
       ? transaction.bankAccountId ??
-          transaction.walletId ??
           transaction.groupName
       : null;
   final String? accountId2 = (transaction.isTransferTransaction)
       ? transaction.bankAccountId2 ??
-          transaction.walletId2 ??
           transaction.groupName2
       : null;
 
   final String? paymentMode1 = (transaction.isTransferTransaction)
       ? (transaction.methodOfPayment == PaymentModes.bankAccount.displayName ||
-              transaction.methodOfPayment == PaymentModes.wallet.displayName ||
               transaction.methodOfPayment == PaymentModes.group.displayName
           ? accountId1
           : 'Cash')
@@ -33,7 +28,6 @@ Widget transactionTile(
 
   final paymentMode2 = (transaction.isTransferTransaction)
       ? (transaction.methodOfPayment2 == PaymentModes.bankAccount.displayName ||
-              transaction.methodOfPayment2 == PaymentModes.wallet.displayName ||
               transaction.methodOfPayment2 == PaymentModes.group.displayName
           ? accountId2
           : 'Cash')
@@ -41,55 +35,9 @@ Widget transactionTile(
 
   return Padding(
     padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-    child: Dismissible(
-      key: ValueKey(transaction),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        bool result = false;
-        // delete transaction dialog
-        showYesNoDialog(
-          context,
-          title: "Delete Transaction ?",
-          contentWidget: SizedBox(),
-          onTapYes: () async {
-            if (transaction.uid != null && transaction.tid != null) {
-              if (await ref
-                  .read(userFinanceDataNotifierProvider.notifier)
-                  .deleteTransaction(transaction.uid!, transaction.tid!)) {
-                snackbarToast(
-                  context: context,
-                  text: "Transaction Deleted!",
-                  icon: Icons.done,
-                );
-                result = true;
-                Navigate().goBack();
-              } else {
-                // error occured
-                snackbarToast(
-                  context: context,
-                  text: "Failed deleting transaction!",
-                  icon: Icons.delete_forever_rounded,
-                );
-                Navigate().goBack();
-              }
-            }
-          },
-          onTapNo: () {
-            Navigate().goBack();
-          },
-        );
-        return Future.value(result);
-      },
-      background: Container(
-        decoration: BoxDecoration(
-          color: Colors.red[300],
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Icon(
-          Icons.delete_rounded,
-          color: Colors.white,
-        ),
-      ),
+    child: InkWell(
+      onTap: () =>
+          Navigate().push(TransactionDetails(transaction: transaction)),
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.all(10),
