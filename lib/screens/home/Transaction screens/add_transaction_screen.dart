@@ -10,9 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
-    super.key, this.initialIndex = 0,
+    super.key,
+    this.initialIndex = 0,
+    required this.isIncome,
   });
   final int initialIndex;
+  final bool isIncome;
   @override
   ConsumerState<AddTransactionScreen> createState() =>
       _AddTransactionScreenState();
@@ -68,7 +71,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget _body(UserFinanceData userFinanceData, UserData userData) {
     return TabBarView(
       children: <Widget>[
-        ExpenseIncomeFields(),
+        ExpenseIncomeFields(isIncome: widget.isIncome),
         TransferFields(),
       ],
     );

@@ -75,7 +75,7 @@ Widget simpleBorderContainer({
   );
 }
 
-class CustomTabBar extends StatelessWidget {
+class CustomTabBar extends StatefulWidget {
   const CustomTabBar({
     super.key,
     required this.selectedIndex,
@@ -86,6 +86,59 @@ class CustomTabBar extends StatelessWidget {
   final int selectedIndex;
   final List<String> tabTitles;
   final ValueChanged<int> onTap;
+
+  @override
+  State<CustomTabBar> createState() => _CustomTabBarState();
+}
+
+class _CustomTabBarState extends State<CustomTabBar> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    // Initial scroll position for first render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedTab();
+    });
+  }
+
+  @override
+  void didUpdateWidget(CustomTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If selected index changed, scroll to make it visible
+    if (widget.selectedIndex != oldWidget.selectedIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToSelectedTab();
+      });
+    }
+  }
+
+  void _scrollToSelectedTab() {
+    // Approximate width of each tab - adjust based on your UI
+    final double tabWidth = 110.0;
+
+    // Calculate target scroll offset
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double targetPosition =
+        (widget.selectedIndex * tabWidth) - (screenWidth / 2) + (tabWidth / 2);
+
+    // Ensure we don't scroll out of bounds
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        targetPosition.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,27 +155,29 @@ class CustomTabBar extends StatelessWidget {
         ),
       ),
       child: SingleChildScrollView(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(tabTitles.length, (index) {
+          children: List.generate(widget.tabTitles.length, (index) {
             return GestureDetector(
-              onTap: () => onTap(index),
+              onTap: () => widget.onTap(index),
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 7, horizontal: 16),
                 margin: EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
                   border: Border.all(color: color2),
-                  color: selectedIndex == index ? color2 : Colors.transparent,
+                  color: widget.selectedIndex == index
+                      ? color2
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: Text(
-                  tabTitles[index],
+                  widget.tabTitles[index],
                   style: TextStyle(
-                    color: selectedIndex == index ? whiteColor : color2,
+                    color: widget.selectedIndex == index ? whiteColor : color2,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

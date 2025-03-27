@@ -101,7 +101,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
                   setState(() {
                     isExpanded = !isExpanded;
                   });
-                  Navigate().push(AddTransactionScreen());
+                  Navigate().push(AddTransactionScreen(isIncome: false));
                 },
                 child: Container(
                   width: 60,

@@ -1,5 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/models/radial_chartdata_model.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
@@ -8,6 +9,7 @@ import 'package:finmate/widgets/snackbar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -17,7 +19,8 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  int _selectedIndex = 0;
+  // Initialize to current month (0-indexed)
+  late int _selectedIndex;
   late PageController _pageController;
 
   List<String> monthsTabTitles = [
@@ -38,6 +41,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   void initState() {
     super.initState();
+    // Get the current month (1-12) and convert to 0-indexed (0-11)
+    _selectedIndex = DateTime.now().month - 1;
     _pageController = PageController(initialPage: _selectedIndex);
   }
 
@@ -123,6 +128,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 }
 
+// __________________________________________________________________________ //
+
 class MonthlyAnalysisCharts extends ConsumerStatefulWidget {
   const MonthlyAnalysisCharts(
       {super.key, required this.monthInt, required this.monthName});
@@ -169,7 +176,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                   : TransactionType.income.displayName)) ||
           (transaction.transactionType ==
               TransactionType.transfer.displayName)) {
-        continue; // Skip income transactions
+        continue; // Skip income & transfer transactions
       }
       String category = transaction.category ?? "Others";
       double amount = double.parse(transaction.amount ?? "0.0");
@@ -189,12 +196,23 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
         child: Column(
           children: [
             _totalIncomeExpense(userFinanceData, monthlyTransactions),
-            _pieChart(categoryTotals),
+            (categoryTotals.isEmpty)
+                ? noTransactionsFoundText()
+                : Column(
+                    children: [
+                      _pieChart(categoryTotals),
+                      (categoryTotals.length < 5)
+                          ? const SizedBox.shrink()
+                          : _radialBarChart(categoryTotals),
+                    ],
+                  ),
           ],
         ),
       ),
     );
   }
+
+// __________________________________________________________________________ //
 
   Widget _totalIncomeExpense(
       UserFinanceData userFinanceData, List<Transaction> monthlyTransactions) {
@@ -232,8 +250,21 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
             child: Column(
               spacing: 5,
               children: [
-                Text("Total Income"),
-                Text("$totalIncome"),
+                Text(
+                  "Total Income",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color1,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  "$totalIncome ₹",
+                  style: TextStyle(
+                    color: color1,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
           ),
@@ -257,8 +288,21 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
             child: Column(
               spacing: 5,
               children: [
-                Text("Total Expense"),
-                Text("$totalExpense"),
+                Text(
+                  "Total Expense",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color1,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  "$totalExpense",
+                  style: TextStyle(
+                    color: color1,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
           ),
@@ -267,49 +311,47 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
     );
   }
 
+// __________________________________________________________________________ //
+
   Widget _pieChart(Map<String, double> categoryTotals) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-      decoration: BoxDecoration(
-        color: color4,
-        border: Border.all(color: color2.withAlpha(100)),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        spacing: 20,
-        children: [
-          AspectRatio(
-            aspectRatio: 1.5,
-            child: PieChart(
-              PieChartData(
-                pieTouchData: PieTouchData(
-                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions ||
-                          pieTouchResponse == null ||
-                          pieTouchResponse.touchedSection == null) {
-                        piChartTouchedIndex = -1;
-                        return;
-                      }
-                      piChartTouchedIndex =
-                          pieTouchResponse.touchedSection!.touchedSectionIndex;
-                    });
-                  },
+        margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+        decoration: BoxDecoration(
+          color: color4,
+          border: Border.all(color: color2.withAlpha(100)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          spacing: 20,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.5,
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                      setState(() {
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          piChartTouchedIndex = -1;
+                          return;
+                        }
+                        piChartTouchedIndex = pieTouchResponse
+                            .touchedSection!.touchedSectionIndex;
+                      });
+                    },
+                  ),
+                  sectionsSpace: 5,
+                  centerSpaceRadius: 50,
+                  sections: piChartShowingSections(categoryTotals),
                 ),
-                borderData: FlBorderData(
-                  show: true,
-                ),
-                sectionsSpace: 5,
-                centerSpaceRadius: 50,
-                sections: piChartShowingSections(categoryTotals),
               ),
             ),
-          ),
-          _categoryAndAmount(categoryTotals),
-        ],
-      ),
-    );
+            _categoryAndAmount(categoryTotals),
+          ],
+        ));
   }
 
   List<PieChartSectionData> piChartShowingSections(
@@ -372,6 +414,181 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
           ],
         );
       }).toList(),
+    );
+  }
+
+// __________________________________________________________________________ //
+
+  Widget _radialBarChart(Map<String, double> categoryTotals) {
+    // Initialize tooltip behavior
+    final TooltipBehavior tooltipBehavior = TooltipBehavior(
+      enable: true,
+      format: 'Category: point.x\nAmount: ₹point.y',
+      header: '',
+    );
+
+    // Prepare chart data
+    List<CategoryChartData> chartData = _prepareRadialChartData(categoryTotals);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+      decoration: BoxDecoration(
+        color: color4,
+        border: Border.all(color: color2.withAlpha(100)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          _buildRadialBarChart(chartData, tooltipBehavior),
+          sbh10,
+          _buildDetailedLegend(chartData),
+        ],
+      ),
+    );
+  }
+
+  // Data preparation method
+  List<CategoryChartData> _prepareRadialChartData(
+      Map<String, double> categoryTotals) {
+    // Sort categories by amount (descending)
+    List<MapEntry<String, double>> sortedEntries = categoryTotals.entries
+        .toList()
+      ..sort((a, b) => b.value.abs().compareTo(a.value.abs()));
+
+    // Take only top 5
+    List<MapEntry<String, double>> topFiveEntries =
+        sortedEntries.take(5).toList();
+
+    // Find max amount for percentage calculation
+    double maxAmount =
+        topFiveEntries.isNotEmpty ? topFiveEntries.first.value.abs() : 0;
+
+    // Generate colors
+    List<Color> categoryColors = [
+      const Color.fromRGBO(248, 177, 149, 1.0),
+      const Color.fromRGBO(246, 114, 128, 1.0),
+      const Color.fromRGBO(61, 205, 171, 1.0),
+      const Color.fromRGBO(1, 174, 190, 1.0),
+      const Color.fromRGBO(116, 90, 242, 1.0),
+    ];
+
+    // Create formatted chart data
+    return topFiveEntries.asMap().entries.map((entry) {
+      int index = entry.key;
+      String category = entry.value.key;
+      double amount = entry.value.value.abs();
+      double percentage = (amount / maxAmount) * 100;
+
+      return CategoryChartData(
+        category: category,
+        amount: amount,
+        color: index < categoryColors.length
+            ? categoryColors[index]
+            : Colors.primaries[index % Colors.primaries.length],
+        percentText: '${percentage.toStringAsFixed(1)}%',
+      );
+    }).toList();
+  }
+
+  // Chart building method
+  Widget _buildRadialBarChart(
+      List<CategoryChartData> chartData, TooltipBehavior tooltipBehavior) {
+    // Calculate maximum value
+    double maxValue = chartData.isNotEmpty ? chartData.first.amount : 1.0;
+
+    return SizedBox(
+      height: 300,
+      child: SfCircularChart(
+        title: ChartTitle(
+          text: "Top 5 ${isIncomeSelected ? 'Income' : 'Expense'} Categories",
+          textStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color1,
+          ),
+        ),
+        tooltipBehavior: tooltipBehavior,
+        series: <RadialBarSeries<CategoryChartData, String>>[
+          RadialBarSeries<CategoryChartData, String>(
+            dataSource: chartData,
+            xValueMapper: (CategoryChartData data, _) => data.category,
+            yValueMapper: (CategoryChartData data, _) => data.amount,
+            pointColorMapper: (CategoryChartData data, _) => data.color,
+            dataLabelMapper: (CategoryChartData data, _) => data.percentText,
+            enableTooltip: true,
+            maximumValue: maxValue,
+            radius: '100%',
+            gap: '5%',
+            cornerStyle: CornerStyle.bothCurve,
+            dataLabelSettings: DataLabelSettings(
+              isVisible: true,
+              labelPosition: ChartDataLabelPosition.outside,
+              textStyle: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: color1,
+              ),
+              useSeriesColor: true,
+            ),
+            legendIconType: LegendIconType.circle,
+            sortingOrder: SortingOrder.descending,
+            sortFieldValueMapper: (CategoryChartData data, _) => data.amount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Legend with exact amounts
+  Widget _buildDetailedLegend(List<CategoryChartData> chartData) {
+    return Column(
+      children: chartData.map((data) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3.0),
+          child: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: data.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                data.category,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              sbw15,
+              Text(
+                '${data.amount.toStringAsFixed(0)} ₹',
+                style: TextStyle(fontSize: 15, color: color2),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+// __________________________________________________________________________ //
+  Widget noTransactionsFoundText() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 30),
+      child: Text(
+        "No Transactions Found for this month ❗",
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 }

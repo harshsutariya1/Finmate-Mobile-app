@@ -74,3 +74,7 @@ android {
 flutter {
     source = "../.."
 }
+
+ dependencies {
+        implementation "dev.shreyaspatil.EasyUpiPayment:EasyUpiPayment:3.0.3"
+    }

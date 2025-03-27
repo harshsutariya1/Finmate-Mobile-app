@@ -832,8 +832,9 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       bankAccountId: selectedBank?.bid,
       bankAccountName: selectedBank?.bankAccountName,
       payee: payee, // Added Payee
-      transactionType:
-          (isIncomeSelected) ? TransactionType.income.displayName : TransactionType.expense.displayName,
+      transactionType: (isIncomeSelected)
+          ? TransactionType.income.displayName
+          : TransactionType.expense.displayName,
     );
   }
 

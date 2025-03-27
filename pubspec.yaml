@@ -64,7 +64,6 @@ dependencies:
   riverpod_annotation: ^2.6.1
   get_it: ^8.0.3
   google_sign_in: ^6.2.2
-  shorebird_code_push: ^2.0.3
   flutter_slidable: ^4.0.0
   searchfield: ^1.2.4
   dotted_border: ^2.1.0
@@ -75,6 +74,8 @@ dependencies:
   fl_chart: ^0.70.2
   # upi_india: ^3.0.1
   upi_pay: ^1.1.0
+  easy_upi_payment: ^0.1.6
+  syncfusion_flutter_charts: ^29.1.33
 
 dev_dependencies:
   flutter_test:
