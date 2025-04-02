@@ -33,6 +33,9 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
     final UserData userData = ref.watch(userDataNotifierProvider); // User data
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider); // User finance data
+    // crouselIndex = 1;
+    selectedBankAccount = userFinanceData
+        .listOfBankAccounts?[crouselIndex]; // selected bank account
     return Scaffold(
       backgroundColor: whiteColor_2,
       body: _body(ref, userData, userFinanceData),

@@ -3,6 +3,7 @@ import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
@@ -26,7 +27,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _categoryController =
-      TextEditingController(text: TransactionCategory.transfer.displayName);
+      TextEditingController(text: SystemCategory.transfer.displayName);
   final TextEditingController _paymentModeOneController =
       TextEditingController();
   final TextEditingController _paymentModeTwoController =

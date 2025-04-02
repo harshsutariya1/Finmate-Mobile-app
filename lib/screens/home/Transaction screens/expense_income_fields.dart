@@ -7,6 +7,7 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/home/Transaction%20screens/select_category.dart';
 import 'package:finmate/screens/home/bnb_pages.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
@@ -120,8 +121,8 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
           ),
           textfield(
             controller: _payeeController, // Added Payee Textfield
-            hintText: "To Payee",
-            lableText: "To Payee",
+            hintText: (isIncomeSelected) ? "From Payeer" : "To Payee",
+            lableText: (isIncomeSelected) ? "From Payeer" : "To Payee",
             prefixIconData: Icons.person_outline,
           ),
           textfield(
@@ -140,70 +141,29 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
               onTap: () {
                 // show modal bottom sheet to select category
                 showModalBottomSheet(
+                  isScrollControlled: true,
                   context: context,
                   builder: (context) {
-                    Iterable<String> categoryList =
-                        transactionCategoriesAndIcons.keys;
                     return Container(
+                      height: MediaQuery.sizeOf(context).height * 0.7,
                       width: double.infinity,
                       padding: EdgeInsets.all(20),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Select Category"),
-                                IconButton(
-                                  onPressed: () {
-                                    snackbarToast(
-                                        context: context,
-                                        text: "This Function is in development",
-                                        icon: Icons.developer_mode_outlined);
-                                  },
-                                  icon: Icon(Icons.add),
-                                  color: color3,
-                                )
-                              ],
-                            ),
-                            Wrap(
-                              spacing: 8.0,
-                              children: categoryList.map((category) {
-                                if (category ==
-                                        TransactionCategory
-                                            .balanceAdjustment.displayName ||
-                                    category ==
-                                        TransactionCategory
-                                            .transfer.displayName) {
-                                  return SizedBox.shrink();
-                                }
-                                return ChoiceChip(
-                                  label: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    spacing: 20,
-                                    children: [
-                                      Icon(
-                                        transactionCategoriesAndIcons[category],
-                                        color: color1,
-                                      ),
-                                      Text(category),
-                                    ],
-                                  ),
-                                  // showCheckmark: false,
-                                  selected:
-                                      _categoryController.text == category,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _categoryController.text =
-                                          selected ? category : '';
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                      decoration: BoxDecoration(
+                        color: color4,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
+                      ),
+                      child: SelectCategory(
+                        isIncome: isIncomeSelected,
+                        onTap: (selectedCategory) {
+                          setState(() {
+                            _categoryController.text = selectedCategory;
+                          });
+                          Navigator.pop(context);
+                        },
+                        selectedCategory: _categoryController.text,
                       ),
                     );
                   },

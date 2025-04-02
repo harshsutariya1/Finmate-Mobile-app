@@ -1,5 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/screens/home/Transaction%20screens/transaction_details.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,7 @@ Widget transactionTile(
                                 "${transaction.description}",
                                 style: TextStyle(
                                   color: (transaction.category ==
-                                          TransactionCategory
+                                          SystemCategory
                                               .balanceAdjustment.displayName)
                                       ? color2
                                       : color1,

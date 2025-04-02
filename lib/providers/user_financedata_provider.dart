@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/services/database_references.dart';
@@ -105,7 +106,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             uid: uid,
             amount: adjustmentAmount,
             description: "Cash Balance Adjustment",
-            category: TransactionCategory.balanceAdjustment.displayName,
+            category: SystemCategory.balanceAdjustment.displayName,
             methodOfPayment: PaymentModes.cash.displayName,
             transactionType: (double.parse(adjustmentAmount).isNegative)
                 ? TransactionType.expense.displayName
@@ -154,7 +155,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             uid: uid,
             amount: adjustmentAmount,
             description: "Bank Balance Adjustment",
-            category: TransactionCategory.balanceAdjustment.displayName,
+            category: SystemCategory.balanceAdjustment.displayName,
             methodOfPayment: PaymentModes.bankAccount.displayName,
             bankAccountId: bankAccount?.bid,
             transactionType: (double.parse(adjustmentAmount).isNegative)

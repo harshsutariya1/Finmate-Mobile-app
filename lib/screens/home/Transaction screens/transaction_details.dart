@@ -1,6 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/transaction.dart';
+import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/auth_widgets.dart';
@@ -173,8 +174,8 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                 radius: 46,
                 backgroundColor: whiteColor,
                 child: Icon(
-                  transactionCategoriesAndIcons[transaction.category] ??
-                      Icons.category,
+                  CategoryHelpers.getIconForCategory(
+                      transaction.category ?? "Others"),
                   size: 50,
                   color: color2.withAlpha(200),
                 ),

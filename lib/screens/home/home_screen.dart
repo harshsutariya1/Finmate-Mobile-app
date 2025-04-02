@@ -18,6 +18,7 @@ import 'package:finmate/widgets/settings_widgets.dart';
 import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -93,6 +94,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 _accounts(),
                 sbh10,
                 _expenseIncomeTransferButtons(),
+                sbh10,
+                _incomeExpenseBalance(),
                 sbh10,
                 _transactionContainer(userFinanceData, transactionsList),
                 sbh15,
@@ -275,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               bankAccount,
               bankAccounts.indexOf(bankAccount),
             );
-          }),
+          }).take(3),
           // cash balance
           _accountBalanceTile(
             bankAccounts,
@@ -285,6 +288,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             bankAccounts.length,
             isCash: true,
+          ),
+          // view all button
+          Align(
+            alignment: Alignment.center,
+            child: InkWell(
+              onTap: () {
+                Navigate().push(AccountsScreen());
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: 20,
+                ),
+                margin: EdgeInsets.only(top: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: color2.withAlpha(100),
+                  ),
+                ),
+                child: Text(
+                  "View All",
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -309,7 +340,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       CurvedAnimation(
         parent: _animationController,
         curve: Interval(
-          (index ?? 0) * 0.1, // Stagger the animation for each tile
+          (index) * 0.1, // Stagger the animation for each tile
           1.0,
           curve: Curves.easeOut,
         ),
@@ -385,101 +416,305 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _expenseIncomeTransferButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color4,
-          border: Border.all(color: color3.withAlpha(100)),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: color3.withAlpha(50),
-              blurRadius: 1,
-              spreadRadius: 1,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            InkWell(
-              onTap: () {
-                Navigate().push(AddTransactionScreen(
-                  initialIndex: 0,
-                  isIncome: true,
-                ));
-              },
-              child: Column(
-                spacing: 5,
-                children: [
-                  Icon(
-                    Icons.arrow_circle_up_rounded,
-                    color: color2,
-                    size: 40,
-                  ),
-                  Text(
-                    "Income",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () {
-                Navigate().push(AddTransactionScreen(
-                  initialIndex: 0,
-                  isIncome: false,
-                ));
-              },
-              child: Column(
-                spacing: 5,
-                children: [
-                  Icon(
-                    Icons.arrow_circle_down_rounded,
-                    color: color2,
-                    size: 40,
-                  ),
-                  Text(
-                    "Expense",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () {
-                Navigate().push(AddTransactionScreen(
-                  initialIndex: 1,
-                  isIncome: false,
-                ));
-              },
-              child: Column(
-                spacing: 5,
-                children: [
-                  Icon(
-                    Icons.swap_horizontal_circle_outlined,
-                    color: color2,
-                    size: 40,
-                  ),
-                  Text(
-                    "Transfer",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: color4,
+        border: Border.all(color: color3.withAlpha(100)),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: color2.withAlpha(50),
+            blurRadius: 1,
+            spreadRadius: 2,
+            offset: Offset(0, 1.5),
+          ),
+        ],
       ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          InkWell(
+            onTap: () {
+              Navigate().push(AddTransactionScreen(
+                initialIndex: 0,
+                isIncome: true,
+              ));
+            },
+            child: Column(
+              spacing: 5,
+              children: [
+                Icon(
+                  Icons.arrow_circle_up_rounded,
+                  color: color2,
+                  size: 40,
+                ),
+                Text(
+                  "Income",
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              Navigate().push(AddTransactionScreen(
+                initialIndex: 0,
+                isIncome: false,
+              ));
+            },
+            child: Column(
+              spacing: 5,
+              children: [
+                Icon(
+                  Icons.arrow_circle_down_rounded,
+                  color: color2,
+                  size: 40,
+                ),
+                Text(
+                  "Expense",
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              Navigate().push(AddTransactionScreen(
+                initialIndex: 1,
+                isIncome: false,
+              ));
+            },
+            child: Column(
+              spacing: 5,
+              children: [
+                Icon(
+                  Icons.swap_horizontal_circle_outlined,
+                  color: color2,
+                  size: 40,
+                ),
+                Text(
+                  "Transfer",
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _incomeExpenseBalance() {
+    final UserFinanceData userFinanceData =
+        ref.watch(userFinanceDataNotifierProvider);
+
+    double totalIncome = 0.0;
+    double totalExpense = 0.0;
+    double todayExpenses = 0.0;
+    int currentDay = DateTime.now().day;
+    int currentYear = DateTime.now().year;
+    int currentMonth = DateTime.now().month;
+
+    for (Transaction transaction
+        in userFinanceData.listOfUserTransactions ?? []) {
+      // Extract the transaction year and month
+      int transactionYear = transaction.date?.year ?? currentYear;
+      int transactionMonth = transaction.date?.month ?? currentMonth;
+
+      // compare transaction date with current month
+      if (transactionYear == currentYear && transactionMonth == currentMonth) {
+        if (transaction.transactionType == TransactionType.income.displayName) {
+          totalIncome += double.parse(transaction.amount ?? "0.0");
+        } else if (transaction.transactionType ==
+            TransactionType.expense.displayName) {
+          totalExpense += double.parse(transaction.amount ?? "0.0");
+        }
+      }
+    }
+
+    for (Transaction transaction in userFinanceData.listOfUserTransactions
+            ?.where((transaction) =>
+                (transaction.date?.day == currentDay) &&
+                (transaction.date?.month == currentMonth) &&
+                (transaction.date?.year == currentYear)) ??
+        []) {
+      if (transaction.transactionType == TransactionType.expense.displayName) {
+        todayExpenses += double.parse(transaction.amount ?? "0.0");
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.only(top: 20, bottom: 10),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: color2.withAlpha(50),
+        border: Border.all(color: color2.withAlpha(100)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 20,
+        children: [
+          // Income Expense Balance
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Income Column
+              Row(
+                spacing: 15,
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.green,
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundColor: Colors.green[100],
+                      child: Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.green,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 5,
+                    children: [
+                      Text(
+                        "Income",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: color2.withAlpha(200),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "₹ $totalIncome",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Expense Column
+              Row(
+                spacing: 15,
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.red,
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundColor: Colors.red[100],
+                      child: Icon(
+                        Icons.arrow_downward_rounded,
+                        color: Colors.red,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 5,
+                    children: [
+                      Text(
+                        "Expense",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: color2.withAlpha(200),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "₹ $totalExpense",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Today Expenses
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 10,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Text(
+                  "Today's Expenses",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: color2.withAlpha(200),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Text(
+                  "₹ $todayExpenses",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Income vs Expense bar
+          _buildRangeColorAxis(context, totalIncome, totalExpense)
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRangeColorAxis(
+      BuildContext context, double totalIncome, double totalExpense) {
+    final income = totalIncome;
+    final expense = totalExpense;
+    final totalAmount = income + expense.abs();
+    final double incomePercentage = ((totalIncome * 100) / totalAmount) >= 0.0
+        ? (totalIncome * 100) / totalAmount
+        : 50;
+    // Logger().i("Income Percentage: $incomePercentage");
+    return SfLinearGauge(
+      useRangeColorForAxis: true,
+      showLabels: false,
+      showTicks: false,
+      animateAxis: true,
+      orientation: LinearGaugeOrientation.horizontal,
+      axisTrackStyle: const LinearAxisTrackStyle(thickness: 1),
+      ranges: <LinearGaugeRange>[
+        LinearGaugeRange(
+          endValue: incomePercentage,
+          color: Colors.green,
+        ),
+        LinearGaugeRange(
+          startValue: incomePercentage,
+          color: Colors.red,
+        ),
+      ],
     );
   }
 
@@ -488,7 +723,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     List<Transaction> transactionsList,
   ) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         border: Border.all(
           color: color2.withAlpha(100),

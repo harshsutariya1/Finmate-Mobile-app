@@ -76,6 +76,7 @@ dependencies:
   upi_pay: ^1.1.0
   easy_upi_payment: ^0.1.6
   syncfusion_flutter_charts: ^29.1.33
+  syncfusion_flutter_gauges: ^29.1.35
 
 dev_dependencies:
   flutter_test:
