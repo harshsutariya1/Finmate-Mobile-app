@@ -43,7 +43,9 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
       actions: [
         // edit button
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            // _editTransaction();
+          },
           icon: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -141,23 +143,39 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
         alignment: Alignment.topCenter,
         children: [
           Container(
-            padding: const EdgeInsets.only(
-              top: 60,
-              bottom: 20,
-              left: 20,
-              right: 20,
-            ),
-            margin: const EdgeInsets.only(top: 50),
             decoration: BoxDecoration(
-              color: color4.withAlpha(100),
-              border: Border.all(color: color2.withAlpha(100)),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+              border: Border(
+                bottom: BorderSide(
+                  color: (transaction.transactionType ==
+                          TransactionType.income.displayName)
+                      ? color3
+                      : (transaction.transactionType ==
+                              TransactionType.transfer.displayName)
+                          ? color2
+                          : Colors.red,
+                  width: 5,
+                ),
               ),
             ),
-            alignment: Alignment.center,
-            child: _transactionDetails(),
+            child: Container(
+              padding: const EdgeInsets.only(
+                top: 60,
+                bottom: 20,
+                left: 20,
+                right: 20,
+              ),
+              margin: const EdgeInsets.only(top: 50),
+              decoration: BoxDecoration(
+                color: color4.withAlpha(100),
+                border: Border.all(color: color2.withAlpha(100)),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: _transactionDetails(),
+            ),
           ),
           Positioned(
             top: 0,
@@ -485,4 +503,24 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
       ],
     );
   }
+
+// __________________________________________________________________________ //
+
+  // Future<void> _editTransaction() async {
+  //   try {
+  //    final Transaction? updatedTransaction = await Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => EditTransactionScreen(transaction: transaction),
+  //     ),
+  //   );
+  //   if (updatedTransaction != null) {
+  //     setState(() {
+  //       transaction = updatedTransaction;
+  //     });
+  //   }
+  //   } catch (e) {
+  //     Logger().e("Error editing transaction: ${e.toString()}");
+  //   }
+  // }
 }

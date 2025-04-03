@@ -1,12 +1,12 @@
+import 'dart:io';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/services/upi_payment_service.dart';
 import 'package:finmate/widgets/snackbar.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:upi_pay/upi_pay.dart';
 
 class UpiPaymentScreen extends StatefulWidget {
   const UpiPaymentScreen({super.key});
@@ -20,51 +20,43 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _upiIdController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  final Logger _logger = Logger();
+  final UpiPaymentService _upiService = UpiPaymentService();
+
   bool _isProcessing = false;
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _upiApps = [];
+  String? _error;
 
   // Platform check
-  final bool _isAndroid = defaultTargetPlatform == TargetPlatform.android;
-
-  // UPI Apps
-  final upiPay = UpiPay();
-  List<ApplicationMeta>? _apps;
-  bool _loadingApps = true;
-  String? _upiError;
+  final bool _isAndroid = Platform.isAndroid;
 
   @override
   void initState() {
     super.initState();
-
-    // Only fetch UPI apps on Android
     if (_isAndroid) {
-      _fetchUpiApps();
+      _loadUpiApps();
     } else {
       setState(() {
-        _loadingApps = false;
-        _upiError = "UPI payments are only supported on Android devices";
+        _isLoading = false;
+        _error = "UPI payments are only supported on Android devices";
       });
     }
   }
 
-  Future<void> _fetchUpiApps() async {
+  Future<void> _loadUpiApps() async {
     try {
-      final apps = await upiPay.getInstalledUpiApplications(
-          paymentType: UpiApplicationDiscoveryAppPaymentType.nonMerchant);
-      if (mounted) {
-        setState(() {
-          _apps = apps;
-          _loadingApps = false;
-        });
-      }
+      final apps = await _upiService.getUpiApps();
+      setState(() {
+        _upiApps = apps;
+        _isLoading = false;
+      });
     } catch (e) {
-      Logger().e("Error fetching UPI apps: $e");
-      if (mounted) {
-        setState(() {
-          _loadingApps = false;
-          _upiError = "Could not load UPI apps. Please try again later.";
-          _apps = [];
-        });
-      }
+      _logger.e("Error loading UPI apps: $e");
+      setState(() {
+        _isLoading = false;
+        _error = "Failed to load UPI apps: $e";
+      });
     }
   }
 
@@ -76,9 +68,7 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
     super.dispose();
   }
 
-  // UPI ID validation regex pattern
   bool _isValidUpiId(String upiId) {
-    // Basic UPI ID format: username@provider
     final RegExp upiRegex = RegExp(r'^[a-zA-Z0-9_.]{3,}@[a-zA-Z]{3,}$');
     return upiRegex.hasMatch(upiId);
   }
@@ -87,53 +77,38 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color4,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Platform warning if not Android
-                if (!_isAndroid) _buildPlatformWarning(),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _buildBody(),
+    );
+  }
 
-                // Form fields section
-                _buildFormFields(),
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!_isAndroid) _buildPlatformWarning(),
+            if (_error != null) _buildErrorMessage(),
 
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed:
-                        (_isProcessing || !_isAndroid) ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: color3,
-                      foregroundColor: whiteColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: _isProcessing
-                        ? CircularProgressIndicator(color: whiteColor)
-                        : Text(
-                            "Pay Now",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-                sbh20,
+            // Form Fields
+            _buildAmountField(),
+            sbh20,
+            _buildUpiIdField(),
+            sbh20,
+            _buildNoteField(),
+            sbh20,
 
-                // Payment Information
-                _buildInformationSection(),
-              ],
-            ),
-          ),
+            // Payment Button
+            _buildPayButton(),
+            sbh20,
+
+            // Information Section
+            _buildInfoSection(),
+          ],
         ),
       ),
     );
@@ -141,10 +116,10 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
 
   Widget _buildPlatformWarning() {
     return Container(
-      padding: EdgeInsets.all(16),
       margin: EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withAlpha(50),
+        color: Colors.orange.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.orange),
       ),
@@ -163,68 +138,133 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
     );
   }
 
-  Widget _buildFormFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Amount Field
-        TextFormField(
-          controller: _amountController,
-          decoration: _buildInputDecoration("Amount (₹)", Icons.currency_rupee),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-          ],
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter an amount';
-            }
-            if (double.tryParse(value) == null) {
-              return 'Please enter a valid amount';
-            }
-            if (double.parse(value) <= 0) {
-              return 'Amount must be greater than zero';
-            }
-            return null;
-          },
-        ),
-        sbh20,
-
-        // UPI ID Field
-        TextFormField(
-          controller: _upiIdController,
-          decoration:
-              _buildInputDecoration("UPI ID", Icons.account_balance_wallet)
-                  .copyWith(helperText: "e.g. username@upi"),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter a UPI ID';
-            }
-            if (!_isValidUpiId(value)) {
-              return 'Please enter a valid UPI ID';
-            }
-            return null;
-          },
-        ),
-        sbh20,
-
-        // Note Field (Optional)
-        TextFormField(
-          controller: _noteController,
-          decoration: _buildInputDecoration("Note (Optional)", Icons.note_alt),
-          maxLength: 50,
-          maxLines: 2,
-        ),
-        sbh20,
-      ],
+  Widget _buildErrorMessage() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _error!,
+              style: TextStyle(color: Colors.red[800]),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildInformationSection() {
+  Widget _buildAmountField() {
+    return TextFormField(
+      controller: _amountController,
+      decoration: InputDecoration(
+        labelText: "Amount (₹)",
+        prefixIcon: Icon(Icons.currency_rupee),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter an amount';
+        }
+        if (double.tryParse(value) == null || double.parse(value) <= 0) {
+          return 'Please enter a valid amount';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildUpiIdField() {
+    return TextFormField(
+      controller: _upiIdController,
+      decoration: InputDecoration(
+        labelText: "UPI ID",
+        prefixIcon: Icon(Icons.account_balance_wallet),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        helperText: "e.g. yourname@upi",
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a UPI ID';
+        }
+        // if (!_isValidUpiId(value)) {
+        //   return 'Please enter a valid UPI ID';
+        // }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNoteField() {
+    return TextFormField(
+      controller: _noteController,
+      decoration: InputDecoration(
+        labelText: "Note (Optional)",
+        prefixIcon: Icon(Icons.note_alt),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      maxLength: 50,
+    );
+  }
+
+  Widget _buildPayButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color3,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        onPressed: _isAndroid && !_isProcessing && _upiApps.isNotEmpty
+            ? _showUpiAppSelector
+            : null,
+        child: _isProcessing
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                "Pay Now",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection() {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: color2.withAlpha(150)),
+        border: Border.all(color: color2.withAlpha(100)),
         borderRadius: BorderRadius.circular(10),
         color: color2.withAlpha(50),
       ),
@@ -232,7 +272,7 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Take Note:",
+            "Payment Information:",
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -240,100 +280,71 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
             ),
           ),
           sbh10,
-          _buildInfoText("Transaction is secure and encrypted"),
-          _buildInfoText(
-              "Money will be deducted from your selected UPI account"),
-          _buildInfoText("Transaction might take a few seconds to process"),
-
-          // Show UPI apps status
-          if (_isAndroid) ...[
-            sbh10,
-            Divider(),
-            sbh10,
-            Text(
-              "UPI Apps Status:",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: color1,
-              ),
+          _buildInfoItem("Payment is secure and encrypted"),
+          _buildInfoItem("Transaction may take a few seconds to process"),
+          _buildInfoItem(
+              "You'll receive a confirmation after successful payment"),
+          sbh10,
+          Divider(),
+          sbh10,
+          Text(
+            "UPI Apps Status:",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color1,
             ),
-            sbh10,
-            if (_loadingApps)
-              _buildInfoText("Loading UPI apps...")
-            else if (_upiError != null)
-              _buildInfoText("Error: $_upiError", color: Colors.red)
-            else if (_apps?.isEmpty ?? true)
-              _buildInfoText("No UPI apps found on your device",
-                  color: Colors.orange[800])
-            else
-              _buildInfoText("Found ${_apps!.length} UPI apps on your device",
-                  color: Colors.green),
-          ],
+          ),
+          sbh10,
+          _buildInfoItem(
+            _isLoading
+                ? "Loading UPI apps..."
+                : _upiApps.isEmpty
+                    ? "No UPI apps found on your device"
+                    : "Found ${_upiApps.length} UPI apps on your device",
+            color: _isLoading
+                ? Colors.blue
+                : _upiApps.isEmpty
+                    ? Colors.red
+                    : Colors.green,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoText(String text, {Color? color}) {
-    return Text(
-      "• $text",
-      style: TextStyle(color: color ?? color2),
-    );
-  }
-
-  InputDecoration _buildInputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: color1),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: color2),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: color3, width: 2),
-      ),
-    );
-  }
-
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isProcessing = true;
-      });
-
-      if (_apps?.isNotEmpty ?? false) {
-        await _showUpiApps();
-      } else {
-        // No UPI apps available
-        snackbarToast(
-          context: context,
-          text: "No UPI apps found on your device.",
-          icon: Icons.error_outline,
-        );
-      }
-
-      setState(() {
-        _isProcessing = false;
-      });
-    }
-  }
-
-  Future<void> _showUpiApps() async {
-    await showModalBottomSheet(
-      isScrollControlled: true,
-      context: context,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          width: double.infinity,
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: color4,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildInfoItem(String text, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("•", style: TextStyle(color: color ?? color2, fontSize: 16)),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: color ?? color2),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpiAppSelector() {
+    if (_formKey.currentState!.validate()) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          padding: EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,30 +352,38 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
                   Text(
                     "Select UPI App",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: color1,
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: color1),
+                    icon: Icon(Icons.close),
                   ),
                 ],
+              ),
+              Divider(),
+              sbh10,
+              Text(
+                "Choose an app to make your payment:",
+                style: TextStyle(color: color2),
               ),
               sbh20,
               Expanded(
                 child: ListView.builder(
-                  itemCount: _apps?.length ?? 0,
+                  itemCount: _upiApps.length,
                   itemBuilder: (context, index) {
-                    final app = _apps![index];
+                    final app = _upiApps[index];
                     return Card(
-                      margin: EdgeInsets.only(bottom: 10),
-                      elevation: 2,
+                      margin: EdgeInsets.only(bottom: 8),
                       child: ListTile(
-                        leading: app.iconImage(48),
-                        title: Text(app.upiApplication.getAppName()),
-                        onTap: () => _initiateUpiTransaction(app),
+                        leading: Icon(Icons.payment),
+                        title: Text(app['appName']),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _initiatePayment(app);
+                        },
                       ),
                     );
                   },
@@ -372,50 +391,47 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Future<void> _initiateUpiTransaction(ApplicationMeta app) async {
-    try {
-      final transactionRef = DateTime.now().millisecondsSinceEpoch.toString();
-
-      final UpiTransactionResponse response = await upiPay.initiateTransaction(
-        app: app.upiApplication,
-        receiverUpiAddress: _upiIdController.text.trim(),
-        receiverName: 'Receiver',
-        transactionRef: transactionRef,
-        amount: _amountController.text.trim(),
-        transactionNote: _noteController.text.trim(),
-      );
-
-      Logger().i("UPI Response: $response");
-      Navigate().goBack; // Close bottom sheet
-
-      // _handleSuccessfulPayment(response.status, transactionRef);
-    } catch (e) {
-      Logger().e("UPI transaction error: $e");
-      Navigator.pop(context); // Close bottom sheet
-      snackbarToast(
-        context: context,
-        text: "Transaction failed: ${e.toString()}",
-        icon: Icons.error_outline,
+        ),
       );
     }
   }
 
-  void _handleSuccessfulPayment(bool responseStatus, String transactionRef) {
-    if (!responseStatus) {
+  Future<void> _initiatePayment(Map<String, dynamic> app) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final result = await _upiService.initiateTransaction(
+        appPackageName: app['packageName'],
+        receiverUpiId: _upiIdController.text.trim(),
+        receiverName: "Payment Receiver", // Change as needed
+        transactionNote: _noteController.text.trim(),
+        amount: _amountController.text.trim(),
+      );
+
+      _handlePaymentResponse(result);
+    } catch (e) {
+      _logger.e("Payment error: $e");
       snackbarToast(
         context: context,
-        text: "Transaction failed. Please try again.",
+        text: "Payment failed: $e",
         icon: Icons.error_outline,
       );
-      return;
-    } else {
-      // Reset form
-      _formKey.currentState!.reset();
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  void _handlePaymentResponse(Map<String, dynamic> response) {
+    final bool success = response['success'] == true;
+    final String status = response['status'] as String? ?? 'UNKNOWN';
+
+    if (success) {
+      // Reset form fields on success
+      _formKey.currentState?.reset();
       _amountController.clear();
       _upiIdController.clear();
       _noteController.clear();
@@ -423,9 +439,51 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
       // Show success message
       snackbarToast(
         context: context,
-        text: "Payment initiated! Transaction reference: $transactionRef",
+        text: "Payment successful! Status: $status",
         icon: Icons.check_circle,
       );
+
+      // You could save the transaction in your app's database here
+      _saveTransaction(response);
+    } else {
+      String errorMessage = "Payment failed";
+      if (status == "USER_CANCELLED") {
+        errorMessage = "Payment was cancelled";
+      } else if (response['error'] != null) {
+        errorMessage = "Payment failed: ${response['error']}";
+      }
+
+      snackbarToast(
+        context: context,
+        text: errorMessage,
+        icon: Icons.error_outline,
+      );
     }
+  }
+
+  void _saveTransaction(Map<String, dynamic> response) {
+    // Here you would typically:
+    // 1. Create a Transaction object
+    // 2. Save it to your database using your existing provider
+    // 3. Update any relevant UI
+
+    // Example (pseudocode):
+    // final transaction = Transaction(
+    //   uid: currentUserData.uid,
+    //   amount: _amountController.text,
+    //   description: _noteController.text,
+    //   category: "UPI Payment",
+    //   transactionType: TransactionType.expense.displayName,
+    //   methodOfPayment: "UPI",
+    //   // Include reference IDs from the response
+    //   transactionRefId: response['transactionId'],
+    // );
+
+    // ref.read(userFinanceDataNotifierProvider.notifier).addTransactionToUserData(
+    //   uid: currentUserData.uid!,
+    //   transactionData: transaction,
+    // );
+
+    _logger.i("Transaction completed: ${response['rawData']}");
   }
 }

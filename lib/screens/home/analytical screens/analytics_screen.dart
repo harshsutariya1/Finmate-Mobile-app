@@ -326,7 +326,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
           spacing: 20,
           children: [
             AspectRatio(
-              aspectRatio: 1.5,
+              aspectRatio: 1.4,
               child: PieChart(
                 PieChartData(
                   pieTouchData: PieTouchData(
@@ -370,11 +370,13 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
           value: total,
           title: total.toStringAsFixed(1),
           radius: radius,
+          titlePositionPercentageOffset: 1.4,
           titleStyle: TextStyle(
             fontSize: 14,
-            color: whiteColor,
+            color: color1,
             overflow: TextOverflow.ellipsis,
           ),
+          showTitle: true,
         ),
       );
     });
@@ -461,8 +463,9 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
         sortedEntries.take(5).toList();
 
     // Find max amount for percentage calculation
-    double maxAmount =
-        topFiveEntries.isNotEmpty ? topFiveEntries.first.value.abs() : 0;
+    double maxAmount = topFiveEntries.isNotEmpty
+        ? topFiveEntries.map((data) => data.value.abs()).reduce((a, b) => a + b)
+        : 0;
 
     // Generate colors
     List<Color> categoryColors = [
@@ -478,6 +481,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
       int index = entry.key;
       String category = entry.value.key;
       double amount = entry.value.value.abs();
+
       double percentage = (amount / maxAmount) * 100;
 
       return CategoryChartData(
@@ -495,7 +499,9 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
   Widget _buildRadialBarChart(
       List<CategoryChartData> chartData, TooltipBehavior tooltipBehavior) {
     // Calculate maximum value
-    double maxValue = chartData.isNotEmpty ? chartData.first.amount : 1.0;
+    double maxValue = chartData.isNotEmpty
+        ? chartData.map((data) => data.amount).reduce((a, b) => a + b)
+        : 1.0;
 
     return SizedBox(
       height: 300,
@@ -519,18 +525,20 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
             enableTooltip: true,
             maximumValue: maxValue,
             radius: '100%',
-            gap: '5%',
+            gap: '10%',
             cornerStyle: CornerStyle.bothCurve,
             dataLabelSettings: DataLabelSettings(
               isVisible: true,
               labelPosition: ChartDataLabelPosition.outside,
               textStyle: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: color1,
+                color: whiteColor,
               ),
               useSeriesColor: true,
             ),
+            innerRadius: "30%",
+            trackColor: Colors.grey.shade300,
             legendIconType: LegendIconType.circle,
             sortingOrder: SortingOrder.descending,
             sortFieldValueMapper: (CategoryChartData data, _) => data.amount,

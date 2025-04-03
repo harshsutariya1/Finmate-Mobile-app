@@ -467,6 +467,43 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
+// Future<bool> updateTransaction(Transaction transaction) async {
+//   try {
+//     // Determine whether it's a group transaction or a regular transaction
+//     final isGroupTransaction = transaction.isGroupTransaction;
+//     final reference = isGroupTransaction
+//         ? groupTansactionCollection(transaction.gid ?? "").doc(transaction.tid)
+//         : userTransactionsCollection(transaction.uid ?? "").doc(transaction.tid);
+//     // Update the transaction in Firestore
+//     await reference.update(transaction.toJson());
+//     // Update the transaction in the local state
+//     if (isGroupTransaction) {
+//       // Update in group transactions state
+//       final updatedGroups = state.listOfGroups?.map((group) {
+//         if (group.gid == transaction.gid) {
+//           final updatedTransactions = group.listOfTransactions?.map((t) {
+//             return t.tid == transaction.tid ? transaction : t;
+//           }).toList();
+//           return group.copyWith(listOfTransactions: updatedTransactions);
+//         }
+//         return group;
+//       }).toList();
+//       state = state.copyWith(listOfGroups: updatedGroups);
+//     } else {
+//       // Update in user transactions state
+//       final updatedTransactions = state.listOfUserTransactions?.map((t) {
+//         return t.tid == transaction.tid ? transaction : t;
+//       }).toList();
+//       state = state.copyWith(listOfUserTransactions: updatedTransactions);
+//     }
+//     logger.i("✅ Transaction with tid ${transaction.tid} updated successfully.");
+//     return true;
+//   } catch (e) {
+//     logger.w("❌ Error updating transaction: $e\nStack Trace: ${StackTrace.current}");
+//     return false;
+//   }
+// }
+
 // __________________________________________________________________________ //
 
   Future<bool> createGroupProfile({required Group groupProfile}) async {
@@ -721,6 +758,36 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
+
+Future<bool> updateBankAccountDetails({
+  required String uid,
+  required String bankAccountId,
+  required Map<String, dynamic> updateData,
+}) async {
+  try {
+    // Update in Firestore
+    await bankAccountsCollectionReference(uid).doc(bankAccountId).update(updateData);
+    
+    // Update in local state
+    final updatedBankAccounts = state.listOfBankAccounts?.map((bankAccount) {
+      if (bankAccount.bid == bankAccountId) {
+        return bankAccount.copyWith(
+          bankAccountName: updateData['bankAccountName'] ?? bankAccount.bankAccountName,
+          upiIds: updateData['upiIds'] ?? bankAccount.upiIds,
+        );
+      }
+      return bankAccount;
+    }).toList();
+    
+    state = state.copyWith(listOfBankAccounts: updatedBankAccounts);
+    
+    logger.i("✅ Bank account details updated successfully.");
+    return true;
+  } catch (e) {
+    logger.w("❌ Error updating bank account details: $e");
+    return false;
+  }
+}
 
 // __________________________________________________________________________ //
 

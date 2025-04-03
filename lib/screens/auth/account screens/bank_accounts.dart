@@ -33,7 +33,6 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
     final UserData userData = ref.watch(userDataNotifierProvider); // User data
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider); // User finance data
-    // crouselIndex = 1;
     selectedBankAccount = userFinanceData
         .listOfBankAccounts?[crouselIndex]; // selected bank account
     return Scaffold(
@@ -325,10 +324,12 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
                             value: "Edit",
                             child: Text("Edit"),
                             onTap: () {
-                              snackbarToast(
-                                  context: context,
-                                  text: "This feature is in development ❗",
-                                  icon: Icons.developer_mode_rounded);
+                              showEditBankBottomSheet(
+                                context,
+                                ref,
+                                userData,
+                                userFinanceData,
+                              );
                             },
                           ),
                           PopupMenuItem(
@@ -690,6 +691,258 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
                                 color: color3),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showEditBankBottomSheet(
+    BuildContext context,
+    WidgetRef ref,
+    UserData userData,
+    UserFinanceData userFinanceData,
+  ) {
+    final formKey = GlobalKey<FormState>();
+    final Size size = MediaQuery.sizeOf(context);
+
+    // Pre-populate controllers with current data
+    final TextEditingController nameController = TextEditingController(
+      text: selectedBankAccount?.bankAccountName ?? "",
+    );
+    final TextEditingController balanceController = TextEditingController(
+      text: selectedBankAccount?.availableBalance ?? "0",
+    );
+    final TextEditingController upiIdController = TextEditingController(
+      text: selectedBankAccount?.upiIds?.isNotEmpty == true
+          ? selectedBankAccount!.upiIds!.first
+          : "",
+    );
+
+    final String originalBalance = selectedBankAccount?.availableBalance ?? "0";
+    final bool isTotalSameAsAvailable = selectedBankAccount?.totalBalance ==
+        selectedBankAccount?.availableBalance;
+
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (contextt) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          height: size.height * 0.8,
+          child: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Edit Bank Account",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: color1,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigate().goBack(),
+                      ),
+                    ],
+                  ),
+                  sbh20,
+                  // Bank name field
+                  textfield(
+                    controller: nameController,
+                    lableText: "Bank Account Name",
+                    hintText: "Enter account nickname",
+                    prefixIconData: Icons.account_balance_rounded,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Enter Bank Account Name";
+                      }
+                      // Check if name already exists (except current name)
+                      if (value != selectedBankAccount?.bankAccountName &&
+                          userFinanceData.listOfBankAccounts != null &&
+                          userFinanceData.listOfBankAccounts!.any((account) =>
+                              account.bankAccountName == value.trim())) {
+                        return "Bank Account with this name already exists❗";
+                      }
+                      return null;
+                    },
+                  ),
+                  sbh15,
+                  // Available balance field
+                  textfield(
+                    controller: balanceController,
+                    lableText: "Available Balance",
+                    hintText: "Amount",
+                    prefixIconData: Icons.currency_rupee_sharp,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Enter Amount";
+                      }
+                      if (double.tryParse(value) == null) {
+                        return "Enter valid Amount";
+                      }
+                      return null;
+                    },
+                  ),
+                  if (balanceController.text != originalBalance)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        "Changing balance will create an adjustment transaction",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber[800],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  sbh15,
+                  // UPI ID field
+                  textfield(
+                    controller: upiIdController,
+                    lableText: "UPI ID",
+                    hintText: "Enter UPI ID",
+                    prefixIconData: Icons.account_balance_wallet_rounded,
+                    sufixWidget: Text(
+                      "verify",
+                      style: TextStyle(
+                        color: color3,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  sbh20,
+                  // Update button
+                  InkWell(
+                    onTap: () async {
+                      // Update Bank Account
+                      if (formKey.currentState!.validate()) {
+                        final name = nameController.text.trim();
+                        final balance = balanceController.text.trim();
+                        final upiId = upiIdController.text.trim();
+
+                        if (selectedBankAccount == null ||
+                            selectedBankAccount!.bid == null) {
+                          snackbarToast(
+                            context: context,
+                            text: "Bank account not found",
+                            icon: Icons.error,
+                          );
+                          return;
+                        }
+
+                        // Check if balance has changed
+                        final bool isBalanceAdjustment =
+                            selectedBankAccount!.availableBalance != balance;
+
+                        // Calculate new total balance
+                        final String newTotalBalance = isTotalSameAsAvailable
+                            ? balance // If total was same as available, keep them in sync
+                            : (double.parse(selectedBankAccount!.totalBalance ??
+                                        "0") +
+                                    double.parse(balance) -
+                                    double.parse(
+                                        selectedBankAccount!.availableBalance ??
+                                            "0"))
+                                .toString();
+
+                        try {
+                          // Update bank account balance
+                          final success = await ref
+                              .read(userFinanceDataNotifierProvider.notifier)
+                              .updateBankAccountBalance(
+                                uid: userData.uid!,
+                                bankAccountId: selectedBankAccount!.bid!,
+                                availableBalance: balance,
+                                totalBalance: newTotalBalance,
+                                bankAccount: selectedBankAccount,
+                                isBalanceAdjustment: isBalanceAdjustment,
+                              );
+
+                          // Update account name and UPI ID
+                          if (success) {
+                            final Map<String, dynamic> updateData = {};
+
+                            if (name != selectedBankAccount!.bankAccountName) {
+                              updateData["bankAccountName"] = name;
+                            }
+
+                            if (upiId.isNotEmpty) {
+                              updateData["upiIds"] = [upiId];
+                            }
+
+                            if (updateData.isNotEmpty) {
+                              await ref
+                                  .read(
+                                      userFinanceDataNotifierProvider.notifier)
+                                  .updateBankAccountDetails(
+                                    uid: userData.uid!,
+                                    bankAccountId: selectedBankAccount!.bid!,
+                                    updateData: updateData,
+                                  );
+                            }
+
+                            snackbarToast(
+                              context: context,
+                              text: "Bank Account Updated Successfully",
+                              icon: Icons.check_circle,
+                            );
+                            Navigate().goBack();
+                          } else {
+                            snackbarToast(
+                              context: context,
+                              text: "Error updating bank account",
+                              icon: Icons.error,
+                            );
+                          }
+                        } catch (e) {
+                          snackbarToast(
+                            context: context,
+                            text: "An error occurred: $e",
+                            icon: Icons.error,
+                          );
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: color3,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color3.withAlpha(100),
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        "Update Bank Account",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
