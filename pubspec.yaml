@@ -71,13 +71,12 @@ dependencies:
   flutter_expandable_fab: ^2.3.0
   floating_expandable_menu: ^0.0.2
   carousel_slider: ^5.0.0
+  #
   fl_chart: ^0.70.2
-  # upi_india: ^3.0.1
-  upi_pay: ^1.1.0
-  easy_upi_payment: ^0.1.6
   syncfusion_flutter_charts: ^29.1.33
   syncfusion_flutter_gauges: ^29.1.35
   package_rename: ^1.9.0
+  mobile_scanner: ^6.0.7
 
 dev_dependencies:
   flutter_test:

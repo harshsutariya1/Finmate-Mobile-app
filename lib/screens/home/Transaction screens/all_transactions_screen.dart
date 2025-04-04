@@ -195,7 +195,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildSummaryItem(
-                "Balance",
+                "Total",
                 balance,
                 balance >= 0 ? Colors.green : Colors.red,
               ),
@@ -208,7 +208,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   Widget _buildSummaryItem(String title, double amount, Color color) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           title,

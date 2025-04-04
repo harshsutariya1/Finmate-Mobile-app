@@ -345,14 +345,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
-  decimal:
-    dependency: transitive
-    description:
-      name: decimal
-      sha256: "4140a688f9e443e2f4de3a1162387bf25e1ac6d51e24c9da263f245210f41440"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
   delayed_tween_animation_builder:
     dependency: "direct main"
     description:
@@ -393,14 +385,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  easy_upi_payment:
-    dependency: "direct main"
-    description:
-      name: easy_upi_payment
-      sha256: "46c9c62dbcb190f89180451bc7310b2b5f712de390506b4384e976b2fed56d62"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.6"
   email_validator:
     dependency: "direct main"
     description:
@@ -1093,6 +1077,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mobile_scanner:
+    dependency: "direct main"
+    description:
+      name: mobile_scanner
+      sha256: "9cb9e371ee9b5b548714f9ab5fd33b530d799745c83d5729ecd1e8ab2935dbd1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.7"
   nested:
     dependency: transitive
     description:
@@ -1365,14 +1357,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  rational:
-    dependency: transitive
-    description:
-      name: rational
-      sha256: cb808fb6f1a839e6fc5f7d8cb3b0a10e1db48b3be102de73938c627f0b636336
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.3"
   riverpod:
     dependency: transitive
     description:
@@ -1682,22 +1666,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  universal_io:
-    dependency: transitive
-    description:
-      name: universal_io
-      sha256: "1722b2dcc462b4b2f3ee7d188dad008b6eb4c40bbd03a3de451d82c78bba9aad"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.2"
-  upi_pay:
-    dependency: "direct main"
-    description:
-      name: upi_pay
-      sha256: "08c6a6418a6a71715afa61a75015978c56d8e09ffedfc8313af0b3afdd34b84a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   url_launcher:
     dependency: "direct main"
     description:

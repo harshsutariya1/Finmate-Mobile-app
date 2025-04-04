@@ -67,6 +67,9 @@ class UpiPaymentHandler(private val activity: Activity) : PluginRegistry.Activit
         val amount = call.argument<String>("amount")
         val currency = call.argument<String>("currency")
         val transactionRefId = call.argument<String>("transactionRefId")
+        val mode = call.argument<String>("mode")            // Get mode parameter
+        val purpose = call.argument<String>("purpose")      // Get purpose parameter
+        val merchantCode = call.argument<String>("mc")      // Get merchant code
         
         if (appPackageName == null || receiverUpiId == null || amount == null) {
             result.error("INVALID_ARGUMENTS", "Required parameters missing", null)
@@ -85,7 +88,22 @@ class UpiPaymentHandler(private val activity: Activity) : PluginRegistry.Activit
                 .appendQueryParameter("cu", currency ?: "INR")
                 .appendQueryParameter("tr", transactionRefId)
             
+            // Add optional parameters if present
+            if (!mode.isNullOrEmpty()) {
+                uriBuilder.appendQueryParameter("mode", mode)
+            }
+            
+            if (!purpose.isNullOrEmpty()) {
+                uriBuilder.appendQueryParameter("purpose", purpose)
+            }
+            
+            if (!merchantCode.isNullOrEmpty()) {
+                uriBuilder.appendQueryParameter("mc", merchantCode)
+            }
+            
             val upiUri = uriBuilder.build()
+            Log.d(TAG, "UPI URI: $upiUri")
+            
             val intent = Intent(Intent.ACTION_VIEW, upiUri)
             intent.setPackage(appPackageName)
             
@@ -119,6 +137,8 @@ class UpiPaymentHandler(private val activity: Activity) : PluginRegistry.Activit
                 response[key] = value
             }
         }
+        
+        Log.d(TAG, "UPI Response Raw Data: $response")
 
         // For typical UPI responses
         val status = when {

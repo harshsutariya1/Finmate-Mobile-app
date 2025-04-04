@@ -31,6 +31,9 @@ class UpiPaymentService {
     required String transactionNote,
     required String amount,
     String? currency,
+    String? mode, // Added mode parameter
+    String? purpose, // Added purpose parameter
+    String? merchantCode, // Added merchant code parameter
   }) async {
     try {
       final Map<String, dynamic> args = {
@@ -41,8 +44,12 @@ class UpiPaymentService {
         'amount': amount,
         'currency': currency ?? 'INR',
         'transactionRefId': DateTime.now().millisecondsSinceEpoch.toString(),
+        'mode': mode, // Add mode to arguments
+        'purpose': purpose, // Add purpose to arguments
+        'mc': merchantCode, // Add merchant code to arguments
       };
 
+      _logger.i('Initiating UPI transaction with args: $args');
       final Map<dynamic, dynamic> result =
           await platform.invokeMethod('initiateUpiTransaction', args);
       return Map<String, dynamic>.from(result);

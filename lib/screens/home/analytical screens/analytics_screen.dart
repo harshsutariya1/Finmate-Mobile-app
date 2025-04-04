@@ -343,7 +343,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                       });
                     },
                   ),
-                  sectionsSpace: 5,
+                  sectionsSpace: 1,
                   centerSpaceRadius: 50,
                   sections: piChartShowingSections(categoryTotals),
                 ),

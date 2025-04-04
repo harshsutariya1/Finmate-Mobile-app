@@ -1,7 +1,7 @@
 import 'dart:io';
+
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
-import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/services/upi_payment_service.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -402,12 +402,19 @@ class _UpiPaymentScreenState extends State<UpiPaymentScreen> {
     });
 
     try {
+      // Format amount to ensure 2 decimal places
+      final formattedAmount =
+          double.parse(_amountController.text.trim()).toStringAsFixed(2);
+
       final result = await _upiService.initiateTransaction(
         appPackageName: app['packageName'],
         receiverUpiId: _upiIdController.text.trim(),
         receiverName: "Payment Receiver", // Change as needed
         transactionNote: _noteController.text.trim(),
-        amount: _amountController.text.trim(),
+        amount: formattedAmount,
+        // Default values for direct payments
+        mode: "04", // 04 = Direct payment (Pay/Push)
+        purpose: "00", // 00 = Default/Others
       );
 
       _handlePaymentResponse(result);
