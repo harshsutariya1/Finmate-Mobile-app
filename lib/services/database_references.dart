@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/accounts.dart';
+import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
@@ -58,12 +59,13 @@ CollectionReference<BankAccount> bankAccountsCollectionReference(String uid) {
       );
 }
 
-// CollectionReference<Wallet> walletCollectionReference(String uid) {
-//   return userCollection.doc(uid).collection("Wallets").withConverter(
-//         fromFirestore: (snapshot, options) => Wallet.fromJson(snapshot.data()!),
-//         toFirestore: (wallet, options) => wallet.toJson(),
-//       );
-// }
+// Collection reference for budget documents
+CollectionReference<Budget> userBudgetsCollection(String uid) {
+  return userCollection.doc(uid).collection('budgets').withConverter<Budget>(
+        fromFirestore: (snapshot, _) => Budget.fromJson(snapshot.data()!),
+        toFirestore: (budget, _) => budget.toJson(),
+      );
+}
 
 CollectionReference<Chat> groupChatCollection(String gid) {
   final collectionref =

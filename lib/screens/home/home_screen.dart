@@ -10,8 +10,8 @@ import 'package:finmate/screens/auth/account%20screens/accounts_screen.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
-import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
+import 'package:finmate/screens/home/budget%20screens/budget_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/settings_widgets.dart';
@@ -70,7 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
 
     return Scaffold(
-      backgroundColor: color4,
+      backgroundColor: color4_120,
       floatingActionButton: floatingUserImage(userData),
       floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
       body: _body(userData, userFinanceData, transactionsList),
@@ -93,7 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 sbh10,
                 _accounts(),
                 sbh10,
-                _expenseIncomeTransferButtons(),
+                expenseIncomeTransferButtons(),
                 sbh10,
                 _incomeExpenseBalance(),
                 sbh10,
@@ -415,103 +415,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         });
   }
 
-  Widget _expenseIncomeTransferButtons() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10),
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: color4,
-        border: Border.all(color: color3.withAlpha(100)),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: color2.withAlpha(50),
-            blurRadius: 1,
-            spreadRadius: 2,
-            offset: Offset(0, 1.5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          InkWell(
-            onTap: () {
-              Navigate().push(AddTransactionScreen(
-                initialIndex: 0,
-                isIncome: true,
-              ));
-            },
-            child: Column(
-              spacing: 5,
-              children: [
-                Icon(
-                  Icons.arrow_circle_up_rounded,
-                  color: color2,
-                  size: 40,
-                ),
-                Text(
-                  "Income",
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          InkWell(
-            onTap: () {
-              Navigate().push(AddTransactionScreen(
-                initialIndex: 0,
-                isIncome: false,
-              ));
-            },
-            child: Column(
-              spacing: 5,
-              children: [
-                Icon(
-                  Icons.arrow_circle_down_rounded,
-                  color: color2,
-                  size: 40,
-                ),
-                Text(
-                  "Expense",
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          InkWell(
-            onTap: () {
-              Navigate().push(AddTransactionScreen(
-                initialIndex: 1,
-                isIncome: false,
-              ));
-            },
-            child: Column(
-              spacing: 5,
-              children: [
-                Icon(
-                  Icons.swap_horizontal_circle_outlined,
-                  color: color2,
-                  size: 40,
-                ),
-                Text(
-                  "Transfer",
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _incomeExpenseBalance() {
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
@@ -555,7 +458,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: EdgeInsets.only(top: 20, bottom: 10),
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: color2.withAlpha(50),
+        color: color4,
         border: Border.all(color: color2.withAlpha(100)),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -890,6 +793,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           onTapClose();
                         });
                         Navigate().push(AccountsScreen());
+                      },
+                    )
+                  ],
+                  customMargin: EdgeInsets.all(0),
+                ),
+              ),
+              futureHomeMenuWidget(
+                child: borderedContainer(
+                  [
+                    settingsTile(
+                      iconData: Icons.pie_chart,
+                      text: "Budgets",
+                      onTap: () {
+                        setState(() {
+                          onTapClose();
+                        });
+                        Navigate().push(BudgetScreen());
+                      },
+                    )
+                  ],
+                  customMargin: EdgeInsets.all(0),
+                ),
+              ),
+              futureHomeMenuWidget(
+                child: borderedContainer(
+                  [
+                    settingsTile(
+                      iconData: Icons.flag_rounded,
+                      text: "Goals",
+                      onTap: () {
+                        setState(() {
+                          onTapClose();
+                        });
+                        Navigate().push(BudgetScreen());
                       },
                     )
                   ],

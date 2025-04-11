@@ -158,6 +158,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
             category: SystemCategory.balanceAdjustment.displayName,
             methodOfPayment: PaymentModes.bankAccount.displayName,
             bankAccountId: bankAccount?.bid,
+            bankAccountName: bankAccount?.bankAccountName,
             transactionType: (double.parse(adjustmentAmount).isNegative)
                 ? TransactionType.expense.displayName
                 : TransactionType.income.displayName,

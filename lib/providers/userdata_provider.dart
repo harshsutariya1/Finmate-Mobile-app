@@ -1,4 +1,5 @@
 import 'package:finmate/models/user.dart';
+import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/services/database_references.dart';
 import 'package:finmate/services/database_services.dart';
@@ -148,6 +149,7 @@ final FutureProviderFamily<UserData, String> userDataProvider =
       .read(userFinanceDataNotifierProvider.notifier)
       .fetchUserFinanceData(uid);
   ref.read(allAppUsers);
+  ref.read(budgetNotifierProvider.notifier).fetchUserBudgets(uid);
   final UserData userData = ref.watch(userDataNotifierProvider);
 
   return userData;

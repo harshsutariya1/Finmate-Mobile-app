@@ -189,8 +189,8 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
     }
 
     return Container(
-      margin: const EdgeInsets.all(10),
-      padding: const EdgeInsets.all(10),
+      // margin: const EdgeInsets.all(10),
+      // padding: const EdgeInsets.all(10),
       alignment: Alignment.topCenter,
       child: SingleChildScrollView(
         child: Column(
@@ -200,10 +200,10 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                 ? noTransactionsFoundText()
                 : Column(
                     children: [
-                      _pieChart(categoryTotals),
                       (categoryTotals.length < 5)
                           ? const SizedBox.shrink()
                           : _radialBarChart(categoryTotals),
+                      _pieChart(categoryTotals),
                     ],
                   ),
           ],
@@ -228,86 +228,89 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
       }
     }
 
-    return Row(
-      spacing: 10,
-      children: [
-        Expanded(
-            child: InkWell(
-          onTap: () {
-            setState(() {
-              isIncomeSelected = true;
-            });
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 5),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: (isIncomeSelected) ? color3 : color2.withAlpha(150),
-                width: 2,
+    return Padding(
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        spacing: 10,
+        children: [
+          Expanded(
+              child: InkWell(
+            onTap: () {
+              setState(() {
+                isIncomeSelected = true;
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 5),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: (isIncomeSelected) ? color3 : color2.withAlpha(150),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(10),
               ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              spacing: 5,
-              children: [
-                Text(
-                  "Total Income",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: color1,
-                    fontSize: 16,
+              child: Column(
+                spacing: 5,
+                children: [
+                  Text(
+                    "Total Income",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color1,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                Text(
-                  "$totalIncome ₹",
-                  style: TextStyle(
-                    color: color1,
-                    fontSize: 16,
+                  Text(
+                    "$totalIncome ₹",
+                    style: TextStyle(
+                      color: color1,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        )),
-        Expanded(
-            child: InkWell(
-          onTap: () {
-            setState(() {
-              isIncomeSelected = false;
-            });
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 5),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: (!isIncomeSelected) ? color3 : color2.withAlpha(150),
-                width: 2,
+                ],
               ),
-              borderRadius: BorderRadius.circular(10),
             ),
-            child: Column(
-              spacing: 5,
-              children: [
-                Text(
-                  "Total Expense",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: color1,
-                    fontSize: 16,
-                  ),
+          )),
+          Expanded(
+              child: InkWell(
+            onTap: () {
+              setState(() {
+                isIncomeSelected = false;
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 5),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: (!isIncomeSelected) ? color3 : color2.withAlpha(150),
+                  width: 2,
                 ),
-                Text(
-                  "$totalExpense",
-                  style: TextStyle(
-                    color: color1,
-                    fontSize: 16,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                spacing: 5,
+                children: [
+                  Text(
+                    "Total Expense",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: color1,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    "$totalExpense",
+                    style: TextStyle(
+                      color: color1,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        )),
-      ],
+          )),
+        ],
+      ),
     );
   }
 
@@ -315,7 +318,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
 
   Widget _pieChart(Map<String, double> categoryTotals) {
     return Container(
-        margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+        margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
         decoration: BoxDecoration(
           color: color4,
@@ -323,7 +326,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
-          spacing: 20,
+          spacing: 15,
           children: [
             AspectRatio(
               aspectRatio: 1.4,
@@ -376,7 +379,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
             color: color1,
             overflow: TextOverflow.ellipsis,
           ),
-          showTitle: true,
+          showTitle: false,
         ),
       );
     });
@@ -390,7 +393,6 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
       children: categoryTotals.entries.map((entry) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.start,
-          spacing: 20,
           children: [
             Container(
               width: 20,
@@ -402,6 +404,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                         Colors.primaries.length],
               ),
             ),
+            sbw20,
             Text(
               entry.key,
               style: TextStyle(
@@ -409,9 +412,18 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                 fontSize: 16,
               ),
             ),
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: Divider(
+                  indent: 20,
+                  endIndent: 20,
+                ),
+              ),
+            ),
             Text(
-              "${entry.value.toStringAsFixed(2)} ₹",
-              style: TextStyle(fontSize: 15, color: color2),
+              "${double.parse(entry.value.toStringAsFixed(2)).abs()} ₹",
+              style: TextStyle(fontSize: 16, color: color1),
             ),
           ],
         );
@@ -433,7 +445,7 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
     List<CategoryChartData> chartData = _prepareRadialChartData(categoryTotals);
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+      margin: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
       padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
       decoration: BoxDecoration(
         color: color4,
@@ -573,10 +585,18 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
-              sbw15,
+              Expanded(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Divider(
+                    indent: 20,
+                    endIndent: 20,
+                  ),
+                ),
+              ),
               Text(
                 '${data.amount.toStringAsFixed(0)} ₹',
-                style: TextStyle(fontSize: 15, color: color2),
+                style: TextStyle(fontSize: 16, color: color1),
               ),
             ],
           ),

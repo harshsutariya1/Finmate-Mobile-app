@@ -91,9 +91,8 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    backgroundColor: (isIncomeSelected)
-                        ? color3.withAlpha(150)
-                        : Colors.redAccent,
+                    backgroundColor:
+                        (isIncomeSelected) ? Colors.green : Colors.redAccent,
                     minimumSize:
                         Size(double.minPositive, 50), // Set width and height
                   ),

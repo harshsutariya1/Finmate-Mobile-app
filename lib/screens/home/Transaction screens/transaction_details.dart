@@ -42,26 +42,26 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
       ),
       actions: [
         // edit button
-        IconButton(
-          onPressed: () {
-            // _editTransaction();
-          },
-          icon: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: color3,
-                width: 1.5,
-              ),
-            ),
-            alignment: Alignment.center,
-            padding: EdgeInsets.all(5.0),
-            child: Icon(
-              Icons.edit_outlined,
-              color: color3,
-            ),
-          ),
-        ),
+        // IconButton(
+        //   onPressed: () {
+        //     // _editTransaction();
+        //   },
+        //   icon: Container(
+        //     decoration: BoxDecoration(
+        //       shape: BoxShape.circle,
+        //       border: Border.all(
+        //         color: color3,
+        //         width: 1.5,
+        //       ),
+        //     ),
+        //     alignment: Alignment.center,
+        //     padding: EdgeInsets.all(5.0),
+        //     child: Icon(
+        //       Icons.edit_outlined,
+        //       color: color3,
+        //     ),
+        //   ),
+        // ),
         // share button
         IconButton(
           onPressed: () {},
@@ -210,11 +210,11 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
         (transaction.methodOfPayment == PaymentModes.bankAccount.displayName)
             ? (transaction.bankAccountId != null &&
                     transaction.bankAccountId!.isNotEmpty)
-                ? transaction.bankAccountName!
+                ? transaction.bankAccountName ?? "Unknown"
                 : "Unknown"
             : (transaction.methodOfPayment == PaymentModes.group.displayName)
                 ? (transaction.gid != null && transaction.gid!.isNotEmpty)
-                    ? transaction.groupName!
+                    ? transaction.groupName ?? "Unknown"
                     : "Unknown"
                 : "Unknown";
 
@@ -222,11 +222,11 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
         (transaction.methodOfPayment2 == PaymentModes.bankAccount.displayName)
             ? (transaction.bankAccountId2 != null &&
                     transaction.bankAccountId2!.isNotEmpty)
-                ? transaction.bankAccountName2!
+                ? transaction.bankAccountName2 ?? "Unknown"
                 : "Unknown"
             : (transaction.methodOfPayment2 == PaymentModes.group.displayName)
                 ? (transaction.gid2 != null && transaction.gid2!.isNotEmpty)
-                    ? transaction.groupName2!
+                    ? transaction.groupName2 ?? "Unknown"
                     : "Unknown"
                 : "Unknown";
 
@@ -245,7 +245,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        sbh10,
+        sbh20,
         // date & time
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -276,12 +276,14 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
         ),
         sbh10,
         Divider(color: color3),
+        // to payee & description & category
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             sbh10,
             // to payee
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
                 Text(
@@ -311,6 +313,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
             // description
             sbh10,
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
                 Text(
@@ -341,6 +344,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
             sbh10,
             // category
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
                 Text(
@@ -372,12 +376,14 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
         ),
         sbh10,
         Divider(color: color3),
+        // payment mode & from account & to account & amount
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             sbh10,
             // Payment Mode
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
                 Text(
@@ -408,6 +414,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
             sbh10,
             // From Account
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
                 Text(
@@ -437,6 +444,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
             (transaction.transactionType ==
                     TransactionType.transfer.displayName)
                 ? Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     spacing: 10,
                     children: [
                       Text(

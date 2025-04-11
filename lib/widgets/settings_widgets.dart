@@ -14,7 +14,7 @@ Widget borderedContainer(
         color: const Color.fromARGB(50, 57, 62, 70),
         width: 2,
       ),
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(10),
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,

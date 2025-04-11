@@ -169,7 +169,7 @@ class _SelectCategoryState extends State<SelectCategory> {
             borderRadius: BorderRadius.circular(8),
             child: Container(
               decoration: BoxDecoration(
-                color: isSelected ? color3.withOpacity(0.1) : Colors.white,
+                color: isSelected ? color3.withAlpha(25) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isSelected ? color3 : Colors.grey.shade300,
@@ -181,7 +181,7 @@ class _SelectCategoryState extends State<SelectCategory> {
                 children: [
                   CircleAvatar(
                     backgroundColor: isSelected
-                        ? color3.withOpacity(0.2)
+                        ? color3.withAlpha(51)
                         : Colors.grey.shade100,
                     radius: 16,
                     child: Icon(

@@ -1,4 +1,6 @@
 import 'package:finmate/models/user.dart';
+import 'package:finmate/providers/auth_provider.dart';
+import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/auth.dart';
@@ -222,6 +224,7 @@ class AuthService {
       sp.setString("userId", "");
       ref.read(userDataNotifierProvider.notifier).reset();
       ref.read(userFinanceDataNotifierProvider.notifier).reset();
+      ref.read(budgetNotifierProvider.notifier).reset();
 
       user = null;
       return true;

@@ -5,7 +5,6 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/screens/auth/account%20screens/bank_accounts.dart';
-import 'package:finmate/screens/auth/account%20screens/cards.dart';
 import 'package:finmate/screens/auth/account%20screens/cash.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
@@ -22,7 +21,8 @@ class AccountsScreen extends ConsumerStatefulWidget {
 class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   int _selectedIndex = 0;
   late PageController _pageController;
-  List<String> tabTitles = ["Bank Accounts", "Cards", "Cash"];
+  // List<String> tabTitles = ["Bank Accounts", "Cards", "Cash"];
+  List<String> tabTitles = ["Bank Accounts", "Cash"];
 
   @override
   void initState() {
@@ -83,7 +83,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       },
       children: [
         BankAccounts(),
-        CardsScreen(),
+        // CardsScreen(),
         CashScreen(),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/transaction_category.dart';
+import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/transaction_details.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
@@ -157,6 +158,103 @@ Widget transactionTile(
           ],
         ),
       ),
+    ),
+  );
+}
+
+Widget expenseIncomeTransferButtons() {
+  return Container(
+    padding: EdgeInsets.symmetric(vertical: 10),
+    margin: EdgeInsets.symmetric(horizontal: 20),
+    decoration: BoxDecoration(
+      color: color4,
+      border: Border.all(color: color3.withAlpha(100)),
+      borderRadius: BorderRadius.circular(10),
+      boxShadow: [
+        BoxShadow(
+          color: color2.withAlpha(50),
+          blurRadius: 1,
+          spreadRadius: 2,
+          offset: Offset(0, 1.5),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        InkWell(
+          onTap: () {
+            Navigate().push(AddTransactionScreen(
+              initialIndex: 0,
+              isIncome: true,
+            ));
+          },
+          child: Column(
+            spacing: 5,
+            children: [
+              Icon(
+                Icons.arrow_circle_up_rounded,
+                color: color2,
+                size: 40,
+              ),
+              Text(
+                "Income",
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () {
+            Navigate().push(AddTransactionScreen(
+              initialIndex: 0,
+              isIncome: false,
+            ));
+          },
+          child: Column(
+            spacing: 5,
+            children: [
+              Icon(
+                Icons.arrow_circle_down_rounded,
+                color: color2,
+                size: 40,
+              ),
+              Text(
+                "Expense",
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () {
+            Navigate().push(AddTransactionScreen(
+              initialIndex: 1,
+              isIncome: false,
+            ));
+          },
+          child: Column(
+            spacing: 5,
+            children: [
+              Icon(
+                Icons.swap_horizontal_circle_outlined,
+                color: color2,
+                size: 40,
+              ),
+              Text(
+                "Transfer",
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 }
