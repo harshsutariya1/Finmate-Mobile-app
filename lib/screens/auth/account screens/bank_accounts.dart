@@ -33,8 +33,15 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
     final UserData userData = ref.watch(userDataNotifierProvider); // User data
     final UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider); // User finance data
-    selectedBankAccount = userFinanceData
-        .listOfBankAccounts?[crouselIndex]; // selected bank account
+    List<BankAccount> bankAccounts = userFinanceData.listOfBankAccounts ?? [];
+    // Check if bank accounts are available
+    if (bankAccounts.isNotEmpty && bankAccounts.length > crouselIndex) {
+      selectedBankAccount = bankAccounts[crouselIndex];
+    } else if (bankAccounts.length == 1) {
+      selectedBankAccount = bankAccounts[0];
+    } else {
+      selectedBankAccount = null;
+    }
     return Scaffold(
       backgroundColor: whiteColor_2,
       body: _body(ref, userData, userFinanceData),
@@ -341,7 +348,10 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            onTap: () => deleteBankAccount(userData),
+                            onTap: () {
+                              deleteBankAccount(userData);
+                              setState(() {});
+                            },
                           ),
                         ],
                       ),
