@@ -1,6 +1,6 @@
 # Finmate - Personal Finance Management App
 
-![Finmate Logo](assets/images/logo.png)
+![Finmate Logo](assets/icons/LOGO.png)
 
 ## Overview
 
