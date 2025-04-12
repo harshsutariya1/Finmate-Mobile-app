@@ -1,0 +1,84 @@
+Create Activity Diagrams for the following key workflows in the Finmate app:
+
+1. Adding a New Transaction:
+   - Start activity
+   - Choose transaction type (Income/Expense/Transfer)
+   - If Income/Expense:
+     - Enter amount
+     - Enter payee information
+     - Enter description (optional)
+     - Select category from predefined list
+     - Select payment mode (Cash/Bank Account/Group)
+     - If Bank Account selected, choose from user's accounts
+     - If Group selected, choose from user's groups
+   - If Transfer:
+     - Enter amount
+     - Enter description (optional)
+     - Select source account (Cash/Bank Account/Group)
+     - Select destination account (Cash/Bank Account/Group)
+   - Validate inputs
+   - If validation fails, show error and return to form
+   - If validation passes, save transaction
+   - Update related balances:
+     - For Bank Account: update available and total balance
+     - For Cash: update cash amount
+     - For Group: update group balance and member balance
+   - If expense, check and update associated budget
+   - Return to previous screen
+
+2. Creating a Group and Managing Members:
+   - Start activity
+   - Enter group name
+   - Enter initial amount
+   - Enter description (optional)
+   - Select payment mode (bank account)
+   - Add members:
+     - View list of available users
+     - Select users to add
+     - Confirm selection
+   - Validate inputs
+   - If validation fails, show error and return to form
+   - If validation passes:
+     - Create group in database
+     - Calculate initial member balances
+     - Update bank account if linked
+     - Navigate back to groups screen
+   - Group management activities:
+     - Add transactions
+     - Add/remove members
+     - Link/unlink bank account
+     - Delete group
+
+3. Filtering and Searching Transactions:
+   - Start from AllTransactionsScreen
+   - Choose filter action:
+     - If Search:
+       - Enter search term
+       - Apply search to current month's transactions
+       - Display filtered results
+     - If Filter:
+       - Open filter dialog
+       - Select filter options (category, bank account, sort order)
+       - Apply filters
+       - Display filtered results
+   - When no results match:
+     - Display "No matching transactions" message
+     - Option to clear filters
+   - Navigate to transaction details when a transaction is selected
+
+4. Budget Management Workflow:
+   - Create new budget:
+     - Select month/year
+     - Enter total budget amount
+     - Allocate amounts to categories
+     - Save budget
+   - Track budget:
+     - System automatically updates spent amounts as transactions are added
+     - Calculate percentage used
+     - Display visual indicators for budget status
+   - View budget analytics:
+     - See spending by category
+     - Compare to previous periods
+     - Identify overspending areas
+
+Use proper activity diagram notation including decision nodes, merge nodes, fork/join for parallel activities, and swimlanes where appropriate to differentiate system vs. user activities.

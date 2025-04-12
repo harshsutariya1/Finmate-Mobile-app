@@ -31,6 +31,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: color4_120,
       appBar: _appBar(),
       body: _body(),
       floatingActionButton: FloatingActionButton(
@@ -43,26 +44,16 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   PreferredSizeWidget _appBar() {
     return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded),
-        onPressed: () {
-          Navigate().goBack();
-        },
-      ),
-      title: const Text('Budgets'),
+      backgroundColor: color4_120,
       centerTitle: true,
+      title: const Text("Budgets"),
       actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.bar_chart_rounded,
-            size: 30,
-            color: color3,
-          ),
-          onPressed: () {
-            // Add your action here
-          },
+        Icon(
+          Icons.track_changes_rounded,
+          color: color3,
+          size: 30,
         ),
-        sbw10,
+        const SizedBox(width: 20),
       ],
     );
   }
@@ -74,7 +65,16 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     if (budgets.isEmpty) {
       return _emptyBudgetState();
     } else {
-      return _budgetsList(budgets);
+      // Sort budgets by date in ascending order (earliest first)
+      final sortedBudgets = List<Budget>.from(budgets);
+      sortedBudgets.sort((a, b) {
+        // Default to current date if date is null
+        final dateA = a.date ?? DateTime.now();
+        final dateB = b.date ?? DateTime.now();
+        return dateA.compareTo(dateB);
+      });
+
+      return _budgetsList(sortedBudgets);
     }
   }
 

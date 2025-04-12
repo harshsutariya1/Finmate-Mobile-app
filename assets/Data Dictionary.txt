@@ -1,0 +1,137 @@
+Create a comprehensive Data Dictionary for the Finmate app database with the following elements:
+
+1. For each table/collection:
+   - Collection name
+   - Description
+   - Primary key(s)
+   - Foreign key(s)
+   - Indexes
+
+2. For each attribute/field:
+   - Field name
+   - Data type
+   - Description
+   - Constraints (required, unique, etc.)
+   - Valid values/range
+   - Default value
+
+Collections:
+
+1. users
+   - Description: Stores user account information
+   - Fields:
+     * uid (string): Primary key, Firebase auth user ID
+     * firstName (string): User's first name
+     * lastName (string): User's last name
+     * name (string): User's full name
+     * userName (string): Username for display
+     * pfpURL (string): URL to profile picture in Firebase Storage
+     * email (string): User's email address (required, unique)
+     * gender (string): User's gender
+     * dob (timestamp): Date of birth
+
+2. user_transactions
+   - Description: Subcollection of user documents storing transaction data
+   - Fields:
+     * tid (string): Primary key, transaction ID
+     * amount (string): Transaction amount with sign (+ for income, - for expense)
+     * date (timestamp): Transaction date
+     * time (string): Transaction time (HH:MM format)
+     * description (string): Transaction description
+     * category (string): Transaction category
+     * methodOfPayment (string): Payment method (Cash, Bank Account, Group)
+     * methodOfPayment2 (string): Secondary payment method for transfers
+     * payee (string): Person/entity receiving/sending money
+     * transactionType (string): Type (Income, Expense, Transfer)
+     * isGroupTransaction (boolean): Whether this is a group transaction
+     * isTransferTransaction (boolean): Whether this is a transfer between accounts
+     * uid (string): Foreign key to user ID
+     * gid (string): Foreign key to group ID (if applicable)
+     * bankAccountId (string): Foreign key to bank account (if applicable)
+     * bankAccountName (string): Name of the bank account
+     * gid2 (string): Secondary group ID for transfers
+     * groupName (string): Name of the group
+     * bankAccountId2 (string): Secondary bank account ID for transfers
+     * bankAccountName2 (string): Name of the secondary bank account
+
+3. groups
+   - Description: Stores group information
+   - Fields:
+     * gid (string): Primary key, group ID
+     * creatorId (string): Foreign key to creator's user ID
+     * name (string): Group name
+     * image (string): Group image URL
+     * date (timestamp): Creation date
+     * time (string): Creation time
+     * description (string): Group description
+     * totalAmount (string): Total group balance
+     * memberIds (array<string>): List of member user IDs
+     * membersBalance (map<string, string>): Map of member IDs to their balances
+     * linkedBankAccountId (string): ID of linked bank account
+
+4. group_transactions
+   - Description: Subcollection of group documents storing group transactions
+   - Fields: (same as user_transactions)
+
+5. group_chats
+   - Description: Subcollection of group documents storing chat messages
+   - Fields:
+     * cid (string): Primary key, chat message ID
+     * senderId (string): Foreign key to user ID of sender
+     * message (string): Message content
+     * date (timestamp): Message date
+     * time (string): Message time
+     * isImage (boolean): Whether message contains an image
+
+6. BankAccounts
+   - Description: Subcollection of user documents storing bank accounts
+   - Fields:
+     * bid (string): Primary key, bank account ID
+     * bankAccountName (string): Name of the bank
+     * totalBalance (string): Total account balance
+     * availableBalance (string): Available balance
+     * upiIds (array<string>): List of UPI IDs associated with account
+     * linkedGroupIds (array<string>): List of linked group IDs
+     * groupsBalance (map<string, string>): Map of group IDs to their balances
+
+7. Cash
+   - Description: Subcollection of user documents storing cash information
+   - Fields:
+     * amount (string): Cash amount
+
+8. budgets
+   - Description: Subcollection of user documents storing budget information
+   - Fields:
+     * bid (string): Primary key, budget ID
+     * date (timestamp): Budget month/year
+     * totalBudget (string): Total budget amount
+     * categoryBudgets (map<string, map<string, string>>): Map of categories to their budget allocation and spent amounts
+
+Valid Values for Constants:
+
+1. transactionType:
+   - "Income"
+   - "Expense"
+   - "Transfer"
+
+2. methodOfPayment:
+   - "Cash"
+   - "Bank Account"
+   - "Group"
+
+3. category: (List common transaction categories)
+   - "Food & Dining"
+   - "Shopping"
+   - "Transportation"
+   - "Entertainment"
+   - "Bills & Utilities"
+   - "Health & Fitness"
+   - "Personal Care"
+   - "Education"
+   - "Travel"
+   - "Gifts & Donations"
+   - "Balance Adjustment" (system category)
+   - "Transfer" (system category)
+   - "Others"
+
+Include details about data validation rules, calculated fields, and any special handling of data types (such as converting string amounts to doubles for calculations).

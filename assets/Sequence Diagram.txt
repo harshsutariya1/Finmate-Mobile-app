@@ -1,0 +1,55 @@
+Create detailed Sequence Diagrams for the following key interactions in the Finmate app:
+
+1. User Authentication Flow:
+   Objects: User, AuthScreen, AuthService, FirebaseAuth, UserDataNotifier, UserFinanceDataNotifier
+   Sequence:
+   - User enters credentials on AuthScreen
+   - AuthScreen calls AuthService.login()
+   - AuthService calls FirebaseAuth.signInWithEmailAndPassword()
+   - On success, AuthService retrieves user ID
+   - AuthStateProvider updates authentication state
+   - UserDataNotifier.fetchCurrentUserData() and UserFinanceDataNotifier.fetchUserFinanceData() are called
+   - User is navigated to HomeScreen
+
+2. Adding a Transaction:
+   Objects: User, AddTransactionScreen, UserFinanceDataNotifier, FirestoreDatabase, BudgetNotifier
+   Sequence:
+   - User enters transaction details (amount, category, date, payment mode)
+   - User taps "Save Transaction" button
+   - AddTransactionScreen validates input
+   - AddTransactionScreen calls UserFinanceDataNotifier.addTransactionToUserData()
+   - UserFinanceDataNotifier creates Transaction object
+   - UserFinanceDataNotifier adds transaction to Firestore
+   - UserFinanceDataNotifier updates provider state
+   - If expense transaction, BudgetNotifier.updateBudgetWithTransaction() is called
+   - If payment method is Bank/Cash, appropriate balance update methods are called
+   - User is navigated back to previous screen
+
+3. Creating a Group and Adding Members:
+   Objects: User, CreateGroupScreen, AddMembersScreen, UserFinanceDataNotifier, FirestoreDatabase
+   Sequence:
+   - User enters group details (name, amount, description)
+   - User selects bank account
+   - User taps "Add members" button
+   - AddMembersScreen displays list of app users
+   - User selects members
+   - User returns to CreateGroupScreen
+   - User taps "Create Group" button
+   - CreateGroupScreen calls UserFinanceDataNotifier.createGroupProfile()
+   - UserFinanceDataNotifier adds group to Firestore
+   - UserFinanceDataNotifier updates provider state
+   - User is navigated back
+
+4. Transfer Transaction Flow:
+   Objects: User, TransferFieldsScreen, UserFinanceDataNotifier, FirestoreDatabase
+   Sequence:
+   - User enters amount and selects source and destination accounts
+   - User taps "Save Transaction" button
+   - TransferFieldsScreen validates input
+   - TransferFieldsScreen calls UserFinanceDataNotifier.addTransferTransactionToUserData()
+   - UserFinanceDataNotifier creates two Transaction objects (one for source, one for destination)
+   - UserFinanceDataNotifier updates balances based on account types
+   - UserFinanceDataNotifier updates provider state
+   - User is navigated back
+
+Include proper lifelines, activation boxes, and message types (synchronous, asynchronous, return). Show error handling paths where appropriate.

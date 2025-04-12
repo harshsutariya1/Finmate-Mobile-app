@@ -1,0 +1,63 @@
+Create a Use-Case Diagram for the Finmate personal finance application with the following elements:
+
+1. Primary Actors:
+   - Regular User
+   - Group Creator/Admin
+   - Group Member
+   - System (Firebase)
+
+2. Authentication Use Cases:
+   - Sign Up
+   - Login
+   - Logout
+   - Edit Profile Information
+   - Google Sign-In
+
+3. Transaction Management Use Cases:
+   - Add Expense Transaction
+   - Add Income Transaction
+   - Create Transfer Transaction
+   - View All Transactions
+   - Filter Transactions by Category
+   - Filter Transactions by Date
+   - Filter Transactions by Account
+   - Search Transactions
+   - Delete Transaction
+   - Edit Transaction Details
+
+4. Group Management Use Cases:
+   - Create New Group
+   - Add Members to Group
+   - View Group Transactions
+   - Add Group Transaction
+   - Link Bank Account to Group
+   - Delete Group
+   - Leave Group
+   - Chat with Group Members
+
+5. Account Management Use Cases:
+   - Add Bank Account
+   - Edit Bank Account Details
+   - Delete Bank Account
+   - Update Cash Balance
+   - Link Bank Account to Group
+
+6. Budget Management Use Cases:
+   - Create Budget
+   - Track Budget Usage
+   - View Budget Analytics
+
+7. Analytics Use Cases:
+   - View Transaction Analytics
+   - View Expense Categories Chart
+   - View Monthly Spending Trends
+
+8. Payment Use Cases:
+   - Make UPI Payment
+
+Include appropriate include/extend relationships between use cases. For example:
+- "Add Expense Transaction" extends "Update Account Balance"
+- "Create Transfer Transaction" includes "Update Source Account" and "Update Destination Account"
+- "Add Group Transaction" includes "Update Group Balance" and "Update Member Balances"
+
+Show clear boundaries between different functional areas, and indicate which actors can perform which use cases.

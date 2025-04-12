@@ -1,0 +1,60 @@
+Create a multi-level Data Flow Diagram (DFD) for the Finmate mobile application showing:
+
+Level 0 (Context Diagram):
+- External entities: User, Firebase Authentication, Firestore Database, Firebase Storage
+- Single central process: Finmate App
+- Main data flows between external entities and the central process
+
+Level 1 (Main Processes):
+1. Authentication System
+   - Inputs: User credentials, Google account data
+   - Outputs: Authentication status, user profile
+
+2. Transaction Management System
+   - Inputs: Transaction details, filter criteria
+   - Outputs: Transaction records, filtered transactions, transaction statistics
+
+3. Group Management System
+   - Inputs: Group details, member information, group transactions
+   - Outputs: Group status, member balances, group transaction records
+
+4. Account Management System
+   - Inputs: Bank account details, cash amounts
+   - Outputs: Account balances, linked accounts
+
+5. Budget Management System
+   - Inputs: Budget allocations, category amounts
+   - Outputs: Budget status, spending vs. budget reports
+
+6. Analytics System
+   - Inputs: Transaction data, time periods
+   - Outputs: Charts, summaries, spending patterns
+
+Level 2 (Detail for Transaction Management):
+1. Process: Add Transaction
+   - Sub-processes: Validate input, Update balances, Update budget
+   - Data stores: Transactions, Accounts, Budgets
+
+2. Process: Filter Transactions
+   - Sub-processes: Apply category filter, Apply date filter, Apply account filter
+   - Data stores: Transactions
+
+3. Process: Transfer Funds
+   - Sub-processes: Validate accounts, Process withdrawal, Process deposit
+   - Data stores: Transactions, Accounts
+
+Data Stores:
+1. Users
+2. Transactions
+3. Groups
+4. Bank Accounts
+5. Budgets
+6. Group Chats
+
+Key Data Flows:
+1. User authentication flow: Credentials → Firebase Auth → User ID → Fetch user data
+2. Transaction creation flow: Transaction details → Validation → Database storage → Balance updates
+3. Group management flow: Group details → Create group → Add members → Calculate balances
+4. Budget tracking flow: Expense transaction → Update budget spent amount → Calculate remaining
+
+Use proper DFD notation with processes (circles/rounded rectangles), external entities (rectangles), data stores (open-ended rectangles/parallel lines), and data flows (arrows with labels). Show bidirectional flows where appropriate.

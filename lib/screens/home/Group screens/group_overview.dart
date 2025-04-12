@@ -22,22 +22,28 @@ class GroupOverview extends ConsumerStatefulWidget {
 }
 
 class _GroupOverviewState extends ConsumerState<GroupOverview> {
-  bool isOverviewTabSelected = true;
-  bool isChatTabSelected = false;
-  bool isMembersTabSelected = false;
   int _selectedIndex = 0;
+  late PageController _pageController;
   List<String> tabTitles = ["Overview", "Chats", "Members"];
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      initialIndex: 0,
-      child: Scaffold(
-        backgroundColor: color4,
-        appBar: _appBar(),
-        body: _body(),
-      ),
+    return Scaffold(
+      backgroundColor: color4,
+      appBar: _appBar(),
+      body: _body(),
     );
   }
 
@@ -54,6 +60,11 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
           onTap: (index) {
             setState(() {
               _selectedIndex = index;
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
             });
           },
         ),
@@ -71,8 +82,14 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   }
 
   Widget _body() {
-    return IndexedStack(
-      index: _selectedIndex,
+    return PageView(
+      controller: _pageController,
+      physics: const BouncingScrollPhysics(),
+      onPageChanged: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
       children: [
         GrpOverview(group: widget.group),
         GroupChats(group: widget.group),

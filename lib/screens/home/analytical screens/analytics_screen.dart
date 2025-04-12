@@ -5,7 +5,6 @@ import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/widgets/other_widgets.dart';
-import 'package:finmate/widgets/snackbar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,23 +70,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         fontSize: 25,
         fontWeight: FontWeight.bold,
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.filter_list_rounded,
-            color: color3,
-            size: 30,
-          ),
-          onPressed: () {
-            // Handle filer action
-            snackbarToast(
-                context: context,
-                text: "This feature is in development❗",
-                icon: Icons.developer_mode);
-          },
-        ),
-        sbw10,
-      ],
+      // actions: [
+      //   IconButton(
+      //     icon: const Icon(
+      //       Icons.filter_list_rounded,
+      //       color: color3,
+      //       size: 30,
+      //     ),
+      //     onPressed: () {
+      //       // Handle filer action
+      //       snackbarToast(
+      //           context: context,
+      //           text: "This feature is in development❗",
+      //           icon: Icons.developer_mode);
+      //     },
+      //   ),
+      //   sbw10,
+      // ],
       bottom: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: CustomTabBar(

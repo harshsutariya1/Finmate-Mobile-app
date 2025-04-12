@@ -2,7 +2,7 @@ import 'package:finmate/constants/colors.dart';
 import 'package:finmate/screens/home/Group%20screens/all_groups_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytical%20screens/analytics_screen.dart';
-import 'package:finmate/screens/home/budget%20screens/budget_screen.dart';
+import 'package:finmate/screens/home/budgets%20goals%20screens/budget_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
 import 'package:finmate/screens/home/payment%20screens/payments_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
@@ -26,7 +26,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     Icons.analytics,
     Icons.add,
     // Icons.attach_money_rounded,
-    Icons.pie_chart_outline_rounded,
+    Icons.flag_rounded,
     Icons.group,
   ];
 
@@ -63,6 +63,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         currentIndex: currentIndex,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
         iconSize: 30,
         onTap: (index) {

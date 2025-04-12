@@ -8,10 +8,8 @@ import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/auth/account%20screens/accounts_screen.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
-import 'package:finmate/screens/auth/notifications_screen.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
-import 'package:finmate/screens/home/budget%20screens/budget_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/settings_widgets.dart';
@@ -135,12 +133,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               style: TextTheme.of(context).titleLarge,
             ),
             Spacer(),
-            IconButton(
-              onPressed: () {
-                Navigate().push(NotificationScreen());
-              },
-              icon: Icon(Icons.notifications_none_rounded),
-            ),
+            // IconButton(
+            //   onPressed: () {
+            //     Navigate().push(NotificationScreen());
+            //   },
+            //   icon: Icon(Icons.notifications_none_rounded),
+            // ),
             IconButton(
               onPressed: () {
                 Navigate().push(SettingsScreen());
@@ -177,6 +175,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           border: Border.all(
             color: color2.withAlpha(100),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: color2.withAlpha(40),
+              offset: Offset(0, 3),
+              blurRadius: 6,
+              spreadRadius: 1,
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -376,6 +382,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         color: color2.withAlpha(100),
                       )
                     : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: color2.withAlpha(isCash ? 40 : 60),
+                    offset: Offset(2, 2),
+                    blurRadius: 4,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -701,7 +715,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.only(left: 15, top: 10),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
-        height: (isExtendedAppbar) ? size.height * .55 : 60,
+        height: (isExtendedAppbar) ? size.height * .45 : 60,
         width: (isExtendedAppbar) ? size.width * .7 : 60,
         padding: EdgeInsets.symmetric(
             vertical: (isExtendedAppbar) ? 20 : 0,
@@ -803,30 +817,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: borderedContainer(
                   [
                     settingsTile(
-                      iconData: Icons.pie_chart,
-                      text: "Budgets",
+                      iconData: Icons.settings,
+                      text: "Settings",
                       onTap: () {
                         setState(() {
                           onTapClose();
                         });
-                        Navigate().push(BudgetScreen());
-                      },
-                    )
-                  ],
-                  customMargin: EdgeInsets.all(0),
-                ),
-              ),
-              futureHomeMenuWidget(
-                child: borderedContainer(
-                  [
-                    settingsTile(
-                      iconData: Icons.flag_rounded,
-                      text: "Goals",
-                      onTap: () {
-                        setState(() {
-                          onTapClose();
-                        });
-                        Navigate().push(BudgetScreen());
+                        Navigate().push(SettingsScreen());
                       },
                     )
                   ],

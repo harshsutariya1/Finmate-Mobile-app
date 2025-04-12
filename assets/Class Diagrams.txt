@@ -1,0 +1,42 @@
+Class Diagram: 
+Generate a comprehensive Class Diagram for the Finmate financial management mobile application, showing the following key classes and their relationships:
+
+1. Model Classes:
+   - UserData (uid, firstName, lastName, name, userName, pfpURL, email, gender, dob)
+   - UserFinanceData (listOfUserTransactions, listOfGroups, listOfBankAccounts, cash)
+   - Transaction (tid, amount, date, time, uid, category, methodOfPayment, methodOfPayment2, description, transactionType, isGroupTransaction, isTransferTransaction)
+   - Group (gid, creatorId, name, image, date, time, description, totalAmount, listOfTransactions, memberIds, listOfMembers, membersBalance, linkedBankAccountId)
+   - BankAccount (bid, bankAccountName, totalBalance, availableBalance, upiIds, linkedGroupIds, groupsBalance)
+   - Cash (amount)
+   - Budget (bid, date, totalBudget, categoryBudgets, spentAmount)
+   - Chat (cid, senderId, message, date, time, isImage)
+   - CategoryChartData (category, amount, color, percentText)
+
+2. Provider/Notifier Classes:
+   - UserDataNotifier (state: UserData) with methods: fetchCurrentUserData(), updateCurrentUserData(), reset()
+   - UserFinanceDataNotifier (state: UserFinanceData) with methods: fetchUserFinanceData(), addTransactionToUserData(), updateUserCashAmount(), createGroupProfile(), updateBankAccountBalance()
+   - BudgetNotifier with methods: fetchUserBudgets(), updateBudgetWithTransaction()
+   - AuthStateProvider
+
+3. Service Classes:
+   - AuthService with methods: checkLogin(), login(), signup(), handleGoogleSignIn(), logout()
+   - DatabaseService with collection references and methods for data storage
+   - NavigationService with navigation methods
+
+4. Key UI Components:
+   - HomeScreen
+   - TransactionScreens (AllTransactionsScreen, AddTransactionScreen)
+   - GroupScreens (GroupOverview, CreateGroup)
+   - BudgetScreen
+   - AnalyticsScreen
+   - BnbPages (bottom navigation)
+
+5. Class Relationships:
+   - Composition: UserFinanceData contains collections of Transaction, Group, BankAccount objects
+   - Association: UserData is associated with UserFinanceData through user ID
+   - Inheritance: All Screen classes inherit from StatefulWidget/ConsumerStatefulWidget
+   - Dependencies: Provider classes depend on corresponding model classes
+   - Association: Transaction has references to BankAccount and Group through IDs
+   - Composition: Group contains a list of Transactions and references to Users
+
+Use proper UML notation, showing attributes, methods, and relationships with appropriate multiplicity indicators. Highlight the state management pattern using Riverpod providers that connects the UI layer with the data layer.

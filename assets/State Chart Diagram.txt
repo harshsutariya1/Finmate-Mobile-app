@@ -1,0 +1,76 @@
+Create State Chart Diagrams for the following components of the Finmate app:
+
+1. User Authentication States:
+   - Initial state: Unauthenticated
+   - States:
+     - Unauthenticated
+     - Authenticating
+     - Authentication Failed
+     - Authenticated
+     - Loading User Data
+     - User Data Error
+     - Logged Out
+   - Transitions:
+     - Unauthenticated → Authenticating: User initiates login/signup
+     - Authenticating → Authentication Failed: Invalid credentials
+     - Authenticating → Authenticated: Valid credentials
+     - Authenticated → Loading User Data: Fetch user profile and finance data
+     - Loading User Data → User Data Error: Data fetch fails
+     - Loading User Data → Complete User Session: Data loaded successfully
+     - Complete User Session → Logged Out: User logs out
+     - Logged Out → Unauthenticated: Return to auth screen
+
+2. Transaction Processing States:
+   - Initial state: New Transaction
+   - States:
+     - New Transaction
+     - Validating Input
+     - Input Error
+     - Processing Transaction
+     - Updating Balances
+     - Transaction Complete
+     - Transaction Failed
+   - Transitions:
+     - New Transaction → Validating Input: User submits transaction form
+     - Validating Input → Input Error: Validation fails
+     - Input Error → New Transaction: User corrects input
+     - Validating Input → Processing Transaction: Input valid
+     - Processing Transaction → Updating Balances: Transaction saved to database
+     - Updating Balances → Transaction Complete: All balances updated
+     - Processing Transaction → Transaction Failed: Database error
+     - Updating Balances → Transaction Failed: Balance update error
+
+3. Budget Tracking States:
+   - Initial state: Budget Created
+   - States:
+     - Budget Created
+     - Under Budget
+     - Approaching Limit (80-99%)
+     - Over Budget
+     - Budget Completed (end of period)
+   - Transitions:
+     - Budget Created → Under Budget: Initial state after creation
+     - Under Budget → Under Budget: Transaction added, still under limit
+     - Under Budget → Approaching Limit: Spending reaches 80% of budget
+     - Approaching Limit → Over Budget: Spending exceeds budget
+     - Any State → Budget Completed: End of budget period
+
+4. Group Lifecycle States:
+   - Initial state: Group Creation
+   - States:
+     - Group Creation
+     - Active Group
+     - Members Changing (adding/removing)
+     - Bank Account Linked
+     - Bank Account Unlinked
+     - Group Deleted
+   - Transitions:
+     - Group Creation → Active Group: Group successfully created
+     - Active Group → Members Changing: Admin adds/removes members
+     - Members Changing → Active Group: Member changes completed
+     - Active Group → Bank Account Linked: Admin links bank account
+     - Bank Account Linked → Bank Account Unlinked: Admin unlinks account
+     - Bank Account Unlinked → Active Group: Group continues without linked account
+     - Any State → Group Deleted: Admin deletes group
+
+Include guard conditions for transitions, actions performed during transitions, and any internal activities within states. Use proper state chart notation with initial states, final states, composite states where appropriate, and clearly labeled transitions.

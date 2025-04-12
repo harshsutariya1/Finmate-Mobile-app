@@ -1,0 +1,112 @@
+Create a detailed Entity-Relationship Diagram for the Finmate application database with the following entities and relationships:
+
+Entities:
+
+1. User
+   - PK: uid (string)
+   - firstName (string)
+   - lastName (string)
+   - name (string)
+   - userName (string)
+   - pfpURL (string)
+   - email (string)
+   - gender (string)
+   - dob (date)
+
+2. Transaction
+   - PK: tid (string)
+   - amount (string)
+   - date (date)
+   - time (time)
+   - description (string)
+   - category (string)
+   - methodOfPayment (string)
+   - methodOfPayment2 (string)
+   - payee (string)
+   - transactionType (string)
+   - isGroupTransaction (boolean)
+   - isTransferTransaction (boolean)
+   - FK: uid (string)
+   - FK: gid (string, nullable)
+   - FK: bankAccountId (string, nullable)
+   - FK: gid2 (string, nullable)
+   - FK: bankAccountId2 (string, nullable)
+
+3. Group
+   - PK: gid (string)
+   - name (string)
+   - image (string)
+   - date (date)
+   - time (time)
+   - description (string)
+   - totalAmount (string)
+   - FK: creatorId (string) → User.uid
+   - FK: linkedBankAccountId (string, nullable) → BankAccount.bid
+
+4. GroupMember
+   - PK: (gid, uid)
+   - FK: gid (string) → Group.gid
+   - FK: uid (string) → User.uid
+   - balance (string)
+
+5. BankAccount
+   - PK: bid (string)
+   - bankAccountName (string)
+   - totalBalance (string)
+   - availableBalance (string)
+   - FK: uid (string) → User.uid
+
+6. BankAccountGroup
+   - PK: (bid, gid)
+   - FK: bid (string) → BankAccount.bid
+   - FK: gid (string) → Group.gid
+   - groupBalance (string)
+
+7. Cash
+   - PK: uid (string) → User.uid
+   - amount (string)
+
+8. Budget
+   - PK: bid (string)
+   - date (date)
+   - totalBudget (string)
+   - spentAmount (string)
+   - FK: uid (string) → User.uid
+
+9. CategoryBudget
+   - PK: (bid, category)
+   - FK: bid (string) → Budget.bid
+   - category (string)
+   - amount (string)
+   - spent (string)
+
+10. Chat
+    - PK: cid (string)
+    - message (string)
+    - date (date)
+    - time (time)
+    - isImage (boolean)
+    - FK: gid (string) → Group.gid
+    - FK: senderId (string) → User.uid
+
+Relationships:
+
+1. User (1) -- (N) Transaction [A user has many transactions]
+2. User (1) -- (N) BankAccount [A user has many bank accounts]
+3. User (1) -- (1) Cash [A user has one cash record]
+4. User (1) -- (N) Budget [A user has many budgets]
+5. User (M) -- (N) Group [via GroupMember junction table]
+6. Group (1) -- (N) Transaction [A group has many transactions]
+7. Group (1) -- (N) Chat [A group has many chat messages]
+8. Group (M) -- (N) BankAccount [via BankAccountGroup junction table]
+9. Budget (1) -- (N) CategoryBudget [A budget has many category allocations]
+10. Transaction (N) -- (1) BankAccount [Many transactions can be associated with one bank account]
+
+Use proper ER notation showing:
+- Primary keys
+- Foreign keys
+- Cardinality constraints (one-to-many, many-to-many)
+- Optional relationships (using dotted lines or appropriate notation)
+- Attributes for each entity
+
+Include a note explaining the special handling for transfer transactions that involve two accounts/groups.
