@@ -940,7 +940,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             uid: uid,
             bankAccountId: bankAccountId1,
             availableBalance: updatedAvailableBalance1,
-            totalBalance: updatedTotalBalance1,
+            totalBalance: updatedTotalBalance1,ref: ref,
           );
 
       await ref
@@ -950,6 +950,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             bankAccountId: bankAccountId2,
             availableBalance: updatedAvailableBalance2,
             totalBalance: updatedTotalBalance2,
+            ref: ref,
           );
     } catch (e, stackTrace) {
       Logger().e("Error in _handleBankToBankTransfer:",
@@ -989,6 +990,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             bankAccountId: bankAccountId!,
             availableBalance: updatedAvailableBalance,
             totalBalance: updatedTotalBalance,
+            ref: ref,
           );
 
       await ref
@@ -996,6 +998,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           .updateUserCashAmount(
             uid: uid,
             amount: updatedCashAmount,
+            ref: ref,
           );
     } catch (e, stackTrace) {
       Logger().e("Error in _handleBankToCashTransfer:",
@@ -1035,6 +1038,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             bankAccountId: bankAccountId!,
             availableBalance: updatedAvailableBalance,
             totalBalance: updatedTotalBalance,
+            ref: ref,
           );
 
       await ref
@@ -1042,6 +1046,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           .updateUserCashAmount(
             uid: uid,
             amount: updatedCashAmount,
+            ref: ref,
           );
     } catch (e, stackTrace) {
       Logger().e("Error in _handleCashToBankTransfer:",
@@ -1087,6 +1092,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           .updateUserCashAmount(
             uid: uid,
             amount: updatedCashAmount,
+            ref: ref,
           );
     } catch (e, stackTrace) {
       Logger().e("Error in _handleGroupToCashTransfer:",
@@ -1132,6 +1138,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
           .updateUserCashAmount(
             uid: uid,
             amount: updatedCashAmount,
+            ref: ref,
           );
     } catch (e, stackTrace) {
       Logger().e("Error in _handleCashToGroupTransfer:",
@@ -1196,6 +1203,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             ...bankAccount.groupsBalance!,
             groupId: updatedGroupBalance,
           },
+          ref: ref,
         );
       } else if (isAdmin) {
         // Case 2: Group is not linked, and user is admin
@@ -1228,6 +1236,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               ...linkedBankAccount.groupsBalance!,
               groupId!: updatedLinkedBankGroupBalance,
             },
+            ref: ref,
           );
         }
 
@@ -1243,7 +1252,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               uid: uid,
               bankAccountId: bankAccountId!,
               availableBalance: updatedAvailableBalance,
-              totalBalance: updatedTotalBalance,
+              totalBalance: updatedTotalBalance,ref: ref,
             );
 
         await ref
@@ -1285,6 +1294,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               ...linkedBankAccount.groupsBalance!,
               groupId!: updatedLinkedBankGroupBalance,
             },
+            ref: ref,
           );
         }
 
@@ -1301,6 +1311,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               bankAccountId: bankAccountId!,
               availableBalance: updatedAvailableBalance,
               totalBalance: updatedTotalBalance,
+              ref: ref,
             );
 
         await ref
@@ -1370,6 +1381,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             ...?bankAccount.groupsBalance,
             groupId!: updatedGroupBalance,
           },
+          ref: ref,
         );
 
         await ref
@@ -1415,7 +1427,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             groupsBalance: {
               ...?linkedBankAccount.groupsBalance,
               groupId!: updatedLinkedBankGroupBalance,
-            },
+            },ref: ref,
           );
         }
 
@@ -1425,7 +1437,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               uid: uid,
               bankAccountId: bankAccountId!,
               availableBalance: updatedAvailableBalance,
-              totalBalance: updatedTotalBalance,
+              totalBalance: updatedTotalBalance,ref: ref,
             );
 
         await ref
@@ -1471,7 +1483,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
             groupsBalance: {
               ...?linkedBankAccount.groupsBalance,
               groupId!: updatedLinkedBankGroupBalance,
-            },
+            },ref: ref,
           );
         }
 
@@ -1481,7 +1493,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields> {
               uid: uid,
               bankAccountId: bankAccountId!,
               availableBalance: updatedAvailableBalance,
-              totalBalance: updatedTotalBalance,
+              totalBalance: updatedTotalBalance,ref: ref,
             );
 
         await ref

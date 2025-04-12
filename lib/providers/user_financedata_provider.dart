@@ -1,11 +1,13 @@
 // Provider for UserFinanceDataNotifier
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:finmate/models/accounts.dart';
+import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/services/database_references.dart';
 import 'package:finmate/services/database_services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -93,6 +95,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String uid,
     required String amount,
     bool isCashBalanceAdjustment = false,
+    required WidgetRef ref,
   }) async {
     try {
       if (isCashBalanceAdjustment) {
@@ -112,6 +115,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
                 ? TransactionType.expense.displayName
                 : TransactionType.income.displayName,
           ),
+          ref: ref,
         );
       }
 
@@ -138,6 +142,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     BankAccount? bankAccount,
     Map<String, String>? groupsBalance,
     bool isBalanceAdjustment = false,
+    required WidgetRef ref,
   }) async {
     try {
       // adjustmentAmount = newAmount - currentAmount
@@ -163,6 +168,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
                 ? TransactionType.expense.displayName
                 : TransactionType.income.displayName,
           ),
+          ref: ref,
         );
       }
 
@@ -269,6 +275,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   Future<bool> addTransactionToUserData({
     required String uid,
     required Transaction transactionData,
+    required WidgetRef ref,
   }) async {
     try {
       final result = (transactionData.isGroupTransaction)
@@ -281,11 +288,58 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         transaction: transactionData,
       );
 
+      // Update budget if this is an expense transaction
+      if (transactionData.transactionType ==
+              TransactionType.expense.displayName &&
+          !transactionData.isGroupTransaction) {
+        await _updateBudgetWithTransaction(uid, transactionData, ref);
+      }
+
       print("Transaction added to user");
       return true;
     } catch (e) {
       print("Error adding transaction to user: $e");
       return false;
+    }
+  }
+
+  /// Updates any budget associated with this transaction
+  Future<void> _updateBudgetWithTransaction(
+      String uid, Transaction transaction, WidgetRef ref) async {
+    try {
+      // Get the transaction date
+      final transactionDate = transaction.date;
+      if (transactionDate == null) return;
+
+      // Get the category
+      final category = transaction.category;
+      if (category == null) return;
+
+      // Get budgets from the provider instead of directly querying Firestore
+      final budgets = ref.read(budgetNotifierProvider);
+
+      // Find budget for the current month and year
+      final budget = budgets.firstWhere(
+        (b) =>
+            b.date?.year == transactionDate.year &&
+            b.date?.month == transactionDate.month,
+        orElse: () => Budget(),
+      );
+
+      // Skip if no budget found for this month
+      if (budget.bid == null || budget.bid!.isEmpty) {
+        logger.i("No budget found for the transaction month");
+        return;
+      }
+
+      // Use the budget provider to update the budget
+      await ref
+          .read(budgetNotifierProvider.notifier)
+          .updateBudgetWithTransaction(uid, transaction);
+
+      logger.i("✅ Budget updated with transaction successfully via provider");
+    } catch (e) {
+      logger.e("❌ Error updating budget with transaction: $e");
     }
   }
 
@@ -467,43 +521,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
-
-// Future<bool> updateTransaction(Transaction transaction) async {
-//   try {
-//     // Determine whether it's a group transaction or a regular transaction
-//     final isGroupTransaction = transaction.isGroupTransaction;
-//     final reference = isGroupTransaction
-//         ? groupTansactionCollection(transaction.gid ?? "").doc(transaction.tid)
-//         : userTransactionsCollection(transaction.uid ?? "").doc(transaction.tid);
-//     // Update the transaction in Firestore
-//     await reference.update(transaction.toJson());
-//     // Update the transaction in the local state
-//     if (isGroupTransaction) {
-//       // Update in group transactions state
-//       final updatedGroups = state.listOfGroups?.map((group) {
-//         if (group.gid == transaction.gid) {
-//           final updatedTransactions = group.listOfTransactions?.map((t) {
-//             return t.tid == transaction.tid ? transaction : t;
-//           }).toList();
-//           return group.copyWith(listOfTransactions: updatedTransactions);
-//         }
-//         return group;
-//       }).toList();
-//       state = state.copyWith(listOfGroups: updatedGroups);
-//     } else {
-//       // Update in user transactions state
-//       final updatedTransactions = state.listOfUserTransactions?.map((t) {
-//         return t.tid == transaction.tid ? transaction : t;
-//       }).toList();
-//       state = state.copyWith(listOfUserTransactions: updatedTransactions);
-//     }
-//     logger.i("✅ Transaction with tid ${transaction.tid} updated successfully.");
-//     return true;
-//   } catch (e) {
-//     logger.w("❌ Error updating transaction: $e\nStack Trace: ${StackTrace.current}");
-//     return false;
-//   }
-// }
 
 // __________________________________________________________________________ //
 
@@ -760,35 +777,38 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-Future<bool> updateBankAccountDetails({
-  required String uid,
-  required String bankAccountId,
-  required Map<String, dynamic> updateData,
-}) async {
-  try {
-    // Update in Firestore
-    await bankAccountsCollectionReference(uid).doc(bankAccountId).update(updateData);
-    
-    // Update in local state
-    final updatedBankAccounts = state.listOfBankAccounts?.map((bankAccount) {
-      if (bankAccount.bid == bankAccountId) {
-        return bankAccount.copyWith(
-          bankAccountName: updateData['bankAccountName'] ?? bankAccount.bankAccountName,
-          upiIds: updateData['upiIds'] ?? bankAccount.upiIds,
-        );
-      }
-      return bankAccount;
-    }).toList();
-    
-    state = state.copyWith(listOfBankAccounts: updatedBankAccounts);
-    
-    logger.i("✅ Bank account details updated successfully.");
-    return true;
-  } catch (e) {
-    logger.w("❌ Error updating bank account details: $e");
-    return false;
+  Future<bool> updateBankAccountDetails({
+    required String uid,
+    required String bankAccountId,
+    required Map<String, dynamic> updateData,
+  }) async {
+    try {
+      // Update in Firestore
+      await bankAccountsCollectionReference(uid)
+          .doc(bankAccountId)
+          .update(updateData);
+
+      // Update in local state
+      final updatedBankAccounts = state.listOfBankAccounts?.map((bankAccount) {
+        if (bankAccount.bid == bankAccountId) {
+          return bankAccount.copyWith(
+            bankAccountName:
+                updateData['bankAccountName'] ?? bankAccount.bankAccountName,
+            upiIds: updateData['upiIds'] ?? bankAccount.upiIds,
+          );
+        }
+        return bankAccount;
+      }).toList();
+
+      state = state.copyWith(listOfBankAccounts: updatedBankAccounts);
+
+      logger.i("✅ Bank account details updated successfully.");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error updating bank account details: $e");
+      return false;
+    }
   }
-}
 
 // __________________________________________________________________________ //
 

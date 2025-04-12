@@ -2,8 +2,8 @@ import 'package:finmate/constants/colors.dart';
 import 'package:finmate/screens/home/Group%20screens/all_groups_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/add_transaction_screen.dart';
 import 'package:finmate/screens/home/analytical%20screens/analytics_screen.dart';
+import 'package:finmate/screens/home/budget%20screens/budget_screen.dart';
 import 'package:finmate/screens/home/home_screen.dart';
-import 'package:finmate/screens/home/investment%20screens/investments_screen.dart';
 import 'package:finmate/screens/home/payment%20screens/payments_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +25,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     Icons.home,
     Icons.analytics,
     Icons.add,
-    Icons.attach_money_rounded,
+    // Icons.attach_money_rounded,
+    Icons.pie_chart_outline_rounded,
     Icons.group,
   ];
 
@@ -33,7 +34,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     'Home',
     'Analytics',
     'Add',
-    'Investments',
+    // 'Investments',
+    'Budgets',
     'Groups',
   ];
 
@@ -49,7 +51,8 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
       // 3
       SizedBox(),
       // 4
-      InvestmentsScreen(),
+      // InvestmentsScreen(),
+      BudgetScreen(),
       // 5
       GroupsScreen(),
     ];

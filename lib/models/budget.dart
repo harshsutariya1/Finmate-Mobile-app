@@ -12,15 +12,21 @@ class Budget {
     this.spendings = "0",
     this.categoryBudgets,
   }) {
-    date = date ?? DateTime.now();
+    // CRITICAL FIX: Only set default date if none was provided
+    // The current code always overwrites the parameter with a new instance
+    this.date = date ?? DateTime(DateTime.now().year, DateTime.now().month, 1);
     categoryBudgets = categoryBudgets ?? {};
   }
 
   factory Budget.fromJson(Map<String, dynamic> json) {
     return Budget(
       bid: json['bid'] as String?,
-      date:
-          json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      // Fix date parsing to handle both ISO string and Firestore Timestamp
+      date: json['date'] != null
+          ? (json['date'] is String
+              ? DateTime.parse(json['date'])
+              : (json['date']).toDate())
+          : DateTime.now(),
       totalBudget: json['totalBudget'] as String? ?? "0",
       spendings: json['spendings'] as String? ?? "0",
       categoryBudgets: json['categoryBudgets'] != null
@@ -46,6 +52,7 @@ class Budget {
     };
   }
 
+  // Add a copyWith method for easier updates
   Budget copyWith({
     String? bid,
     DateTime? date,

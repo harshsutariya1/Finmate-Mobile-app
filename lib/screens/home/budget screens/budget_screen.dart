@@ -10,6 +10,7 @@ import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 class BudgetScreen extends ConsumerStatefulWidget {
   const BudgetScreen({super.key});
@@ -24,6 +25,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   // Add a map to track animation triggers for each budget
   final Map<String?, bool> _animationTriggered = {};
+
+  DateTime? selectedDate;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           Navigate().goBack();
         },
       ),
-      title: const Text('Budget'),
+      title: const Text('Budgets'),
       centerTitle: true,
       actions: [
         IconButton(
@@ -116,7 +119,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             ),
             const SizedBox(height: 40),
             InkWell(
-              onTap: _createBudget,
+              onTap: _showMonthPicker,
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding:
@@ -261,16 +264,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               curve: Curves.easeOutCubic,
               tween: Tween<double>(begin: 0, end: progress > 1 ? 1 : progress),
               builder: (context, animatedProgress, child) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: animatedProgress,
-                    backgroundColor: Colors.grey.withAlpha(38),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isOverBudget ? Colors.red : color3,
-                    ),
-                    minHeight: 12,
-                  ),
+                return GradientProgressBar(
+                  value: animatedProgress,
+                  height: 12,
+                  borderRadius: 8,
                 );
               },
             ),
@@ -544,7 +541,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             ],
           ),
           SizedBox(height: 2),
-          // Animated progress bar for category - only animate when section is expanded
+          // Animated progress bar for category
           animationEnabled
               ? TweenAnimationBuilder<double>(
                   duration: const Duration(milliseconds: 1200),
@@ -554,29 +551,17 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     end: percentageValue > 0 ? percentageValue / 100 : 0,
                   ),
                   builder: (context, animatedProgress, child) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: animatedProgress,
-                        backgroundColor: Colors.grey.withAlpha(38),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isOverBudget ? Colors.red : color3,
-                        ),
-                        minHeight: 6,
-                      ),
+                    return GradientProgressBar(
+                      value: animatedProgress,
+                      height: 6,
+                      borderRadius: 4,
                     );
                   },
                 )
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: 0,
-                    backgroundColor: Colors.grey.withAlpha(38),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isOverBudget ? Colors.red : color3,
-                    ),
-                    minHeight: 6,
-                  ),
+              : GradientProgressBar(
+                  value: 0,
+                  height: 6,
+                  borderRadius: 4,
                 ),
         ],
       ),
@@ -585,7 +570,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   /// Shows a month picker and creates a budget for the selected month
   void _showMonthPicker() async {
-    DateTime? pickedDate = await showDatePicker(
+    selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
@@ -606,18 +591,33 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       },
     );
 
-    if (pickedDate != null) {
+    if (selectedDate != null) {
       // Create a budget for the first day of the selected month
-      final selectedMonth = DateTime(pickedDate.year, pickedDate.month, 1);
-      _createBudget(selectedMonth);
+      // final selectedMonth = DateTime(pickedDate.year, pickedDate.month, 1);
+      Logger().i(
+          "Selected month in picker: ${selectedDate?.toIso8601String()}"); // Debug
+      _createBudget();
+    } else {
+      // Handle case when no date is selected
+      Logger().w("No date selected in month picker"); // Debug
+      snackbarToast(
+        context: context,
+        text: "No date selected",
+        icon: Icons.error_outline,
+      );
     }
   }
 
   /// Handler for budget creation - opens a bottom sheet with budget form
-  void _createBudget([DateTime? initialDate]) {
+  void _createBudget() {
     final formKey = GlobalKey<FormState>();
     final totalBudgetController = TextEditingController();
-    List<Map<String, dynamic>> selectedCategories = [];
+    // List<Map<String, dynamic>> selectedCategories = [];
+
+    // Initialize with provided date
+    // DateTime selectedDate =
+    //     initialDate ?? DateTime(DateTime.now().year, DateTime.now().month, 1);
+    Logger().i("Initial selectedDate in _createBudget: $selectedDate"); // Debug
 
     // Define months array
     final months = [
@@ -645,8 +645,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             })
         .toList();
 
-    // Initialize with provided date or current month
-    DateTime selectedDate = DateTime.now();
+    // Define state variables outside the builder
+    List<Map<String, dynamic>> selectedCategories = [];
     bool isSubmitting = false;
     bool isLoadingTransactions = true;
     double currentSpending = 0;
@@ -662,7 +662,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (isLoadingTransactions) {
                 _fetchExistingTransactionData(
-                  selectedDate,
+                  selectedDate ?? DateTime.now(),
                   (spending, categories) {
                     // This callback will be called when transaction data is fetched
                     if (!context.mounted) return;
@@ -733,7 +733,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           ),
                           SizedBox(height: 15),
                           Text(
-                            'Create Budget for ${months[selectedDate.month - 1]} ${selectedDate.year}',
+                            'Create Budget for ${months[selectedDate!.month - 1]} ${selectedDate!.year}',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -775,7 +775,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     Card(
                                       elevation: 2,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(15),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Padding(
                                         padding: EdgeInsets.all(16),
@@ -841,6 +841,13 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                                                   .grey[600],
                                                             ),
                                                           ),
+                                                          Expanded(
+                                                              child: SizedBox(
+                                                            child: Divider(
+                                                              indent: 20,
+                                                              endIndent: 20,
+                                                            ),
+                                                          )),
                                                           Text(
                                                             "₹${entry.value.toStringAsFixed(2)}",
                                                             style: TextStyle(
@@ -863,7 +870,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                   Card(
                                     elevation: 2,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Padding(
                                       padding: EdgeInsets.all(16),
@@ -899,14 +906,14 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                                       horizontal: 15),
                                               border: OutlineInputBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(10),
                                                 borderSide: BorderSide(
                                                     color:
                                                         color1.withAlpha(100)),
                                               ),
                                               focusedBorder: OutlineInputBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(10),
                                                 borderSide: BorderSide(
                                                     color: color3, width: 2),
                                               ),
@@ -928,6 +935,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                               if (double.parse(value) <= 0) {
                                                 return 'Budget must be greater than zero';
                                               }
+                                              if (double.parse(value) <
+                                                  currentSpending) {
+                                                return 'Budget cannot be less than current spending';
+                                              }
                                               return null;
                                             },
                                           ),
@@ -942,7 +953,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                   Card(
                                     elevation: 2,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Padding(
                                       padding: EdgeInsets.all(16),
@@ -950,6 +961,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
+                                          // Header with title and button
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -1122,77 +1134,78 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           ),
                           elevation: 3,
                         ),
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                if (formKey.currentState!.validate()) {
-                                  setState(() {
-                                    isSubmitting = true;
-                                  });
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            setModalState(() {
+                              isSubmitting = true;
+                            });
 
-                                  final userData =
-                                      ref.read(userDataNotifierProvider);
-                                  final totalBudget =
-                                      totalBudgetController.text;
+                            final userData = ref.read(userDataNotifierProvider);
+                            final totalBudget = totalBudgetController.text;
 
-                                  // Build category budgets map with detailed structure
-                                  final Map<String, Map<String, String>>
-                                      categoryBudgets = {};
-                                  for (var category in selectedCategories) {
-                                    final allocatedValue =
-                                        category['controller'].text;
-                                    if (allocatedValue.isNotEmpty) {
-                                      final allocated =
-                                          double.parse(allocatedValue);
-                                      final spent =
-                                          categorySpending[category['name']] ??
-                                              0.0;
-                                      final remaining = allocated - spent;
-                                      final percentage = allocated > 0
-                                          ? ((spent / allocated) * 100)
-                                              .clamp(0, 100)
-                                          : 0.0;
+                            // Build category budgets map with detailed structure
+                            final Map<String, Map<String, String>>
+                                categoryBudgets = {};
+                            for (var category in selectedCategories) {
+                              final allocatedValue =
+                                  category['controller'].text;
+                              if (allocatedValue.isNotEmpty) {
+                                final allocated = double.parse(allocatedValue);
+                                final spent =
+                                    categorySpending[category['name']] ?? 0.0;
+                                final remaining = allocated - spent;
+                                final percentage = allocated > 0
+                                    ? ((spent / allocated) * 100).clamp(0, 100)
+                                    : 0.0;
 
-                                      categoryBudgets[category['name']] = {
-                                        "allocated": allocatedValue,
-                                        "spent": spent.toString(),
-                                        "remaining": remaining.toString(),
-                                        "percentage": percentage.toString(),
-                                      };
-                                    }
-                                  }
+                                categoryBudgets[category['name']] = {
+                                  "allocated": allocatedValue,
+                                  "spent": spent.toString(),
+                                  "remaining": remaining.toString(),
+                                  "percentage": percentage.toString(),
+                                };
+                              }
+                            }
 
-                                  // Create budget object
-                                  final budget = Budget(
-                                    date: selectedDate,
-                                    totalBudget: totalBudget,
-                                    spendings: currentSpending.toString(),
-                                    categoryBudgets: categoryBudgets,
-                                  );
+                            print(
+                                "Creating budget with date: ${selectedDate?.toIso8601String()}");
 
-                                  // Save budget
-                                  final success = await ref
-                                      .read(budgetNotifierProvider.notifier)
-                                      .createBudget(userData.uid ?? '', budget);
+                            // Create budget object with explicit date
+                            final budget = Budget(
+                              date: DateTime(selectedDate!.year,
+                                  selectedDate!.month, selectedDate!.day),
+                              totalBudget: totalBudget,
+                              spendings: currentSpending.toString(),
+                              categoryBudgets: categoryBudgets,
+                            );
 
-                                  Navigator.pop(context);
+                            // Add debug logging
+                            print(
+                                "Creating budget with date: ${budget.date?.toIso8601String()}");
 
-                                  // Show success/error message
-                                  if (success) {
-                                    snackbarToast(
-                                      context: context,
-                                      text: "Budget created successfully!",
-                                      icon: Icons.check_circle,
-                                    );
-                                  } else {
-                                    snackbarToast(
-                                      context: context,
-                                      text: "Failed to create budget",
-                                      icon: Icons.error,
-                                    );
-                                  }
-                                }
-                              },
+                            // Save budget
+                            final success = await ref
+                                .read(budgetNotifierProvider.notifier)
+                                .createBudget(userData.uid ?? '', budget);
+
+                            Navigate().goBack();
+
+                            // Show success/error message
+                            if (success) {
+                              snackbarToast(
+                                context: context,
+                                text: "Budget created successfully!",
+                                icon: Icons.check_circle,
+                              );
+                            } else {
+                              snackbarToast(
+                                context: context,
+                                text: "Failed to create budget",
+                                icon: Icons.error,
+                              );
+                            }
+                          }
+                        },
                         child: isSubmitting
                             ? SizedBox(
                                 height: 20,
@@ -1224,9 +1237,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   /// Fetches existing transaction data for the selected month
   void _fetchExistingTransactionData(
-      DateTime selectedDate,
-      Function(double totalSpending, Map<String, double> categorySpending)
-          onDataFetched) {
+    DateTime selectedDate,
+    Function(double totalSpending, Map<String, double> categorySpending)
+        onDataFetched,
+  ) {
     final userFinanceData = ref.read(userFinanceDataNotifierProvider);
     final transactions = userFinanceData.listOfUserTransactions ?? [];
 
@@ -1241,8 +1255,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       }
 
       final transactionDate = transaction.date;
-      return transactionDate?.month == selectedDate.month &&
-          transactionDate?.year == selectedDate.year;
+      return ((transactionDate?.month == selectedDate.month) &&
+          (transactionDate?.year == selectedDate.year));
     }).toList();
 
     // Calculate spending amounts
@@ -1334,6 +1348,77 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           },
         );
       },
+    );
+  }
+}
+
+/// Custom gradient progress bar widget that transitions from green to red
+class GradientProgressBar extends StatelessWidget {
+  final double value;
+  final double height;
+  final double borderRadius;
+
+  const GradientProgressBar({
+    super.key,
+    required this.value,
+    this.height = 10,
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Define gradient colors based on progress value
+    List<Color> getGradientColors() {
+      if (value < 0.4) {
+        // Green to light green (safe zone)
+        return [
+          Colors.green.shade700,
+          Colors.green.shade400,
+        ];
+      } else if (value < 0.7) {
+        // Light green to orange (caution zone)
+        return [
+          Colors.green.shade400,
+          Colors.orange.shade300,
+        ];
+      } else if (value < 0.9) {
+        // Orange to red (warning zone)
+        return [
+          Colors.orange.shade300,
+          Colors.orange.shade800,
+        ];
+      } else {
+        // Red (danger zone)
+        return [
+          Colors.orange.shade800,
+          Colors.red.shade700,
+        ];
+      }
+    }
+
+    final gradientColors = getGradientColors();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.grey.withAlpha(38),
+        ),
+        child: FractionallySizedBox(
+          widthFactor: value,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gradientColors,
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

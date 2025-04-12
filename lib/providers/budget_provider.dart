@@ -35,31 +35,59 @@ class BudgetNotifier extends StateNotifier<List<Budget>> {
   /// Creates a new budget
   Future<bool> createBudget(String uid, Budget budget) async {
     try {
-      // Check if a budget for this month already exists
-      final existingBudget = state
-          .where((b) =>
-              b.date?.year == budget.date?.year &&
-              b.date?.month == budget.date?.month)
-          .toList();
+      print(
+          "In provider, creating budget for: ${budget.date?.toIso8601String()}"); // Debug
 
-      if (existingBudget.isNotEmpty) {
+      // Look for existing budget with SAME year and month
+      final existingBudgets = state.where((b) {
+        if (b.date == null) return false;
+
+        return b.date!.year == budget.date?.year &&
+            b.date!.month == budget.date?.month;
+      }).toList();
+
+      print(
+          "Found ${existingBudgets.length} existing budgets for this month"); // Debug
+
+      if (existingBudgets.isNotEmpty) {
         logger.w("⚠️ A budget for this month already exists");
-        return await updateBudget(uid, budget);
+        return await updateBudget(uid, budget.copyWith(date: budget.date));
       }
 
-      // Create a new budget document
-      final budgetRef = userBudgetsCollection(uid).doc();
-      final budgetWithId = budget.copyWith(bid: budgetRef.id);
+      // Check if the budget date is null or not
+      if (budget.date == null) {
+        logger.e("❌ Budget date is null!");
+        throw Exception("Budget date cannot be null");
+      } else {
+        print("Budget date is: ${budget.date?.toIso8601String()}"); // Debug
 
-      await budgetRef.set(budgetWithId);
+        // Create a new budget document
+        final budgetRef = userBudgetsCollection(uid).doc();
+        Budget budgetWithId = budget.copyWith(bid: budgetRef.id);
 
-      // Update local state
-      state = [budgetWithId, ...state];
+        // Check date before saving
+        if (budgetWithId.date == null) {
+          logger.e("❌ Budget date is null before saving!");
+          // Force set a date to prevent null
+          budgetWithId = budgetWithId.copyWith(
+              date: DateTime(DateTime.now().year, DateTime.now().month, 1));
+        }
 
-      logger.i("✅ Budget created successfully");
+        print(
+            "Saving budget with date: ${budgetWithId.date?.toIso8601String()}"); // Debug
+
+        await budgetRef.set(budgetWithId);
+
+        // Update local state
+        state = [budgetWithId, ...state];
+
+        logger.i(
+            "✅ Budget created successfully with date: ${budgetWithId.date?.toIso8601String()}");
+      }
+
       return true;
-    } catch (e) {
-      logger.e("❌ Error creating budget: $e");
+    } catch (e, stackTrace) {
+      logger.e("❌ Error creating budget: $e\n$stackTrace");
       return false;
     }
   }
@@ -81,7 +109,10 @@ class BudgetNotifier extends StateNotifier<List<Budget>> {
       }
 
       // Update with the existing ID
-      final updatedBudget = budget.copyWith(bid: existingBudget.bid);
+      final updatedBudget = budget.copyWith(
+          bid: existingBudget.bid,
+          // Ensure date is preserved
+          date: budget.date ?? existingBudget.date);
 
       await userBudgetsCollection(uid)
           .doc(existingBudget.bid)
@@ -89,10 +120,11 @@ class BudgetNotifier extends StateNotifier<List<Budget>> {
 
       // Update state
       state = state
-          .map((b) => (b.bid == existingBudget.bid) ? updatedBudget : b)
+          .map((b) => b.bid == existingBudget.bid ? updatedBudget : b)
           .toList();
 
-      logger.i("✅ Budget updated successfully");
+      logger
+          .i("✅ Budget updated successfully with date: ${updatedBudget.date}");
       return true;
     } catch (e) {
       logger.e("❌ Error updating budget: $e");
@@ -100,7 +132,7 @@ class BudgetNotifier extends StateNotifier<List<Budget>> {
     }
   }
 
-  /// Updates category spending based on a new transaction
+  /// Updates budget spending based on a new transaction
   Future<bool> updateBudgetWithTransaction(
       String uid, Transaction transaction) async {
     try {
@@ -134,13 +166,12 @@ class BudgetNotifier extends StateNotifier<List<Budget>> {
       final newTotalSpending = (currentSpending + amount).toString();
 
       // Update category spending if applicable
-      final categoryName = transaction.category;
-      final categoryBudgets =
-          Map<String, Map<String, String>>.from(budget.categoryBudgets ?? {});
+      final String? categoryName = transaction.category;
+      final Map<String, Map<String, String>> categoryBudgets =
+          budget.categoryBudgets ?? {};
 
       if (categoryName != null && categoryBudgets.containsKey(categoryName)) {
-        final categoryData =
-            Map<String, String>.from(categoryBudgets[categoryName]!);
+        final Map<String, String> categoryData = categoryBudgets[categoryName]!;
 
         // Update spent amount
         final categorySpent =

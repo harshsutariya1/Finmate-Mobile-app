@@ -871,6 +871,7 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
                                 totalBalance: newTotalBalance,
                                 bankAccount: selectedBankAccount,
                                 isBalanceAdjustment: isBalanceAdjustment,
+                                ref: ref,
                               );
 
                           // Update account name and UPI ID

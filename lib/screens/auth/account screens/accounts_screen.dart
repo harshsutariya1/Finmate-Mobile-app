@@ -148,6 +148,7 @@ void showEditAmountBottomSheet(
                           uid: userdata.uid ?? '',
                           amount: amountController.text,
                           isCashBalanceAdjustment: true,
+                          ref: ref,
                         );
                   }
                   if (isBank) {
@@ -164,6 +165,7 @@ void showEditAmountBottomSheet(
                               .toString(),
                           bankAccount: bankAccount,
                           isBalanceAdjustment: true,
+                          ref: ref,
                         );
                   }
                   Navigate().goBack();

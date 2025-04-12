@@ -289,7 +289,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                 Text(
                   "To:",
                   style: TextStyle(
-                    color: color2,
+                    color: color1,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -300,7 +300,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                         ? transaction.payee!
                         : "Unknown",
                     style: TextStyle(
-                      color: color2,
+                      color: Colors.grey.shade600,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
@@ -331,7 +331,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                         ? transaction.description!
                         : "Unknown",
                     style: TextStyle(
-                      color: color2,
+                      color: Colors.grey.shade600,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -362,7 +362,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                         ? transaction.category!
                         : "Unknown",
                     style: TextStyle(
-                      color: color2,
+                      color: Colors.grey.shade600,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -401,7 +401,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                         ? transaction.methodOfPayment!
                         : "Unknown",
                     style: TextStyle(
-                      color: color2,
+                      color: Colors.grey.shade600,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
@@ -429,7 +429,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                   child: Text(
                     fromAccountName,
                     style: TextStyle(
-                      color: color2,
+                      color: Colors.grey.shade600,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
@@ -459,7 +459,7 @@ class _TransactionDetailsState extends ConsumerState<TransactionDetails> {
                         child: Text(
                           toAccountName,
                           style: TextStyle(
-                            color: color2,
+                            color: Colors.grey.shade600,
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
                           ),

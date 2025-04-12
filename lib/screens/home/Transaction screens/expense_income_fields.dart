@@ -804,6 +804,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
         .addTransactionToUserData(
           uid: uid,
           transactionData: transactionData,
+          ref: ref,
         );
 
     if (success) {
@@ -816,6 +817,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
               amount: (double.parse(transactionData.amount ?? "0") +
                       (double.parse(userFinanceData.cash!.amount ?? '0')))
                   .toString(),
+              ref: ref,
             );
       }
 
@@ -837,6 +839,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
               bankAccountId: transactionData.bankAccountId!,
               availableBalance: updatedAvailableBalance,
               totalBalance: updatedTotalBalance,
+              ref: ref,
             );
       }
 
