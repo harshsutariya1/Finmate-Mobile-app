@@ -295,34 +295,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             bankAccounts.length,
             isCash: true,
           ),
-          // view all button
-          Align(
-            alignment: Alignment.center,
-            child: InkWell(
-              onTap: () {
-                Navigate().push(AccountsScreen());
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  vertical: 5,
-                  horizontal: 20,
-                ),
-                margin: EdgeInsets.only(top: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: color2.withAlpha(100),
-                  ),
-                ),
-                child: Text(
-                  "View All",
-                  style: TextStyle(
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

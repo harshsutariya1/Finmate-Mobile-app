@@ -81,7 +81,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         spacing: 8,
         children: [
           sbh10,
-          Image.asset(appLogo),
+          Image.asset(
+            appLogo,
+            height: 100,
+          ),
           sbh5,
           Text(
             "Sign In",

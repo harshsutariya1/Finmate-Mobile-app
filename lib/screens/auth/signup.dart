@@ -86,7 +86,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         spacing: 8,
         children: [
-          Image.asset(appLogo),
+          Image.asset(
+            appLogo,
+            height: 100,
+          ),
           Text(
             "Join Us",
             style: TextStyle(
