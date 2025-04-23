@@ -10,6 +10,7 @@ import 'package:finmate/screens/auth/account%20screens/accounts_screen.dart';
 import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
+import 'package:finmate/screens/home/budgets%20goals%20screens/budgets_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/settings_widgets.dart';
@@ -687,7 +688,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.only(left: 15, top: 10),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
-        height: (isExtendedAppbar) ? size.height * .45 : 60,
+        height: (isExtendedAppbar) ? size.height * .6 : 60,
         width: (isExtendedAppbar) ? size.width * .7 : 60,
         padding: EdgeInsets.symmetric(
             vertical: (isExtendedAppbar) ? 20 : 0,
@@ -747,6 +748,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
               ),
+              futureHomeMenuWidget(
+                child: Text(
+                  "“Rule No. 1 : Never lose money. Rule No. 2 : Never forget Rule No. 1.”  ― Warren Buffett",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
               futureHomeMenuWidget(child: sbh10),
 
               // Button Tiles
@@ -779,6 +789,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           onTapClose();
                         });
                         Navigate().push(AccountsScreen());
+                      },
+                    )
+                  ],
+                  customMargin: EdgeInsets.all(0),
+                ),
+              ),
+              futureHomeMenuWidget(
+                child: borderedContainer(
+                  [
+                    settingsTile(
+                      iconData: Icons.track_changes_rounded,
+                      text: "Budgets",
+                      onTap: () {
+                        setState(() {
+                          onTapClose();
+                        });
+                        Navigate().push(BudgetScreen());
+                      },
+                    )
+                  ],
+                  customMargin: EdgeInsets.all(0),
+                ),
+              ),
+              futureHomeMenuWidget(
+                child: borderedContainer(
+                  [
+                    settingsTile(
+                      iconData: Icons.flag_circle_rounded,
+                      text: "Goals",
+                      onTap: () {
+                        setState(() {
+                          onTapClose();
+                        });
+                        Navigate().push(BudgetScreen());
                       },
                     )
                   ],

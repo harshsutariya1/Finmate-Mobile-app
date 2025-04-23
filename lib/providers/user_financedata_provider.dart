@@ -26,7 +26,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     List<Transaction> transactions = [];
     List<Group> groups = [];
     List<BankAccount> bankAccounts = [];
-    // List<Wallet> wallets = [];
     Cash? cash = Cash();
     try {
       // fetch user transactions data

@@ -31,20 +31,20 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: color4_120,
+      backgroundColor: Colors.white70,
       appBar: _appBar(),
       body: _body(),
       floatingActionButton: FloatingActionButton(
         backgroundColor: color3,
         onPressed: _showMonthPicker,
-        child: Icon(Icons.date_range, color: Colors.white),
+        child: Icon(Icons.addchart_rounded, color: Colors.white),
       ),
     );
   }
 
   PreferredSizeWidget _appBar() {
     return AppBar(
-      backgroundColor: color4_120,
+      backgroundColor: color4,
       centerTitle: true,
       title: const Text("Budgets"),
       actions: [
