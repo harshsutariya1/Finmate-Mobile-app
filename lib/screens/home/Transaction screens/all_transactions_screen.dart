@@ -222,9 +222,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       margin: EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
-                          color: color3.withOpacity(0.1),
+                          color: color3.withAlpha(26),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: color3.withOpacity(0.3))),
+                          border: Border.all(color: color3.withAlpha(77))),
                       child: Row(
                         children: [
                           Icon(Icons.filter_list, size: 16, color: color3),
@@ -320,7 +320,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color3.withOpacity(0.8), color2.withOpacity(0.7)],
+          colors: [color3.withAlpha(204), color2.withAlpha(179)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -436,7 +436,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           margin: EdgeInsets.only(top: 12, bottom: 8),
           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            color: color3.withOpacity(0.1),
+            color: color3.withAlpha(26),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -523,7 +523,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         boxShadow: _isSearching
             ? [
                 BoxShadow(
-                  color: color3.withOpacity(0.3),
+                  color: color3.withAlpha(77),
                   blurRadius: 8,
                   spreadRadius: 1,
                   offset: const Offset(0, 2),
@@ -531,7 +531,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               ]
             : [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withAlpha(51),
                   blurRadius: 4,
                   spreadRadius: 0,
                   offset: const Offset(0, 2),
@@ -591,7 +591,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             Icon(
               Icons.search_off_rounded,
               size: 70,
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withAlpha(128),
             ),
             const SizedBox(height: 20),
             Text(
@@ -935,7 +935,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             Icon(
               Icons.filter_alt_off,
               size: 70,
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withAlpha(128),
             ),
             const SizedBox(height: 20),
             Text(
