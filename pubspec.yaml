@@ -78,6 +78,7 @@ dependencies:
   package_rename: ^1.9.0
   mobile_scanner: ^6.0.7
   lottie: ^3.3.1
+  percent_indicator: ^4.2.5
 
 dev_dependencies:
   flutter_test:

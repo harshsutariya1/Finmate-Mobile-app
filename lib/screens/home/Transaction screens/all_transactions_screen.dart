@@ -205,7 +205,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           }).toList();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
       child: monthlyTransactions.isEmpty
           ? _buildEmptyState(month)
           : SingleChildScrollView(
@@ -318,6 +318,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Container(
       padding: EdgeInsets.all(20),
+      margin: EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color3.withAlpha(204), color2.withAlpha(179)],

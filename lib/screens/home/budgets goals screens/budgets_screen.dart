@@ -6,6 +6,7 @@ import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/home/budgets%20goals%20screens/budget_overview.dart'; // Import the new screen
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white70,
+      backgroundColor: color4,
       appBar: _appBar(),
       body: _body(),
       floatingActionButton: FloatingActionButton(
@@ -214,198 +215,203 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final year = budget.date?.year ?? DateTime.now().year;
     final budgetPeriod = "$month $year Budget";
 
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with period and percentage
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  budgetPeriod,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: color1,
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isOverBudget
-                        ? Colors.red.withAlpha(38)
-                        : color3.withAlpha(38),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    "$percentage%",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isOverBudget ? Colors.red : color3,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Progress bar visualization with animation
-            const SizedBox(height: 16),
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 1500),
-              curve: Curves.easeOutCubic,
-              tween: Tween<double>(begin: 0, end: progress > 1 ? 1 : progress),
-              builder: (context, animatedProgress, child) {
-                return GradientProgressBar(
-                  value: animatedProgress,
-                  height: 12,
-                  borderRadius: 8,
-                );
-              },
-            ),
-
-            // Budget summary info (total, spent, remaining)
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _budgetInfoItem(
-                  title: "Total Budget",
-                  amount: "₹$totalBudget",
-                  color: color3,
-                  icon: Icons.account_balance_wallet,
-                ),
-                _budgetInfoItem(
-                  title: "Spent",
-                  amount: "₹$spendings",
-                  color: Colors.orange,
-                  icon: Icons.shopping_cart_outlined,
-                ),
-                _budgetInfoItem(
-                  title: isOverBudget ? "Overspent" : "Remaining",
-                  amount: "₹$remaining",
-                  color: isOverBudget ? Colors.red : Colors.green,
-                  icon: isOverBudget
-                      ? Icons.warning_amber_rounded
-                      : Icons.savings_outlined,
-                ),
-              ],
-            ),
-
-            // Optional category breakdown section with toggle and animation
-            if (budget.categoryBudgets != null &&
-                budget.categoryBudgets!.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell( 
+      onTap: () {
+        Navigate().push(BudgetOverviewScreen(budget: budget)); // Navigate on tap
+      },
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.only(bottom: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with period and percentage
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Divider(height: 30),
-                  // Category header with toggle button
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        // Toggle visibility
-                        _categoryVisibility[budget.bid] = !isCategoryVisible;
-
-                        // Set animation trigger to true when expanding
-                        if (!isCategoryVisible) {
-                          _animationTriggered[budget.bid] = true;
-                        }
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Category Breakdown",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: color1,
-                            ),
-                          ),
-                          // Animated rotation for the dropdown icon
-                          TweenAnimationBuilder<double>(
-                            duration: const Duration(milliseconds: 300),
-                            tween: Tween<double>(
-                              begin: 0,
-                              end: isCategoryVisible ? 180 : 0,
-                            ),
-                            builder: (_, angle, child) {
-                              return Transform.rotate(
-                                angle: angle * 3.14159 / 180,
-                                child: child,
-                              );
-                            },
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: color3,
-                            ),
-                          ),
-                        ],
-                      ),
+                  Text(
+                    budgetPeriod,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color1,
                     ),
                   ),
-                  sbh10,
-                  // Animated container for category items
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.fastOutSlowIn,
-                    height: isCategoryVisible
-                        ? budget.categoryBudgets!.length *
-                            65.0 // Approximate height per item
-                        : 0,
-                    clipBehavior: Clip.antiAlias,
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
+                      color: isOverBudget
+                          ? Colors.red.withAlpha(38)
+                          : color3.withAlpha(38),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 300),
-                      opacity: isCategoryVisible ? 1.0 : 0.0,
-                      child: SingleChildScrollView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...budget.categoryBudgets!.entries.map((entry) {
-                              final categoryName = entry.key;
-                              final categoryData = entry.value;
-                              final allocated =
-                                  categoryData['allocated'] ?? '0';
-                              final spent = categoryData['spent'] ?? '0';
-                              final remaining =
-                                  categoryData['remaining'] ?? '0';
-                              final percentage =
-                                  categoryData['percentage'] ?? '0';
-
-                              return _categoryBudgetItem(
-                                categoryName,
-                                allocated,
-                                spent: spent,
-                                remaining: remaining,
-                                percentage: percentage,
-                                animationEnabled:
-                                    isCategoryVisible && hasAnimationTriggered,
-                              );
-                            }),
-                          ],
-                        ),
+                    child: Text(
+                      "$percentage%",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isOverBudget ? Colors.red : color3,
                       ),
                     ),
                   ),
                 ],
               ),
-          ],
+
+              // Progress bar visualization with animation
+              const SizedBox(height: 16),
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 1500),
+                curve: Curves.easeOutCubic,
+                tween: Tween<double>(begin: 0, end: progress > 1 ? 1 : progress),
+                builder: (context, animatedProgress, child) {
+                  return GradientProgressBar(
+                    value: animatedProgress,
+                    height: 12,
+                    borderRadius: 8,
+                  );
+                },
+              ),
+
+              // Budget summary info (total, spent, remaining)
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _budgetInfoItem(
+                    title: "Total Budget",
+                    amount: "₹$totalBudget",
+                    color: color3,
+                    icon: Icons.account_balance_wallet,
+                  ),
+                  _budgetInfoItem(
+                    title: "Spent",
+                    amount: "₹$spendings",
+                    color: Colors.orange,
+                    icon: Icons.shopping_cart_outlined,
+                  ),
+                  _budgetInfoItem(
+                    title: isOverBudget ? "Overspent" : "Remaining",
+                    amount: "₹$remaining",
+                    color: isOverBudget ? Colors.red : Colors.green,
+                    icon: isOverBudget
+                        ? Icons.warning_amber_rounded
+                        : Icons.savings_outlined,
+                  ),
+                ],
+              ),
+
+              // Optional category breakdown section with toggle and animation
+              if (budget.categoryBudgets != null &&
+                  budget.categoryBudgets!.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(height: 30),
+                    // Category header with toggle button
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          // Toggle visibility
+                          _categoryVisibility[budget.bid] = !isCategoryVisible;
+
+                          // Set animation trigger to true when expanding
+                          if (!isCategoryVisible) {
+                            _animationTriggered[budget.bid] = true;
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Category Breakdown",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: color1,
+                              ),
+                            ),
+                            // Animated rotation for the dropdown icon
+                            TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 300),
+                              tween: Tween<double>(
+                                begin: 0,
+                                end: isCategoryVisible ? 180 : 0,
+                              ),
+                              builder: (_, angle, child) {
+                                return Transform.rotate(
+                                  angle: angle * 3.14159 / 180,
+                                  child: child,
+                                );
+                              },
+                              child: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: color3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    sbh10,
+                    // Animated container for category items
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.fastOutSlowIn,
+                      height: isCategoryVisible
+                          ? budget.categoryBudgets!.length *
+                              65.0 // Approximate height per item
+                          : 0,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: isCategoryVisible ? 1.0 : 0.0,
+                        child: SingleChildScrollView(
+                          physics: const NeverScrollableScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...budget.categoryBudgets!.entries.map((entry) {
+                                final categoryName = entry.key;
+                                final categoryData = entry.value;
+                                final allocated =
+                                    categoryData['allocated'] ?? '0';
+                                final spent = categoryData['spent'] ?? '0';
+                                final remaining =
+                                    categoryData['remaining'] ?? '0';
+                                final percentage =
+                                    categoryData['percentage'] ?? '0';
+
+                                return _categoryBudgetItem(
+                                  categoryName,
+                                  allocated,
+                                  spent: spent,
+                                  remaining: remaining,
+                                  percentage: percentage,
+                                  animationEnabled:
+                                      isCategoryVisible && hasAnimationTriggered,
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
