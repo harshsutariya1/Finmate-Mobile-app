@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:intl/intl.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -223,92 +224,175 @@ class _MonthlyAnalysisChartsState extends ConsumerState<MonthlyAnalysisCharts> {
         totalIncome += double.parse(transaction.amount ?? "0.0");
       } else if (transaction.transactionType ==
           TransactionType.expense.displayName) {
-        totalExpense += double.parse(transaction.amount ?? "0.0");
+        totalExpense += double.parse(transaction.amount ?? "0.0").abs();
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(15),
-      child: Row(
-        spacing: 10,
-        children: [
-          Expanded(
-              child: InkWell(
-            onTap: () {
-              setState(() {
-                isIncomeSelected = true;
-              });
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: (isIncomeSelected) ? color3 : color2.withAlpha(150),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                spacing: 5,
-                children: [
-                  Text(
-                    "Total Income",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color1,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    "$totalIncome ₹",
-                    style: TextStyle(
-                      color: color1,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )),
-          Expanded(
-              child: InkWell(
-            onTap: () {
-              setState(() {
-                isIncomeSelected = false;
-              });
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: (!isIncomeSelected) ? color3 : color2.withAlpha(150),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                spacing: 5,
-                children: [
-                  Text(
-                    "Total Expense",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color1,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    "$totalExpense",
-                    style: TextStyle(
-                      color: color1,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )),
+    // Calculate balance and format values
+    final double balance = totalIncome - totalExpense;
+    final numberFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
+
+    return Container(
+      margin: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(26), // Replaced withOpacity(0.1)
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
         ],
+      ),
+      child: Column(
+        children: [
+          // Header with balance info
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  balance >= 0 ? Colors.green.withAlpha(26) : Colors.red.withAlpha(26), // Replaced withOpacity(0.1)
+                  Colors.white.withAlpha(179), // Replaced withOpacity(0.7)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Monthly Balance',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: color1,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  numberFormat.format(balance),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: balance >= 0 ? Colors.green : Colors.red,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Income/Expense selection cards
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              spacing: 16,
+              children: [
+                _buildFinancialCard(
+                  title: "Income",
+                  amount: totalIncome,
+                  icon: Icons.arrow_upward_rounded,
+                  iconColor: Colors.green,
+                  isSelected: isIncomeSelected,
+                  onTap: () {
+                    setState(() {
+                      isIncomeSelected = true;
+                    });
+                  },
+                ),
+                
+                _buildFinancialCard(
+                  title: "Expense",
+                  amount: totalExpense,
+                  icon: Icons.arrow_downward_rounded,
+                  iconColor: Colors.red,
+                  isSelected: !isIncomeSelected,
+                  onTap: () {
+                    setState(() {
+                      isIncomeSelected = false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for building financial cards
+  Widget _buildFinancialCard({
+    required String title,
+    required double amount,
+    required IconData icon,
+    required Color iconColor,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final numberFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+    
+    return Expanded(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color3.withAlpha(26) : Colors.transparent, // Replaced withOpacity(0.1)
+          border: Border.all(
+            color: isSelected ? color3 : color2.withAlpha(150), // Already using withAlpha
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          splashColor: color3.withAlpha(26), // Replaced withOpacity(0.1)
+          highlightColor: color3.withAlpha(13), // Replaced withOpacity(0.05)
+          child: Column(
+            children: [
+              // Title row with icon
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: iconColor.withAlpha(26), // Replaced withOpacity(0.1)
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 16),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? color3 : color1,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Amount value
+              Text(
+                numberFormat.format(amount),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? color3 : color1,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
