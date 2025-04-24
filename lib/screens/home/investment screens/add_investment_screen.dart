@@ -282,7 +282,7 @@ class _AddInvestmentScreenState extends ConsumerState<AddInvestmentScreen> {
             }
           },
           backgroundColor: Colors.white,
-          selectedColor: color3.withOpacity(0.2),
+            selectedColor: color3.withAlpha(51), 
           labelStyle: TextStyle(
             color: isSelected ? color3 : color1,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

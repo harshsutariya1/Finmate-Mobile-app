@@ -20,6 +20,7 @@ class InvestmentsScreen extends ConsumerStatefulWidget {
 
 class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late PageController _pageController;
   final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
   int _selectedInvestmentTypeFilter = 0;
   bool _isLoading = false;
@@ -40,7 +41,33 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
   void initState() {
     super.initState();
     _tabController = TabController(length: investmentTypeTabs.length, vsync: this);
+    _pageController = PageController(initialPage: _selectedInvestmentTypeFilter);
     _loadInvestments();
+    
+    // Connect tab controller to selection
+    _tabController.addListener(_handleTabSelection);
+  }
+  
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging || _tabController.index != _selectedInvestmentTypeFilter) {
+      setState(() {
+        _selectedInvestmentTypeFilter = _tabController.index;
+        // Animate to the selected page without jumping
+        _pageController.animateToPage(
+          _selectedInvestmentTypeFilter,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInvestments() async {
@@ -48,12 +75,6 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
     final userData = ref.read(userDataNotifierProvider);
     await ref.read(investmentNotifierProvider.notifier).loadInvestments(userData.uid ?? '');
     setState(() => _isLoading = false);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -105,7 +126,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
                 ? const Center(child: CircularProgressIndicator())
                 : investments.isEmpty
                     ? _buildEmptyState()
-                    : _buildInvestmentsDashboard(investments),
+                    : _buildPageView(investments),
           ),
         ],
       ),
@@ -130,6 +151,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 4),
+        controller: ScrollController(), // Adding a ScrollController for smoother scrolling
         child: Row(
           children: investmentTypeTabs.asMap().entries.map((entry) {
             final index = entry.key;
@@ -141,6 +163,13 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
                 setState(() {
                   _selectedInvestmentTypeFilter = index;
                   _tabController.animateTo(index);
+                  
+                  // Scroll to the selected tab in the CustomTabBar
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
                 });
               },
               child: AnimatedContainer(
@@ -213,14 +242,30 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
     );
   }
 
-  Widget _buildInvestmentsDashboard(List<Investment> allInvestments) {
-    // Filter investments based on selected tab
-    final List<Investment> filteredInvestments = _selectedInvestmentTypeFilter == 0
-        ? allInvestments
-        : allInvestments.where(
-            (investment) => investment.type == investmentTypeTabs[_selectedInvestmentTypeFilter],
-          ).toList();
-    
+  Widget _buildPageView(List<Investment> allInvestments) {
+    return PageView.builder(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() {
+          _selectedInvestmentTypeFilter = index;
+          _tabController.animateTo(index);
+        });
+      },
+      itemCount: investmentTypeTabs.length,
+      itemBuilder: (context, index) {
+        // Filter investments based on selected tab
+        final List<Investment> filteredInvestments = index == 0
+            ? allInvestments
+            : allInvestments.where(
+                (investment) => investment.type == investmentTypeTabs[index],
+              ).toList();
+              
+        return _buildInvestmentsDashboard(filteredInvestments);
+      },
+    );
+  }
+  
+  Widget _buildInvestmentsDashboard(List<Investment> filteredInvestments) {
     // Calculate portfolio totals
     final double totalInvested = filteredInvestments.fold(
         0, (sum, investment) => sum + investment.initialAmount);
@@ -497,7 +542,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
         color: color,
         value: entry.value,
         title: '', // Remove text from chart sections for cleaner look
-        radius: isSelected ? 90 : 80, // Expand selected section
+        radius: isSelected ? 90 : 60, // Expand selected section
         titleStyle: const TextStyle(
           fontSize: 0,  // No text inside sections
         ),
