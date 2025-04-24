@@ -5,6 +5,7 @@ import 'package:finmate/providers/investment_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/investment%20screens/add_investment_screen.dart';
 import 'package:finmate/screens/home/investment%20screens/investment_details_screen.dart';
+import 'package:finmate/screens/home/market%20screens/market_overview_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +22,7 @@ class InvestmentsScreen extends ConsumerStatefulWidget {
 class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late PageController _pageController;
+  late ScrollController _tabScrollController;
   final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
   int _selectedInvestmentTypeFilter = 0;
   bool _isLoading = false;
@@ -42,6 +44,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
     super.initState();
     _tabController = TabController(length: investmentTypeTabs.length, vsync: this);
     _pageController = PageController(initialPage: _selectedInvestmentTypeFilter);
+    _tabScrollController = ScrollController();
     _loadInvestments();
     
     // Connect tab controller to selection
@@ -58,7 +61,33 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
+        
+        // Scroll tab into view
+        _scrollToSelectedTab();
       });
+    }
+  }
+
+  void _scrollToSelectedTab() {
+    // Calculate the approximate position of the selected tab
+    // This estimation assumes all tabs have similar width
+    final tabWidth = 100.0;  // Approximate width of each tab including padding
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxOffset = _tabScrollController.position.maxScrollExtent;
+    
+    // Calculate target position (center the selected tab)
+    double targetPosition = (tabWidth * _selectedInvestmentTypeFilter) - (screenWidth / 2) + (tabWidth / 2);
+    
+    // Clamp the position to valid scroll bounds
+    targetPosition = targetPosition.clamp(0.0, maxOffset);
+    
+    // Animate to the position
+    if (_tabScrollController.hasClients) {
+      _tabScrollController.animateTo(
+        targetPosition,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -67,6 +96,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
     _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
     _pageController.dispose();
+    _tabScrollController.dispose();
     super.dispose();
   }
 
@@ -94,10 +124,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
             icon: const Icon(Icons.trending_up, color: color3),
             tooltip: 'Market Overview',
             onPressed: () {
-              // TODO: Implement navigation to Market Details Screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Market Details button pressed')),
-              );
+              Navigate().push(const MarketOverviewScreen());
             },
           ),
           IconButton(
@@ -149,9 +176,9 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
         ],
       ),
       child: SingleChildScrollView(
+        controller: _tabScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        controller: ScrollController(), // Adding a ScrollController for smoother scrolling
         child: Row(
           children: investmentTypeTabs.asMap().entries.map((entry) {
             final index = entry.key;
@@ -170,6 +197,9 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                   );
+                  
+                  // Ensure selected tab is visible
+                  _scrollToSelectedTab();
                 });
               },
               child: AnimatedContainer(
@@ -312,7 +342,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13), // Changed to withAlpha
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -376,7 +406,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+            color: color.withAlpha(26), // Adjusted from withOpacity(0.1)
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -715,7 +745,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withAlpha(8), // Changed from withOpacity(0.03)
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -729,7 +759,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: _getColorForInvestmentType(investment.type).withOpacity(0.2),
+                    color: _getColorForInvestmentType(investment.type).withAlpha(51), // Adjusted from withOpacity(0.2)
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -862,7 +892,7 @@ class _Badge extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26), // Adjusted from withOpacity(0.1)
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
