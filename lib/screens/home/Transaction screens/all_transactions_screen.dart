@@ -30,6 +30,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   String? _selectedBankAccount;
   String? _sortOption;
   bool _hasActiveFilters = false;
+  
+  // Create a map for category search controllers to prevent disposal issues
+  final Map<String, TextEditingController> _categorySearchControllers = {};
 
   List<String> monthsTabTitles = [
     "January",
@@ -58,12 +61,20 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   void dispose() {
     _searchController.dispose();
     _pageController.dispose();
+    
+    // Dispose all category search controllers
+    for (var controller in _categorySearchControllers.values) {
+      controller.dispose();
+    }
+    _categorySearchControllers.clear();
+    
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: color4,
       appBar: _buildAppBar(),
       body: _buildTransactionPageView(),
@@ -635,6 +646,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       }
     }
 
+    // Sort categories alphabetically for better dropdown experience
+    final sortedCategories = categories.toList()..sort();
+
     // Local variables to track selections in the dialog
     String? tempCategory = _selectedCategory;
     String? tempBankAccount = _selectedBankAccount;
@@ -700,40 +714,32 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   // Content - Scrollable area
                   Container(
                     constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      maxHeight: MediaQuery.of(context).size.height * 0.5, // Reduced from 0.6
                     ),
                     child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Categories section
+                          // Replace dropdown with category selector button
                           _buildFilterSectionHeader('Categories'),
-                          _buildFilterOption(
-                            'All Categories',
-                            tempCategory == null,
-                            () {
-                              setDialogState(() {
-                                tempCategory = null;
-                              });
-                            },
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            child: _buildCategorySelector(
+                              sortedCategories,
+                              tempCategory,
+                              (newValue) {
+                                setDialogState(() {
+                                  tempCategory = newValue;
+                                });
+                              },
+                            ),
                           ),
-                          ...categories.map((category) => _buildFilterOption(
-                                category,
-                                tempCategory == category,
-                                () {
-                                  setDialogState(() {
-                                    tempCategory = (tempCategory == category)
-                                        ? null
-                                        : category;
-                                  });
-                                },
-                              )),
 
-                          Divider(
-                              height: 1, thickness: 1, color: Colors.grey[200]),
+                          Divider(height: 1, thickness: 1, color: Colors.grey[200]),
 
-                          // Bank accounts section
+                          // Bank accounts section - Keep the existing pattern
                           _buildFilterSectionHeader('Bank Accounts'),
                           _buildFilterOption(
                             'All Accounts',
@@ -770,6 +776,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                 tempSortOption = null;
                               });
                             },
+                            key: ValueKey('sort_default'),
                           ),
                           _buildFilterOption(
                             'Amount: Low to High',
@@ -782,6 +789,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                         : 'amount_asc';
                               });
                             },
+                            key: ValueKey('sort_asc'),
                           ),
                           _buildFilterOption(
                             'Amount: High to Low',
@@ -794,6 +802,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                         : 'amount_desc';
                               });
                             },
+                            key: ValueKey('sort_desc'),
                           ),
                         ],
                       ),
@@ -881,8 +890,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   }
 
   // Helper widget for filter options with checkbox
-  Widget _buildFilterOption(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildFilterOption(String label, bool isSelected, VoidCallback onTap, {Key? key}) {
     return InkWell(
+      key: key,
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -890,12 +900,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color: isSelected ? color3 : Colors.black87,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isSelected ? color3 : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
@@ -923,6 +936,295 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ),
       ),
     );
+  }
+
+  // Replace the dropdown with a button that opens a searchable category selector
+  Widget _buildCategorySelector(
+    List<String> categories,
+    String? selectedCategory,
+    Function(String?) onCategorySelected,
+  ) {
+    return InkWell(
+      onTap: () {
+        _showCategorySearchDialog(categories, selectedCategory, onCategorySelected);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                selectedCategory ?? 'All Categories',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: selectedCategory != null ? color2 : Colors.grey[600],
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Icon(Icons.filter_list, color: color3, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Add a new method to show the category search dialog
+  void _showCategorySearchDialog(
+    List<String> categories,
+    String? selectedCategory,
+    Function(String?) onCategorySelected,
+  ) {
+    // Create a unique key for this dialog instance
+    final String dialogKey = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    // Create or retrieve controller for this instance
+    if (!_categorySearchControllers.containsKey(dialogKey)) {
+      _categorySearchControllers[dialogKey] = TextEditingController();
+    }
+    final searchController = _categorySearchControllers[dialogKey]!;
+    
+    List<String> filteredCategories = List.from(categories);
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              width: double.maxFinite,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      'Select Category',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color1,
+                      ),
+                    ),
+                  ),
+                  
+                  // Search box
+                  Container(
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[100],
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (query) {
+                        setState(() {
+                          if (query.isEmpty) {
+                            filteredCategories = List.from(categories);
+                          } else {
+                            filteredCategories = categories
+                                .where((cat) =>
+                                    cat.toLowerCase().contains(query.toLowerCase()))
+                                .toList();
+                          }
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search categories...',
+                        prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  
+                  // "All Categories" option
+                  InkWell(
+                    onTap: () {
+                      onCategorySelected(null);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[200]!),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: color3.withAlpha(26),
+                            ),
+                            child: Icon(Icons.category, color: color3, size: 18),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'All Categories',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: selectedCategory == null ? FontWeight.bold : FontWeight.normal,
+                                color: color1,
+                              ),
+                            ),
+                          ),
+                          if (selectedCategory == null)
+                            Icon(Icons.check_circle, color: color3),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Fix overflow issues with the category list
+                  Flexible(
+                    child: filteredCategories.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text(
+                                'No categories match your search',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: filteredCategories.length,
+                            itemBuilder: (context, index) {
+                              final category = filteredCategories[index];
+                              final isSelected = category == selectedCategory;
+                              
+                              // Create a unique key for each list item
+                              return InkWell(
+                                key: ValueKey('category_${category}_$index'),
+                                onTap: () {
+                                  onCategorySelected(category);
+                                  Navigator.pop(context);
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(color: Colors.grey[200]!),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: _getCategoryColor(category).withAlpha(26), // 0.1 opacity = 25.5 alpha, rounded to 26
+                                        ),
+                                        child: Icon(
+                                          _getCategoryIcon(category), 
+                                          color: _getCategoryColor(category), 
+                                          size: 18
+                                        ),
+                                      ),
+                                      SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          category,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            color: color1,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        Icon(Icons.check_circle, color: color3),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  
+                  // Footer buttons
+                  Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Close', style: TextStyle(color: color3)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    ).then((_) {
+      // Do not dispose the controller here - it will be disposed in the dispose() method
+      searchController.clear();
+    });
+  }
+
+  // Helper method to get a color for a category (based on category name hash)
+  Color _getCategoryColor(String category) {
+    final colors = [
+      color3,
+      Colors.orange,
+      Colors.green,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+    ];
+    final index = category.hashCode % colors.length;
+    return colors[index.abs()];
+  }
+
+  // Helper method to get an icon for a category
+  IconData _getCategoryIcon(String category) {
+    final categoryLower = category.toLowerCase();
+    
+    if (categoryLower.contains('food') || categoryLower.contains('grocery')) {
+      return Icons.restaurant;
+    } else if (categoryLower.contains('transport') || categoryLower.contains('travel')) {
+      return Icons.directions_car;
+    } else if (categoryLower.contains('shopping')) {
+      return Icons.shopping_bag;
+    } else if (categoryLower.contains('bill') || categoryLower.contains('utility')) {
+      return Icons.receipt;
+    } else if (categoryLower.contains('entertainment') || categoryLower.contains('movie')) {
+      return Icons.movie;
+    } else if (categoryLower.contains('health') || categoryLower.contains('medical')) {
+      return Icons.medical_services;
+    } else if (categoryLower.contains('education')) {
+      return Icons.school;
+    } else if (categoryLower.contains('income') || categoryLower.contains('salary')) {
+      return Icons.attach_money;
+    } else if (categoryLower.contains('transfer')) {
+      return Icons.swap_horiz;
+    }
+    
+    return Icons.category;
   }
 
   // New widget to show when no results match the filter
