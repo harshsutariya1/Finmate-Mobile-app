@@ -6,7 +6,7 @@ import 'package:finmate/models/transaction_category.dart';
 import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
-import 'package:finmate/screens/home/budgets%20goals%20screens/budget_overview.dart'; // Import the new screen
+import 'package:finmate/screens/home/budgets%20goals%20screens/budget_overview.dart'; 
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -215,9 +215,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final year = budget.date?.year ?? DateTime.now().year;
     final budgetPeriod = "$month $year Budget";
 
-    return InkWell( 
+    return InkWell(
       onTap: () {
-        Navigate().push(BudgetOverviewScreen(budget: budget)); // Navigate on tap
+        Navigate()
+            .push(BudgetOverviewScreen(budget: budget)); // Navigate on tap
       },
       child: Card(
         elevation: 4,
@@ -264,17 +265,53 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
               // Progress bar visualization with animation
               const SizedBox(height: 16),
-              TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 1500),
-                curve: Curves.easeOutCubic,
-                tween: Tween<double>(begin: 0, end: progress > 1 ? 1 : progress),
-                builder: (context, animatedProgress, child) {
-                  return GradientProgressBar(
-                    value: animatedProgress,
+              Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
                     height: 12,
-                    borderRadius: 8,
-                  );
-                },
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withAlpha(100),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1500),
+                    curve: Curves.easeOutCubic,
+                    tween: Tween<double>(
+                        begin: 0, end: progress > 1 ? 1 : progress),
+                    builder: (context, animatedProgress, child) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          GradientProgressBar(
+                            value: animatedProgress,
+                            height: 12,
+                            borderRadius: 8,
+                          ),
+                          Text(
+                            "${(animatedProgress == 0)?"   ":""}${(animatedProgress * 100).toStringAsFixed(1)}%",
+                            style: TextStyle(
+                              fontSize: 10, // Adjusted size for better fit
+                              fontWeight: FontWeight.bold,
+                              color: Colors
+                                  .white, // White for contrast on gradient
+                              shadows: [
+                                // Add shadow for readability
+                                Shadow(
+                                  blurRadius: 1.0,
+                                  color: Colors.black.withAlpha(
+                                      153), // Changed from withOpacity(0.6)
+                                  offset: Offset(0.5, 0.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
               ),
 
               // Budget summary info (total, spent, remaining)
@@ -305,7 +342,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                 ],
               ),
 
-              // Optional category breakdown section with toggle and animation
+              // category breakdown section with toggle and animation
               if (budget.categoryBudgets != null &&
                   budget.categoryBudgets!.isNotEmpty)
                 Column(
@@ -399,8 +436,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                   spent: spent,
                                   remaining: remaining,
                                   percentage: percentage,
-                                  animationEnabled:
-                                      isCategoryVisible && hasAnimationTriggered,
+                                  animationEnabled: isCategoryVisible &&
+                                      hasAnimationTriggered,
                                 );
                               }),
                             ],
@@ -549,26 +586,50 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           SizedBox(height: 2),
           // Animated progress bar for category
           animationEnabled
-              ? TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 1200),
-                  curve: Curves.easeOutCubic,
-                  tween: Tween<double>(
-                    begin: 0,
-                    end: percentageValue > 0 ? percentageValue / 100 : 0,
+              ? Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withAlpha(100),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                  builder: (context, animatedProgress, child) {
-                    return GradientProgressBar(
-                      value: animatedProgress,
+                  TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 1200),
+                      curve: Curves.easeOutCubic,
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: percentageValue > 0 ? percentageValue / 100 : 0,
+                      ),
+                      builder: (context, animatedProgress, child) {
+                        return GradientProgressBar(
+                          value: animatedProgress,
+                          height: 6,
+                          borderRadius: 4,
+                        );
+                      },
+                    ),
+                ],
+              )
+              : Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withAlpha(100),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  GradientProgressBar(
+                      value: 0,
                       height: 6,
                       borderRadius: 4,
-                    );
-                  },
-                )
-              : GradientProgressBar(
-                  value: 0,
-                  height: 6,
-                  borderRadius: 4,
-                ),
+                    ),
+                ],
+              ),
         ],
       ),
     );
