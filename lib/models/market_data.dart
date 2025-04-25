@@ -17,6 +17,17 @@ class MarketIndex {
   });
 
   bool get isPositive => change >= 0;
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'symbol': symbol,
+      'currentValue': currentValue,
+      'change': change,
+      'changePercentage': changePercentage,
+      'historicalData': historicalData.map((point) => point.toJson()).toList(),
+    };
+  }
 }
 
 class Stock {
@@ -49,6 +60,23 @@ class Stock {
   });
 
   bool get isPositive => change >= 0;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'symbol': symbol,
+      'companyLogo': companyLogo,
+      'currentPrice': currentPrice,
+      'change': change,
+      'changePercentage': changePercentage,
+      'marketCap': marketCap,
+      'peRatio': peRatio,
+      'eps': eps,
+      'sector': sector,
+      'historicalData': historicalData.map((point) => point.toJson()).toList(),
+      'additionalInfo': additionalInfo,
+    };
+  }
 }
 
 class Cryptocurrency {
@@ -77,6 +105,21 @@ class Cryptocurrency {
   });
 
   bool get isPositive => change >= 0;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'symbol': symbol,
+      'image': image,
+      'currentPrice': currentPrice,
+      'change': change,
+      'changePercentage': changePercentage,
+      'marketCap': marketCap,
+      'volume24h': volume24h,
+      'circulatingSupply': circulatingSupply,
+      'historicalData': historicalData.map((point) => point.toJson()).toList(),
+    };
+  }
 }
 
 class Commodity {
@@ -99,6 +142,18 @@ class Commodity {
   });
 
   bool get isPositive => change >= 0;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'symbol': symbol,
+      'currentPrice': currentPrice,
+      'change': change,
+      'changePercentage': changePercentage,
+      'unit': unit,
+      'historicalData': historicalData.map((point) => point.toJson()).toList(),
+    };
+  }
 }
 
 class ChartDataPoint {
@@ -109,6 +164,13 @@ class ChartDataPoint {
     required this.timestamp,
     required this.value,
   });
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'value': value,
+    };
+  }
 }
 
 enum TimeRange {
