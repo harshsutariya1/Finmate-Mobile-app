@@ -27,6 +27,10 @@ const Map<String, IconData> transactionCategoriesAndIcons = {
   'Others': Icons.category,
   'Balance Adjustment': Icons.account_balance_wallet_rounded,
   'Transfer': Icons.swap_horiz,
+
+  // Add goal contribution category
+  'Goal Contribution': Icons.savings,
+  'Goal Refund': Icons.savings_outlined,
 };
 
 // Separated expense categories
@@ -120,6 +124,7 @@ extension IncomeCategoryExtension on IncomeCategory {
 enum SystemCategory {
   balanceAdjustment,
   transfer,
+  goalContribution, // Added new category for goal contributions
 }
 
 extension SystemCategoryExtension on SystemCategory {
@@ -129,6 +134,8 @@ extension SystemCategoryExtension on SystemCategory {
         return 'Balance Adjustment';
       case SystemCategory.transfer:
         return 'Transfer';
+      case SystemCategory.goalContribution:
+        return 'Goal Contribution';
     }
   }
 

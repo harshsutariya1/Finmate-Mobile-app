@@ -83,4 +83,14 @@ class BankAccount {
       groupsBalance: groupsBalance ?? this.groupsBalance,
     );
   }
+
+  // Add equality operator and hashCode for proper comparison in dropdowns
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is BankAccount && other.bid == bid;
+  }
+
+  @override
+  int get hashCode => bid.hashCode;
 }

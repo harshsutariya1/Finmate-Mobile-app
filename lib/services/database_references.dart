@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat.dart';
+import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;
 import 'package:finmate/models/user.dart';
@@ -64,6 +65,14 @@ CollectionReference<Budget> userBudgetsCollection(String uid) {
   return userCollection.doc(uid).collection('budgets').withConverter<Budget>(
         fromFirestore: (snapshot, _) => Budget.fromJson(snapshot.data()!),
         toFirestore: (budget, _) => budget.toJson(),
+      );
+}
+
+// Collection reference for goal documents
+CollectionReference<Goal> userGoalsCollection(String uid) {
+  return userCollection.doc(uid).collection('goals').withConverter<Goal>(
+        fromFirestore: (snapshot, _) => Goal.fromJson(snapshot.data()!),
+        toFirestore: (goal, _) => goal.toJson(),
       );
 }
 

@@ -11,6 +11,7 @@ import 'package:finmate/screens/auth/edit_user_details.dart';
 import 'package:finmate/screens/auth/settings_screen.dart';
 import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
 import 'package:finmate/screens/home/budgets%20goals%20screens/budgets_screen.dart';
+import 'package:finmate/screens/home/budgets%20goals%20screens/goals_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/settings_widgets.dart';
@@ -822,7 +823,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         setState(() {
                           onTapClose();
                         });
-                        Navigate().push(BudgetScreen());
+                        Navigate().push(GoalsScreen());
                       },
                     )
                   ],
