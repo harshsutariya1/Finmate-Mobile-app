@@ -34,15 +34,18 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
   final percentFormat = NumberFormat('+0.00%;-0.00%');
   final numberFormat = NumberFormat('#,##0.00');
-  
+
   // For chart touch data
   TouchedSpot? _touchedSpot;
-  
+
   @override
   Widget build(BuildContext context) {
     final timeRange = ref.watch(selectedTimeRangeProvider);
-    final detailDataAsync = ref.watch(detailedStockDataProvider(widget.symbol));
-    
+    // Use the correct provider - chartDataProvider with ChartDataRequest
+    final detailDataAsync = ref.watch(chartDataProvider(
+      ChartDataRequest(symbol: widget.symbol, timeRange: timeRange)
+    ));
+
     // Get entity-specific data based on type
     dynamic entityData;
     if (widget.type == 'index') {
@@ -56,9 +59,10 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       entityData = cryptos.where((c) => c.symbol == widget.symbol).firstOrNull;
     } else if (widget.type == 'commodity') {
       final commodities = ref.watch(commoditiesProvider).valueOrNull ?? [];
-      entityData = commodities.where((c) => c.symbol == widget.symbol).firstOrNull;
+      entityData =
+          commodities.where((c) => c.symbol == widget.symbol).firstOrNull;
     }
-    
+
     return Scaffold(
       backgroundColor: color4,
       appBar: AppBar(
@@ -68,7 +72,8 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.invalidate(detailedStockDataProvider(widget.symbol));
+              ref.invalidate(chartDataProvider(ChartDataRequest(
+                  symbol: widget.symbol, timeRange: timeRange)));
               if (widget.type == 'index') {
                 ref.invalidate(marketIndicesProvider);
               } else if (widget.type == 'stock') {
@@ -87,17 +92,18 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
           : _buildDetailView(entityData, timeRange, detailDataAsync),
     );
   }
-  
-  Widget _buildDetailView(dynamic entityData, TimeRange timeRange, AsyncValue<List<ChartDataPoint>> detailDataAsync) {
+
+  Widget _buildDetailView(dynamic entityData, TimeRange timeRange,
+      AsyncValue<List<ChartDataPoint>> detailDataAsync) {
     final bool isPositive = entityData.isPositive;
     final Color valueColor = isPositive ? Colors.green : Colors.red;
-    
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _buildHeaderSection(entityData, valueColor),
         sbh20,
-        _buildChartSection(detailDataAsync, isPositive),
+        _buildChartSection(detailDataAsync, valueColor),
         sbh20,
         _buildTimeRangeSelector(timeRange),
         sbh20,
@@ -105,7 +111,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ],
     );
   }
-  
+
   Widget _buildHeaderSection(dynamic entityData, Color valueColor) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -118,7 +124,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildEntityIcon(entityData),
+                _buildEntityIcon(),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -126,7 +132,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
                     children: [
                       Text(
                         widget.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: color1,
@@ -134,15 +140,15 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
                       ),
                       Text(
                         widget.symbol,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: color2,
                         ),
                       ),
-                      if (widget.type == 'stock')
+                      if (widget.type == 'stock' && entityData.sector != null)
                         Text(
                           entityData.sector,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             color: color3,
                           ),
@@ -159,7 +165,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Current Value',
                         style: TextStyle(
                           fontSize: 14,
@@ -167,8 +173,8 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
                         ),
                       ),
                       Text(
-                        currencyFormat.format(entityData.currentPrice ?? entityData.currentValue),
-                        style: TextStyle(
+                        currencyFormat.format(entityData.currentValue),
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: color1,
@@ -181,26 +187,33 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
+                      mainAxisSize: MainAxisSize.min,  // Use minimum space needed
                       children: [
-                        Icon(
-                          entityData.isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                          size: 16,
-                          color: valueColor,
-                        ),
-                        Text(
-                          entityData.isPositive
-                              ? '+${numberFormat.format(entityData.change)}'
-                              : numberFormat.format(entityData.change),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Flexible(  // Make the Icon flexible
+                          child: Icon(
+                            entityData.isPositive
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            size: 16,
                             color: valueColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(  // Make text flexible and handle overflow
+                          child: Text(
+                            '${entityData.change.abs().toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: valueColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,  // Handle text overflow with ellipsis
                           ),
                         ),
                       ],
                     ),
                     Text(
-                      '${entityData.changePercentage.toStringAsFixed(2)}%',
+                      '${entityData.changePercentage.abs().toStringAsFixed(2)}%',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -216,99 +229,50 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
-  Widget _buildEntityIcon(dynamic entityData) {
-    // For Stock
-    if (widget.type == 'stock' && entityData.companyLogo.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          entityData.companyLogo,
-          width: 50,
-          height: 50,
-          errorBuilder: (_, __, ___) => const Icon(
-            Icons.business,
-            size: 50,
-            color: Colors.grey,
-          ),
-        ),
-      );
+
+  Widget _buildEntityIcon() {
+    IconData iconData;
+    Color iconColor;
+
+    switch (widget.type) {
+      case 'index':
+        iconData = Icons.show_chart;
+        iconColor = color3;
+        break;
+      case 'stock':
+        iconData = Icons.business;
+        iconColor = Colors.blue;
+        break;
+      case 'crypto':
+        iconData = Icons.currency_bitcoin;
+        iconColor = Colors.amber;
+        break;
+      case 'commodity':
+        iconData = Icons.monetization_on;
+        iconColor = Colors.green;
+        break;
+      default:
+        iconData = Icons.show_chart;
+        iconColor = Colors.grey;
     }
-    
-    // For Crypto
-    if (widget.type == 'crypto' && entityData.image.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          entityData.image,
-          width: 50,
-          height: 50,
-          errorBuilder: (_, __, ___) => const Icon(
-            Icons.currency_bitcoin,
-            size: 50,
-            color: Colors.amber,
-          ),
-        ),
-      );
-    }
-    
-    // For commodity
-    if (widget.type == 'commodity') {
-      IconData icon;
-      Color iconColor;
-      
-      switch (entityData.name.toLowerCase()) {
-        case 'gold':
-          icon = Icons.monetization_on;
-          iconColor = Colors.amber;
-          break;
-        case 'silver':
-          icon = Icons.brightness_medium;
-          iconColor = Colors.blueGrey;
-          break;
-        case 'crude oil':
-          icon = Icons.local_gas_station;
-          iconColor = Colors.brown;
-          break;
-        default:
-          icon = Icons.grain;
-          iconColor = Colors.grey;
-      }
-      
-      return Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          icon,
-          size: 30,
-          color: iconColor,
-        ),
-      );
-    }
-    
-    // For indices & default
+
     return Container(
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: color3.withOpacity(0.1),
+        color: iconColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
-        Icons.show_chart,
+        iconData,
         size: 30,
-        color: color3,
+        color: iconColor,
       ),
     );
   }
-  
-  Widget _buildChartSection(AsyncValue<List<ChartDataPoint>> detailDataAsync, bool isPositive) {
-    final chartColor = isPositive ? Colors.green : Colors.red;
-    
+
+  Widget _buildChartSection(
+      AsyncValue<List<ChartDataPoint>> detailDataAsync, Color chartColor) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
@@ -320,7 +284,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Price Chart',
                   style: TextStyle(
                     fontSize: 18,
@@ -343,10 +307,38 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             SizedBox(
               height: 250,
               child: detailDataAsync.when(
-                data: (data) => _buildChart(data, chartColor),
+                data: (data) => data.isEmpty
+                    ? const Center(child: Text('No chart data available'))
+                    : _buildChart(data, chartColor),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Center(
-                  child: Text('Error loading chart data: $error'),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red[300],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load chart data',
+                        style: TextStyle(
+                          color: Colors.red[300],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -357,20 +349,16 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   }
 
   Widget _buildChart(List<ChartDataPoint> data, Color chartColor) {
-    if (data.isEmpty) {
-      return const Center(child: Text('No data available'));
-    }
-    
     // Calculate min and max values for scaling
     final List<double> values = data.map((point) => point.value).toList();
     double minValue = values.reduce((a, b) => a < b ? a : b);
     double maxValue = values.reduce((a, b) => a > b ? a : b);
-    
+
     // Add padding to min/max
     final padding = (maxValue - minValue) * 0.1;
     minValue = (minValue - padding).clamp(0, double.infinity);
     maxValue = maxValue + padding;
-    
+
     return LineChart(
       LineChartData(
         gridData: FlGridData(
@@ -413,7 +401,10 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
               interval: data.length > 10 ? (data.length / 5).ceilToDouble() : 1,
               getTitlesWidget: (value, meta) {
                 final int index = value.toInt();
-                if (index >= 0 && index < data.length && index % ((data.length > 10) ? 5 : 1) == 0) {
+                if (index >= 0 &&
+                    index < data.length &&
+                    index % ((data.length > 10) ? (data.length ~/ 5) : 1) ==
+                        0) {
                   final DateTime date = data[index].timestamp;
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -488,7 +479,9 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             },
           ),
           touchCallback: (event, response) {
-            if (response == null || response.lineBarSpots == null || response.lineBarSpots!.isEmpty) {
+            if (response == null ||
+                response.lineBarSpots == null ||
+                response.lineBarSpots!.isEmpty) {
               setState(() => _touchedSpot = null);
               return;
             }
@@ -497,9 +490,9 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
               return;
             }
             setState(() => _touchedSpot = TouchedSpot(
-              response.lineBarSpots!.first,
-              response.lineBarSpots!.first.barIndex,
-            ));
+                  response.lineBarSpots!.first,
+                  response.lineBarSpots!.first.barIndex,
+                ));
           },
         ),
         lineBarsData: [
@@ -534,54 +527,74 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
-  Widget _buildTimeRangeSelector(TimeRange currentRange) {
+
+  Widget _buildTimeRangeSelector(TimeRange timeRange) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: TimeRange.values.map((range) {
-            final isSelected = range == currentRange;
-            return _buildTimeRangeChip(range.label, range, isSelected);
-          }).toList(),
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                'Time Range',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color1,
+                ),
+              ),
+            ),
+            // Replace the overflowing Row with a SingleChildScrollView
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: TimeRange.values.map((range) => _buildTimeRangeButton(range, timeRange)).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-  
-  Widget _buildTimeRangeChip(String text, TimeRange range, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        ref.read(selectedTimeRangeProvider.notifier).state = range;
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? color3 : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? color3 : color2.withOpacity(0.3),
-            width: 1,
+
+  Widget _buildTimeRangeButton(TimeRange range, TimeRange selectedRange) {
+    final isSelected = range == selectedRange;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: InkWell(
+        onTap: () {
+          ref.read(selectedTimeRangeProvider.notifier).state = range;
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 7.0),
+          decoration: BoxDecoration(
+            color: isSelected ? color3 : Colors.transparent,
+            border: Border.all(
+              color: isSelected ? color3 : color2.withOpacity(0.3),
+            ),
+            borderRadius: BorderRadius.circular(16.0),
           ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? Colors.white : color2,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
+          child: Text(
+            range.label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : color2,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
         ),
       ),
     );
   }
-  
+
   Widget _buildAdditionalInfo(dynamic entityData) {
     if (entityData == null) return const SizedBox.shrink();
-    
+
     // Different layouts based on entity type
     if (widget.type == 'stock') {
       return _buildStockAdditionalInfo(entityData);
@@ -593,7 +606,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       return _buildIndexAdditionalInfo(entityData);
     }
   }
-  
+
   Widget _buildStockAdditionalInfo(dynamic stock) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -616,7 +629,6 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             _buildInfoRow('P/E Ratio', numberFormat.format(stock.peRatio)),
             _buildInfoRow('EPS', numberFormat.format(stock.eps)),
             _buildInfoRow('Sector', stock.sector),
-            
             sbh20,
             Text(
               'About the Company',
@@ -640,7 +652,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
+
   Widget _buildCryptoAdditionalInfo(dynamic crypto) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -659,9 +671,12 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
               ),
             ),
             sbh15,
-            _buildInfoRow('Market Cap', currencyFormat.format(crypto.marketCap)),
-            _buildInfoRow('24h Volume', currencyFormat.format(crypto.volume24h)),
-            _buildInfoRow('Circulating Supply', '${numberFormat.format(crypto.circulatingSupply)} ${crypto.symbol}'),
+            _buildInfoRow(
+                'Market Cap', currencyFormat.format(crypto.marketCap)),
+            _buildInfoRow(
+                '24h Volume', currencyFormat.format(crypto.volume24h)),
+            _buildInfoRow('Circulating Supply',
+                '${numberFormat.format(crypto.circulatingSupply)} ${crypto.symbol}'),
             sbh20,
             Text(
               'About this Cryptocurrency',
@@ -685,7 +700,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
+
   Widget _buildCommodityAdditionalInfo(dynamic commodity) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -705,7 +720,8 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             ),
             sbh15,
             _buildInfoRow('Unit', commodity.unit),
-            _buildInfoRow('Yearly Change', '${commodity.changePercentage >= 0 ? '+' : ''}${commodity.changePercentage.toStringAsFixed(2)}%'),
+            _buildInfoRow('Yearly Change',
+                '${commodity.changePercentage >= 0 ? '+' : ''}${commodity.changePercentage.toStringAsFixed(2)}%'),
             sbh20,
             Text(
               'About this Commodity',
@@ -729,7 +745,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
+
   Widget _buildIndexAdditionalInfo(dynamic index) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -748,9 +764,14 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
               ),
             ),
             sbh15,
-            _buildInfoRow('Daily Change', '${numberFormat.format(index.change)} (${index.changePercentage.toStringAsFixed(2)}%)'),
-            _buildInfoRow('Open', numberFormat.format(index.currentValue - index.change)),
-            _buildInfoRow('Previous Close', numberFormat.format((index.currentValue - index.change) * 0.997)),
+            _buildInfoRow('Daily Change',
+                '${numberFormat.format(index.change)} (${index.changePercentage.toStringAsFixed(2)}%)'),
+            _buildInfoRow(
+                'Open', numberFormat.format(index.currentValue - index.change)),
+            _buildInfoRow(
+                'Previous Close',
+                numberFormat
+                    .format((index.currentValue - index.change) * 0.997)),
             sbh20,
             Text(
               'About this Index',
@@ -774,7 +795,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -800,46 +821,64 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       ),
     );
   }
-  
+
   String _getCompanyDescription(String name) {
     // Mock data - in a real app, this would come from an API
     final descriptions = {
-      'Reliance Industries': 'Reliance Industries Limited is an Indian multinational conglomerate company headquartered in Mumbai. It has diverse businesses including energy, petrochemicals, natural gas, retail, telecommunications, mass media, and textiles.',
-      'Tata Consultancy Services': 'Tata Consultancy Services is an Indian multinational information technology services and consulting company headquartered in Mumbai. It is part of the Tata Group and operates in 149 locations across 46 countries.',
-      'HDFC Bank': 'HDFC Bank Limited is an Indian banking and financial services company headquartered in Mumbai. It is India\'s largest private sector bank by assets and market capitalization.',
-      'Infosys': 'Infosys Limited is an Indian multinational corporation that provides business consulting, information technology and outsourcing services. The company is headquartered in Bangalore.',
-      'ICICI Bank': 'ICICI Bank Limited is an Indian multinational banking and financial services company headquartered in Mumbai. It offers a wide range of banking products and financial services to corporate and retail customers.',
+      'Reliance Industries':
+          'Reliance Industries Limited is an Indian multinational conglomerate company headquartered in Mumbai. It has diverse businesses including energy, petrochemicals, natural gas, retail, telecommunications, mass media, and textiles.',
+      'Tata Consultancy Services':
+          'Tata Consultancy Services is an Indian multinational information technology services and consulting company headquartered in Mumbai. It is part of the Tata Group and operates in 149 locations across 46 countries.',
+      'HDFC Bank':
+          'HDFC Bank Limited is an Indian banking and financial services company headquartered in Mumbai. It is India\'s largest private sector bank by assets and market capitalization.',
+      'Infosys':
+          'Infosys Limited is an Indian multinational corporation that provides business consulting, information technology and outsourcing services. The company is headquartered in Bangalore.',
+      'ICICI Bank':
+          'ICICI Bank Limited is an Indian multinational banking and financial services company headquartered in Mumbai. It offers a wide range of banking products and financial services to corporate and retail customers.',
     };
-    return descriptions[name] ?? 'A publicly traded company on the Indian stock exchange.';
+    return descriptions[name] ??
+        'A publicly traded company on the Indian stock exchange.';
   }
-  
+
   String _getCryptoDescription(String name) {
     // Mock data
     final descriptions = {
-      'Bitcoin': 'Bitcoin is the first decentralized cryptocurrency, introduced in 2009. It operates on blockchain technology, allowing peer-to-peer transactions without a central authority.',
-      'Ethereum': 'Ethereum is a decentralized, open-source blockchain with smart contract functionality. Launched in 2015, it enables developers to build and deploy decentralized applications.',
-      'Tether': 'Tether is a cryptocurrency that is pegged to the value of fiat currencies like USD, EUR, and JPY. It aims to maintain price stability, making it classified as a stablecoin.',
+      'Bitcoin':
+          'Bitcoin is the first decentralized cryptocurrency, introduced in 2009. It operates on blockchain technology, allowing peer-to-peer transactions without a central authority.',
+      'Ethereum':
+          'Ethereum is a decentralized, open-source blockchain with smart contract functionality. Launched in 2015, it enables developers to build and deploy decentralized applications.',
+      'Tether':
+          'Tether is a cryptocurrency that is pegged to the value of fiat currencies like USD, EUR, and JPY. It aims to maintain price stability, making it classified as a stablecoin.',
     };
-    return descriptions[name] ?? 'A cryptocurrency operating on blockchain technology.';
+    return descriptions[name] ??
+        'A cryptocurrency operating on blockchain technology.';
   }
-  
+
   String _getCommodityDescription(String name) {
     // Mock data
     final descriptions = {
-      'Gold': 'Gold is a precious metal used throughout history as a store of value and in jewelry. It\'s considered a safe-haven investment during economic uncertainty.',
-      'Silver': 'Silver is both a precious and industrial metal, with uses ranging from jewelry to electronics. It historically has been used as currency.',
-      'Crude Oil': 'Crude oil is a naturally occurring fossil fuel composed of hydrocarbon deposits. It\'s refined to make various petroleum products like gasoline, diesel, and plastic.',
+      'Gold':
+          'Gold is a precious metal used throughout history as a store of value and in jewelry. It\'s considered a safe-haven investment during economic uncertainty.',
+      'Silver':
+          'Silver is both a precious and industrial metal, with uses ranging from jewelry to electronics. It historically has been used as currency.',
+      'Crude Oil':
+          'Crude oil is a naturally occurring fossil fuel composed of hydrocarbon deposits. It\'s refined to make various petroleum products like gasoline, diesel, and plastic.',
     };
-    return descriptions[name] ?? 'A widely traded physical commodity with both industrial and investment applications.';
+    return descriptions[name] ??
+        'A widely traded physical commodity with both industrial and investment applications.';
   }
-  
+
   String _getIndexDescription(String name) {
     // Mock data
     final descriptions = {
-      'NSE NIFTY 50': 'The NIFTY 50 is the flagship index of the National Stock Exchange of India, representing the weighted average of 50 of the largest Indian companies across various sectors.',
-      'BSE SENSEX': 'The S&P BSE SENSEX is a free-float market-weighted stock market index of 30 well-established companies listed on the Bombay Stock Exchange, representing various industrial sectors.',
-      'NIFTY Bank': 'The NIFTY Bank index represents the 12 most liquid and large capitalized stocks from the banking sector trading on the National Stock Exchange.',
+      'NSE NIFTY 50':
+          'The NIFTY 50 is the flagship index of the National Stock Exchange of India, representing the weighted average of 50 of the largest Indian companies across various sectors.',
+      'BSE SENSEX':
+          'The S&P BSE SENSEX is a free-float market-weighted stock market index of 30 well-established companies listed on the Bombay Stock Exchange, representing various industrial sectors.',
+      'NIFTY Bank':
+          'The NIFTY Bank index represents the 12 most liquid and large capitalized stocks from the banking sector trading on the National Stock Exchange.',
     };
-    return descriptions[name] ?? 'A market index tracking the performance of a specific segment of the stock market.';
+    return descriptions[name] ??
+        'A market index tracking the performance of a specific segment of the stock market.';
   }
 }

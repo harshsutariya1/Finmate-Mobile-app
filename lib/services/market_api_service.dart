@@ -1,976 +1,633 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:finmate/models/market_data.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MarketApiService {
-  final Logger _logger = Logger();
+  static final Logger _logger = Logger();
+  static const String _apiKey = 'ALK9YGQQOOGYR0CY'; // Alpha Vantage API key
+  static const String _baseUrl = 'https://www.alphavantage.co/query';
   
-  // AlphaVantage API key
-  static const String _alphavantageApiKey = 'ALK9YGQQOOGYR0CY';
+  // Cache management
+  static final Map<String, dynamic> _cache = {};
+  static final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheDuration = Duration(minutes: 15);
+
+  // Market indices with correct Alpha Vantage symbols
+  static final Map<String, Map<String, String>> _indiaIndices = {
+    '^NSEI': {'name': 'NIFTY 50', 'type': 'equity'},
+    '^BSESN': {'name': 'BSE SENSEX', 'type': 'equity'},
+    'NIFTY50.NS': {'name': 'NIFTY MIDCAP 50', 'type': 'equity'},
+    'NSEBANK.NS': {'name': 'NIFTY BANK', 'type': 'sector'},
+    'CNXIT.NS': {'name': 'NIFTY IT', 'type': 'sector'},
+  };
   
-  // Base URL for AlphaVantage API
-  static const String _alphavantageBaseUrl = 'https://www.alphavantage.co/query';
+  // Popular Indian stocks with correct Alpha Vantage symbols
+  static final List<Map<String, String>> _popularIndianStocks = [
+    {'symbol': 'RELIANCE.BSE', 'name': 'Reliance Industries'},
+    {'symbol': 'TCS.BSE', 'name': 'Tata Consultancy Services'},
+    {'symbol': 'INFY.BSE', 'name': 'Infosys'},
+    {'symbol': 'HDFCBANK.BSE', 'name': 'HDFC Bank'},
+    {'symbol': 'HINDUNILVR.BSE', 'name': 'Hindustan Unilever'}
+  ];
   
-  // Cache timeout (5 minutes)
-  static const int _cacheTimeoutMinutes = 5;
+  // Popular cryptocurrencies with direct Alpha Vantage support
+  static final List<Map<String, String>> _cryptoCurrencies = [
+    {'symbol': 'BTC', 'name': 'Bitcoin'},
+    {'symbol': 'ETH', 'name': 'Ethereum'},
+    {'symbol': 'XRP', 'name': 'Ripple'},
+    {'symbol': 'LTC', 'name': 'Litecoin'},
+    {'symbol': 'DOGE', 'name': 'Dogecoin'}
+  ];
   
-  // Get market indices data (NSE, BSE)
-  Future<List<MarketIndex>> getMarketIndices() async {
+  // Popular commodities using Alpha Vantage forex endpoint
+  static final Map<String, Map<String, String>> _commodities = {
+    'XAU': {'name': 'Gold', 'unit': 'oz'}, 
+    'XAG': {'name': 'Silver', 'unit': 'oz'}, 
+    'BRENT': {'name': 'Crude Oil (Brent)', 'unit': 'bbl'}
+  };
+
+  // API Rate limiting tracking
+  static DateTime _lastApiCallTime = DateTime.now().subtract(const Duration(seconds: 15));
+  static int _apiCallsInLastMinute = 0;
+  static const int _maxCallsPerMinute = 5; // Alpha Vantage free tier limit
+  
+  // Check if cached data is still valid
+  static bool _isCacheValid(String key) {
+    if (!_cache.containsKey(key) || !_cacheTimestamps.containsKey(key)) {
+      return false;
+    }
+    
+    final timestamp = _cacheTimestamps[key]!;
+    return DateTime.now().difference(timestamp) < _cacheDuration;
+  }
+  
+  // Save data to cache
+  static void _cacheData(String key, dynamic data) {
+    _cache[key] = data;
+    _cacheTimestamps[key] = DateTime.now();
+    
+    // Persist the cache to SharedPreferences for longer-term storage
+    _persistCache(key, data);
+  }
+  
+  // Persist cache to SharedPreferences
+  static Future<void> _persistCache(String key, dynamic data) async {
     try {
-      final cachedData = await _getCachedData('market_indices');
-      if (cachedData != null) {
-        return _parseIndicesFromCache(cachedData);
-      }
-      
-      // For NSE NIFTY 50
-      final niftyData = await _fetchGlobalQuote('^NSEI');
-      
-      // For BSE SENSEX
-      final bseData = await _fetchGlobalQuote('^BSESN');
-      
-      // For NIFTY Bank
-      final bankNiftyData = await _fetchGlobalQuote('^NSEBANK');
-      
-      // Get historical data for charts
-      final niftyHistorical = await _fetchTimeSeriesData('^NSEI', TimeRange.month);
-      final bseHistorical = await _fetchTimeSeriesData('^BSESN', TimeRange.month);
-      final bankNiftyHistorical = await _fetchTimeSeriesData('^NSEBANK', TimeRange.month);
-      
-      final indices = [
-        _createMarketIndexFromResponse(
-          'NSE NIFTY 50', 'NIFTY', niftyData, niftyHistorical),
-        _createMarketIndexFromResponse(
-          'BSE SENSEX', 'SENSEX', bseData, bseHistorical),
-        _createMarketIndexFromResponse(
-          'NIFTY Bank', 'BANKNIFTY', bankNiftyData, bankNiftyHistorical),
-      ];
-      
-      // Cache the results
-      await _cacheData('market_indices', indices.map((index) => index.toJson()).toList());
-      
-      return indices;
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode({
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': data
+      });
+      await prefs.setString('market_cache_$key', jsonString);
     } catch (e) {
-      _logger.e('Failed to fetch market indices: $e');
-      // Return mock data as fallback if API fails
-      return [
-        MarketIndex(
-          name: 'NSE NIFTY 50',
-          symbol: 'NIFTY',
-          currentValue: 22462.75,
-          change: 121.63,
-          changePercentage: 0.54,
-          historicalData: _generateMockHistoricalData(22300, 22500),
-        ),
-        MarketIndex(
-          name: 'BSE SENSEX',
-          symbol: 'SENSEX',
-          currentValue: 73709.60,
-          change: 469.05,
-          changePercentage: 0.64,
-          historicalData: _generateMockHistoricalData(73300, 73800),
-        ),
-        MarketIndex(
-          name: 'NIFTY Bank',
-          symbol: 'BANKNIFTY',
-          currentValue: 48461.30,
-          change: -98.20,
-          changePercentage: -0.20,
-          historicalData: _generateMockHistoricalData(48300, 48600),
-        ),
-      ];
+      _logger.e('Error persisting cache: $e');
     }
   }
   
-  // Get popular stocks data
-  Future<List<Stock>> getPopularStocks() async {
+  // Load cache from SharedPreferences
+  static Future<Map<String, dynamic>?> _loadPersistedCache(String key) async {
     try {
-      final cachedData = await _getCachedData('popular_stocks');
-      if (cachedData != null) {
-        return _parseStocksFromCache(cachedData);
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('market_cache_$key');
+      
+      if (jsonString == null) return null;
+      
+      final Map<String, dynamic> cacheData = jsonDecode(jsonString);
+      final timestamp = DateTime.parse(cacheData['timestamp'] as String);
+      
+      // Check if persisted cache is still valid
+      if (DateTime.now().difference(timestamp) < _cacheDuration) {
+        _cache[key] = cacheData['data'];
+        _cacheTimestamps[key] = timestamp;
+        return cacheData['data'];
       }
-      
-      // Symbols for popular Indian stocks
-      final symbols = [
-        'RELIANCE.BSE', // Reliance Industries
-        'TCS.BSE',      // Tata Consultancy Services
-        'HDFCBANK.BSE', // HDFC Bank
-        'INFY.BSE',     // Infosys
-        'ICICIBANK.BSE' // ICICI Bank
-      ];
-      
-      final List<Stock> stocks = [];
-      
-      for (final symbol in symbols) {
-        // Get quote data
-        final quoteData = await _fetchGlobalQuote(symbol);
-        
-        // Get historical data
-        final historicalData = await _fetchTimeSeriesData(symbol, TimeRange.month);
-        
-        // Create stock object
-        stocks.add(_createStockFromResponse(symbol, quoteData, historicalData));
-      }
-      
-      // Cache the results
-      await _cacheData('popular_stocks', stocks.map((stock) => stock.toJson()).toList());
-      
-      return stocks;
     } catch (e) {
-      _logger.e('Failed to fetch popular stocks: $e');
-      // Return mock data as fallback
-      return [
-        Stock(
-          name: 'Reliance Industries',
-          symbol: 'RELIANCE.NS',
-          companyLogo: 'https://companieslogo.com/img/orig/RELIANCE.NS-c28acd1c.png',
-          currentPrice: 2934.75,
-          change: 18.55,
-          changePercentage: 0.64,
-          marketCap: 1986432000000,
-          peRatio: 32.56,
-          eps: 90.13,
-          sector: 'Oil & Gas',
-          historicalData: _generateMockHistoricalData(2900, 2950),
-        ),
-        // ... other mock stocks data
-      ];
+      _logger.e('Error loading persisted cache: $e');
     }
+    return null;
   }
 
-  // Search stocks by query
-  Future<List<Stock>> searchStocks(String query) async {
-    if (query.isEmpty) return [];
+  // Handle API rate limiting - CRITICAL for Alpha Vantage
+  static Future<void> _respectRateLimit() async {
+    final now = DateTime.now();
+    final timeSinceLastCall = now.difference(_lastApiCallTime);
+    
+    // Reset counter if it's been more than a minute
+    if (timeSinceLastCall >= const Duration(minutes: 1)) {
+      _apiCallsInLastMinute = 0;
+    }
+    
+    // Check if we need to wait due to rate limits
+    if (_apiCallsInLastMinute >= _maxCallsPerMinute) {
+      final waitTime = const Duration(minutes: 1) - timeSinceLastCall;
+      if (waitTime.isNegative) {
+        _apiCallsInLastMinute = 0;
+      } else {
+        _logger.w('Rate limit reached. Waiting for ${waitTime.inSeconds} seconds.');
+        await Future.delayed(waitTime + const Duration(seconds: 1));
+        _apiCallsInLastMinute = 0;
+      }
+    }
+    
+    _lastApiCallTime = now;
+    _apiCallsInLastMinute++;
+  }
+  
+  // Generic HTTP GET request with error handling and caching
+  static Future<Map<String, dynamic>> _get(String function, Map<String, String> params) async {
+    // Create a unique key for this request
+    final queryParams = Map<String, String>.from(params)..addAll({'function': function, 'apikey': _apiKey});
+    final cacheKey = Uri(queryParameters: queryParams).query;
+    
+    // Check memory cache first
+    if (_isCacheValid(cacheKey)) {
+      _logger.i('Using memory cache for: $function with params: $params');
+      return _cache[cacheKey];
+    }
+    
+    // Check persisted cache
+    final persistedData = await _loadPersistedCache(cacheKey);
+    if (persistedData != null) {
+      _logger.i('Using persisted cache for: $function with params: $params');
+      return persistedData;
+    }
+    
+    // Respect API rate limits - VERY IMPORTANT for Alpha Vantage
+    await _respectRateLimit();
+    
+    // Build URL with query parameters
+    final url = Uri.parse('$_baseUrl').replace(
+      queryParameters: queryParams,
+    );
+    
+    _logger.i('Fetching data from Alpha Vantage: ${url.toString()}');
     
     try {
-      // Use AlphaVantage Symbol Search API
-      final response = await http.get(Uri.parse(
-        '$_alphavantageBaseUrl?function=SYMBOL_SEARCH&keywords=$query&apikey=$_alphavantageApiKey'
-      ));
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          _logger.e('Request timed out for: $function with params: $params');
+          throw TimeoutException('Request timed out');
+        },
+      );
       
       if (response.statusCode == 200) {
+        // Check for Alpha Vantage error messages or API limits
         final data = json.decode(response.body);
         
-        if (data.containsKey('bestMatches')) {
-          final matches = data['bestMatches'] as List;
-          
-          final List<Stock> results = [];
-          
-          // Limit to 5 results to avoid API rate limiting
-          for (int i = 0; i < matches.length && i < 5; i++) {
-            final match = matches[i];
-            final symbol = match['1. symbol'];
-            
-            // Get more details for this stock
-            try {
-              final quoteData = await _fetchGlobalQuote(symbol);
-              final historicalData = await _fetchTimeSeriesData(symbol, TimeRange.month);
-              
-              results.add(_createStockFromResponse(
-                symbol, quoteData, historicalData, 
-                name: match['2. name'],
-                type: match['3. type'],
-                region: match['4. region'],
-              ));
-            } catch (e) {
-              // Continue with next result if one fails
-              _logger.w('Error fetching details for search result $symbol: $e');
-              continue;
-            }
-          }
-          
-          return results;
-        }
-      }
-      
-      return [];
-    } catch (e) {
-      _logger.e('Failed to search stocks: $e');
-      return [];
-    }
-  }
-
-  // Get cryptocurrencies data
-  Future<List<Cryptocurrency>> getCryptocurrencies() async {
-    try {
-      final cachedData = await _getCachedData('cryptocurrencies');
-      if (cachedData != null) {
-        return _parseCryptosFromCache(cachedData);
-      }
-      
-      // Crypto symbols to fetch
-      final symbols = ['BTC', 'ETH', 'USDT'];
-      final List<Cryptocurrency> cryptos = [];
-      
-      for (final symbol in symbols) {
-        // Fetch crypto data from AlphaVantage
-        final response = await http.get(Uri.parse(
-          '$_alphavantageBaseUrl?function=DIGITAL_CURRENCY_DAILY&symbol=$symbol&market=INR&apikey=$_alphavantageApiKey'
-        ));
+        // Debug logging - print the actual response content
+        _logger.d('Alpha Vantage response body: ${response.body}');
+        _logger.d('Alpha Vantage response keys: ${data.keys.toList()}');
         
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          
-          if (data.containsKey('Meta Data') && data.containsKey('Time Series (Digital Currency Daily)')) {
-            final metaData = data['Meta Data'];
-            final timeSeries = data['Time Series (Digital Currency Daily)'];
-            
-            // Get the latest date
-            final latestDate = timeSeries.keys.first;
-            final latestData = timeSeries[latestDate];
-            
-            // Get historical data for chart
-            final List<ChartDataPoint> historicalData = [];
-            final sortedDates = timeSeries.keys.toList()..sort();
-            final last30Days = sortedDates.reversed.take(30).toList();
-            
-            for (final date in last30Days) {
-              final dayData = timeSeries[date];
-              historicalData.add(ChartDataPoint(
-                timestamp: DateTime.parse(date),
-                value: double.parse(dayData['4a. close (INR)']),
-              ));
-            }
-            
-            // Calculate change
-            final double currentPrice = double.parse(latestData['4a. close (INR)']);
-            final double previousPrice = double.parse(
-              timeSeries[sortedDates[sortedDates.length - 2]]['4a. close (INR)']
-            );
-            final double change = currentPrice - previousPrice;
-            final double changePercentage = (change / previousPrice) * 100;
-            
-            cryptos.add(Cryptocurrency(
-              name: _getCryptoName(symbol),
-              symbol: symbol,
-              image: _getCryptoImage(symbol),
-              currentPrice: currentPrice,
-              change: change,
-              changePercentage: changePercentage,
-              marketCap: _estimateMarketCap(symbol, currentPrice),
-              volume24h: double.parse(latestData['5. volume']),
-              circulatingSupply: _getCirculatingSupply(symbol),
-              historicalData: historicalData,
-            ));
-          }
+        // Check if Alpha Vantage returned an error message
+        if (data is Map<String, dynamic> && data.containsKey('Error Message')) {
+          _logger.e('Alpha Vantage API error: ${data['Error Message']} for URL: ${url.toString()}');
+          throw Exception('API Error: ${data['Error Message']}');
         }
+        
+        // Check for API call limits
+        if (data is Map<String, dynamic> && data.containsKey('Note') && 
+            data['Note'].toString().contains('API call frequency')) {
+          _logger.w('Alpha Vantage API rate limit reached: ${data['Note']}');
+          throw Exception('API rate limit exceeded: ${data['Note']}');
+        }
+        
+        // If there's no real data in the response, throw an exception with details
+        if (_isEmptyResponse(data, function, params)) {
+          _logger.w('Empty response from Alpha Vantage for function: $function, params: $params');
+          throw Exception('Empty response from Alpha Vantage. The symbol may not exist or API call limit reached.');
+        }
+        
+        // Cache the successful response
+        _cacheData(cacheKey, data);
+        return data;
+      } else {
+        _logger.e('HTTP error ${response.statusCode} for URL: ${url.toString()}');
+        throw HttpException('HTTP error: ${response.statusCode}');
       }
-      
-      if (cryptos.isNotEmpty) {
-        await _cacheData('cryptocurrencies', cryptos.map((crypto) => crypto.toJson()).toList());
-        return cryptos;
-      }
-      
-      // Use mock data if API call fails
-      return _getMockCryptos();
     } catch (e) {
-      _logger.e('Failed to fetch cryptocurrencies: $e');
-      return _getMockCryptos();
+      _logger.e('Error fetching data from Alpha Vantage: $e for URL: ${url.toString()}');
+      
+      // For network errors, try to use cache even if it's expired
+      if (_cache.containsKey(cacheKey)) {
+        _logger.w('Network error, using expired cache');
+        return _cache[cacheKey];
+      }
+      
+      // Re-throw the exception to be handled by the provider
+      throw Exception('Failed to fetch market data: $e');
     }
   }
 
-  // Get commodities data (Gold, Silver)
-  Future<List<Commodity>> getCommodities() async {
-    try {
-      // For commodities, we use Forex API to get precious metals
-      // XAU/INR for Gold (per troy ounce)
-      // XAG/INR for Silver (per troy ounce)
-      
-      final cachedData = await _getCachedData('commodities');
-      if (cachedData != null) {
-        return _parseCommoditiesFromCache(cachedData);
+  // Improved empty response detection with context-based checks
+  static bool _isEmptyResponse(Map<String, dynamic> data, String function, Map<String, String>? params) {
+    // Debug logging of the response structure
+    _logger.d('Response data for $function: ${json.encode(data)}');
+    
+    // Special handling for GLOBAL_QUOTE
+    if (function == 'GLOBAL_QUOTE') {
+      // Check if the Global Quote object exists
+      if (!data.containsKey('Global Quote')) {
+        return true;
       }
       
-      final List<Commodity> commodities = [];
+      // Check if the Global Quote object is empty or only has empty values
+      final quote = data['Global Quote'] as Map<String, dynamic>;
+      if (quote.isEmpty) {
+        return true;
+      }
       
-      // Gold price in INR
-      final goldResponse = await http.get(Uri.parse(
-        '$_alphavantageBaseUrl?function=CURRENCY_EXCHANGE_RATE&from_currency=XAU&to_currency=INR&apikey=$_alphavantageApiKey'
-      ));
+      // Check if it has the price field and it's not empty
+      if (!quote.containsKey('05. price') || (quote['05. price'] as String).isEmpty) {
+        return true;
+      }
       
-      // Silver price in INR
-      final silverResponse = await http.get(Uri.parse(
-        '$_alphavantageBaseUrl?function=CURRENCY_EXCHANGE_RATE&from_currency=XAG&to_currency=INR&apikey=$_alphavantageApiKey'
-      ));
+      // Check if there's any non-empty value in the quote
+      bool hasNonEmptyValue = false;
+      quote.forEach((key, value) {
+        if (value is String && value.isNotEmpty) {
+          hasNonEmptyValue = true;
+        }
+      });
       
-      // Oil (WTI) price in USD, then convert to INR
-      final oilResponse = await http.get(Uri.parse(
-        '$_alphavantageBaseUrl?function=WTI&interval=daily&apikey=$_alphavantageApiKey'
-      ));
+      return !hasNonEmptyValue;
+    }
+    
+    // Special handling for CURRENCY_EXCHANGE_RATE
+    if (function == 'CURRENCY_EXCHANGE_RATE') {
+      // Check if the exchange rate object exists
+      if (!data.containsKey('Realtime Currency Exchange Rate')) {
+        return true;
+      }
       
-      // USD to INR exchange rate
-      final usdInrResponse = await http.get(Uri.parse(
-        '$_alphavantageBaseUrl?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=INR&apikey=$_alphavantageApiKey'
-      ));
+      // Check if the exchange rate object is empty
+      final exchangeRate = data['Realtime Currency Exchange Rate'] as Map<String, dynamic>;
+      return exchangeRate.isEmpty || !exchangeRate.containsKey('5. Exchange Rate');
+    }
+    
+    // Special handling for TIME_SERIES functions
+    if (function.contains('TIME_SERIES')) {
+      // Look for time series data keys
+      final hasTimeSeriesKey = data.keys.any((key) => 
+          key.contains('Time Series') || 
+          key.contains('Weekly') || 
+          key.contains('Monthly'));
       
-      if (goldResponse.statusCode == 200) {
-        final data = json.decode(goldResponse.body);
-        if (data.containsKey('Realtime Currency Exchange Rate')) {
-          final rateData = data['Realtime Currency Exchange Rate'];
-          final double exchangeRate = double.parse(rateData['5. Exchange Rate']);
+      if (!hasTimeSeriesKey) {
+        return true;
+      }
+      
+      // Find the time series key
+      final timeSeriesKey = data.keys.firstWhere(
+        (key) => key.contains('Time Series') || key.contains('Weekly') || key.contains('Monthly'),
+        orElse: () => '',
+      );
+      
+      if (timeSeriesKey.isEmpty) {
+        return true;
+      }
+      
+      // Check if the time series data is empty
+      final timeSeriesData = data[timeSeriesKey] as Map<String, dynamic>;
+      return timeSeriesData.isEmpty;
+    }
+    
+    // Special handling for SYMBOL_SEARCH
+    if (function == 'SYMBOL_SEARCH') {
+      if (!data.containsKey('bestMatches')) {
+        return true;
+      }
+      
+      final matches = data['bestMatches'] as List;
+      return matches.isEmpty;
+    }
+    
+    // Default check for empty response
+    if (data.isEmpty) {
+      return true;
+    }
+    
+    // If only Meta Data is present or only Information key is present
+    if ((data.length == 1 && data.containsKey('Meta Data')) || 
+        (data.length == 1 && data.containsKey('Information'))) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  // Public API methods
+  static Future<List<MarketIndex>> getMarketIndices() async {
+    final indices = <MarketIndex>[];
+    
+    for (var entry in _indiaIndices.entries) {
+      final symbol = entry.key;
+      final indexData = entry.value;
+      
+      try {
+        _logger.i('Fetching market index data for: $symbol');
+        
+        // Get Global Quote for each index
+        final response = await _get('GLOBAL_QUOTE', {'symbol': symbol});
+        
+        // Process if valid data is returned
+        if (response.containsKey('Global Quote') && 
+            response['Global Quote'] != null && 
+            response['Global Quote'].isNotEmpty) {
           
-          // Convert from per troy ounce to per 10 grams (standard in India)
-          // 1 troy ounce = 31.1035 grams
-          final double perTenGrams = exchangeRate * 10 / 31.1035;
-          
-          // Mock change data since the API doesn't provide historical data in the free tier
-          final double change = 305.00;
-          final double changePercentage = 0.43;
-          
-          commodities.add(Commodity(
-            name: 'Gold',
-            symbol: 'XAU',
-            currentPrice: perTenGrams,
-            change: change,
-            changePercentage: changePercentage,
-            unit: '10 grams',
-            historicalData: _generateMockHistoricalData(perTenGrams - 500, perTenGrams + 500),
+          final quote = response['Global Quote'];
+          indices.add(MarketIndex(
+            symbol: symbol,
+            name: indexData['name'] ?? '',
+            currentValue: double.tryParse(quote['05. price'] ?? '0') ?? 0,
+            change: double.tryParse(quote['09. change'] ?? '0') ?? 0,
+            changePercentage: double.tryParse(
+              (quote['10. change percent'] as String?)?.replaceAll('%', '') ?? '0'
+            ) ?? 0,
+            type: indexData['type'] ?? 'equity',
+            country: 'India',
           ));
-        }
-      }
-      
-      if (silverResponse.statusCode == 200) {
-        final data = json.decode(silverResponse.body);
-        if (data.containsKey('Realtime Currency Exchange Rate')) {
-          final rateData = data['Realtime Currency Exchange Rate'];
-          final double exchangeRate = double.parse(rateData['5. Exchange Rate']);
           
-          // Convert from per troy ounce to per kg (standard in India)
-          // 1 troy ounce = 31.1035 grams, 1 kg = 1000 grams
-          final double perKg = exchangeRate * 1000 / 31.1035;
-          
-          // Mock change data
-          final double change = -294.00;
-          final double changePercentage = -0.31;
-          
-          commodities.add(Commodity(
-            name: 'Silver',
-            symbol: 'XAG',
-            currentPrice: perKg,
-            change: change,
-            changePercentage: changePercentage,
-            unit: '1 kg',
-            historicalData: _generateMockHistoricalData(perKg - 1000, perKg + 1000),
-          ));
-        }
-      }
-      
-      // Handle crude oil if the response is valid
-      if (oilResponse.statusCode == 200 && usdInrResponse.statusCode == 200) {
-        final oilData = json.decode(oilResponse.body);
-        final usdInrData = json.decode(usdInrResponse.body);
-        
-        if (oilData.containsKey('data') && 
-            usdInrData.containsKey('Realtime Currency Exchange Rate')) {
-          final oilEntries = oilData['data'] as List;
-          if (oilEntries.isNotEmpty) {
-            final latestOil = oilEntries.first;
-            final double oilUsd = double.parse(latestOil['value']);
-            
-            final usdInrRate = usdInrData['Realtime Currency Exchange Rate'];
-            final double usdToInr = double.parse(usdInrRate['5. Exchange Rate']);
-            
-            final double oilInr = oilUsd * usdToInr;
-            
-            // Mock change data
-            final double change = 23.50;
-            final double changePercentage = 0.35;
-            
-            commodities.add(Commodity(
-              name: 'Crude Oil',
-              symbol: 'CL',
-              currentPrice: oilInr,
-              change: change,
-              changePercentage: changePercentage,
-              unit: '1 barrel',
-              historicalData: _generateMockHistoricalData(oilInr - 100, oilInr + 100),
-            ));
-          }
-        }
-      }
-      
-      if (commodities.isNotEmpty) {
-        await _cacheData('commodities', commodities.map((commodity) => commodity.toJson()).toList());
-        return commodities;
-      }
-      
-      // Return mock data if API calls fail
-      return _getMockCommodities();
-    } catch (e) {
-      _logger.e('Failed to fetch commodities: $e');
-      return _getMockCommodities();
-    }
-  }
-
-  // Get detailed historical data for a specific stock
-  Future<List<ChartDataPoint>> getDetailedStockData(String symbol, TimeRange timeRange) async {
-    try {
-      final cacheKey = 'detailed_${symbol}_${timeRange.label}';
-      final cachedData = await _getCachedData(cacheKey);
-      if (cachedData != null) {
-        return (cachedData as List)
-          .map((item) => ChartDataPoint(
-            timestamp: DateTime.parse(item['timestamp']),
-            value: item['value'],
-          ))
-          .toList();
-      }
-      
-      // Determine time series function based on time range
-      String function;
-      String interval = 'daily';
-      
-      switch (timeRange) {
-        case TimeRange.day:
-          function = 'TIME_SERIES_INTRADAY';
-          interval = '5min';
-          break;
-        case TimeRange.week:
-        case TimeRange.month:
-          function = 'TIME_SERIES_DAILY';
-          break;
-        case TimeRange.threeMonths:
-        case TimeRange.sixMonths:
-          function = 'TIME_SERIES_WEEKLY';
-          break;
-        case TimeRange.year:
-        case TimeRange.fiveYears:
-          function = 'TIME_SERIES_MONTHLY';
-          break;
-      }
-      
-      // Build URL based on function
-      String url = '$_alphavantageBaseUrl?function=$function&symbol=$symbol&apikey=$_alphavantageApiKey';
-      if (function == 'TIME_SERIES_INTRADAY') {
-        url += '&interval=$interval';
-      }
-      
-      final response = await http.get(Uri.parse(url));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        List<ChartDataPoint> chartData = [];
-        
-        String timeSeriesKey;
-        if (function == 'TIME_SERIES_INTRADAY') {
-          timeSeriesKey = 'Time Series ($interval)';
-        } else if (function == 'TIME_SERIES_DAILY') {
-          timeSeriesKey = 'Time Series (Daily)';
-        } else if (function == 'TIME_SERIES_WEEKLY') {
-          timeSeriesKey = 'Weekly Time Series';
+          _logger.i('Successfully processed market index: $symbol');
         } else {
-          timeSeriesKey = 'Monthly Time Series';
+          _logger.w('Invalid or empty response for market index: $symbol');
+          throw Exception('Invalid or empty response for $symbol');
         }
+      } catch (e) {
+        _logger.e('Error fetching market index $symbol: $e');
+        // Don't add this index if it failed
+      }
+    }
+    
+    if (indices.isEmpty) {
+      _logger.w('Failed to fetch any market indices');
+      throw Exception('Failed to fetch market indices');
+    }
+    
+    return indices;
+  }
+  
+  static Future<List<Stock>> getPopularStocks() async {
+    final stocks = <Stock>[];
+    
+    for (var stockInfo in _popularIndianStocks) {
+      try {
+        final symbol = stockInfo['symbol']!;
+        final name = stockInfo['name']!;
         
-        if (data.containsKey(timeSeriesKey)) {
-          final timeSeries = data[timeSeriesKey] as Map<String, dynamic>;
-          
-          // Convert map entries to list and sort by date
-          final entries = timeSeries.entries.toList()
-            ..sort((a, b) => a.key.compareTo(b.key));
+        // Get quote data
+        final quoteResponse = await _get('GLOBAL_QUOTE', {'symbol': symbol});
+        
+        // Get company overview for more details
+        final overviewResponse = await _get('OVERVIEW', {'symbol': symbol});
+        
+        if (quoteResponse.containsKey('Global Quote') && 
+            quoteResponse['Global Quote'] != null && 
+            quoteResponse['Global Quote'].isNotEmpty) {
             
-          // Filter based on time range
-          final now = DateTime.now();
-          final startDate = now.subtract(timeRange.duration);
+          final quote = quoteResponse['Global Quote'];
           
-          for (var entry in entries) {
-            final date = DateTime.parse(entry.key);
-            if (date.isAfter(startDate)) {
-              chartData.add(ChartDataPoint(
-                timestamp: date,
-                value: double.parse(entry.value['4. close']),
-              ));
-            }
-          }
-          
-          // Cache the results
-          await _cacheData(cacheKey, chartData.map((point) => {
-            'timestamp': point.timestamp.toIso8601String(),
-            'value': point.value,
-          }).toList());
-          
-          return chartData;
+          stocks.add(Stock(
+            symbol: symbol,
+            name: name,
+            currentValue: double.tryParse(quote['05. price'] ?? '0') ?? 0,
+            change: double.tryParse(quote['09. change'] ?? '0') ?? 0,
+            changePercentage: double.tryParse(
+              (quote['10. change percent'] as String?)?.replaceAll('%', '') ?? '0'
+            ) ?? 0,
+            companyLogo: '', // Alpha Vantage doesn't provide logos
+            sector: overviewResponse['Sector'] ?? 'Technology',
+            marketCap: double.tryParse(overviewResponse['MarketCapitalization'] ?? '0') ?? 0,
+            peRatio: double.tryParse(overviewResponse['PERatio'] ?? '0') ?? 0,
+            eps: double.tryParse(overviewResponse['EPS'] ?? '0') ?? 0,
+            beta: double.tryParse(overviewResponse['Beta'] ?? '0'),
+            dividend: double.tryParse(overviewResponse['DividendYield'] ?? '0'),
+            volume: double.tryParse(quote['06. volume'] ?? '0'),
+          ));
+        } else {
+          throw Exception('Invalid or empty response for stock $symbol');
         }
+      } catch (e) {
+        _logger.e('Error fetching stock: $e');
+        // Continue with the next stock
       }
-      
-      // Return mock data if API call fails
-      return _generateDetailedMockData(timeRange);
-    } catch (e) {
-      _logger.e('Failed to fetch detailed stock data: $e');
-      return _generateDetailedMockData(timeRange);
-    }
-  }
-
-  // Fetch global quote for a symbol
-  Future<Map<String, dynamic>> _fetchGlobalQuote(String symbol) async {
-    final response = await http.get(Uri.parse(
-      '$_alphavantageBaseUrl?function=GLOBAL_QUOTE&symbol=$symbol&apikey=$_alphavantageApiKey'
-    ));
-    
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load quote for $symbol');
     }
     
-    final data = json.decode(response.body);
-    if (!data.containsKey('Global Quote') || data['Global Quote'].isEmpty) {
-      throw Exception('No quote data for $symbol');
+    if (stocks.isEmpty) {
+      throw Exception('Failed to fetch stock data');
     }
     
-    return data['Global Quote'];
+    return stocks;
   }
   
-  // Fetch time series data for a symbol
-  Future<List<ChartDataPoint>> _fetchTimeSeriesData(String symbol, TimeRange timeRange) async {
-    String function = 'TIME_SERIES_DAILY';
-    String outputSize = 'compact'; // compact = 100 data points
+  static Future<List<Cryptocurrency>> getCryptocurrencies() async {
+    final cryptos = <Cryptocurrency>[];
     
-    final response = await http.get(Uri.parse(
-      '$_alphavantageBaseUrl?function=$function&symbol=$symbol&outputsize=$outputSize&apikey=$_alphavantageApiKey'
-    ));
-    
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load time series for $symbol');
-    }
-    
-    final data = json.decode(response.body);
-    if (!data.containsKey('Time Series (Daily)')) {
-      throw Exception('No time series data for $symbol');
-    }
-    
-    final timeSeries = data['Time Series (Daily)'] as Map<String, dynamic>;
-    final List<ChartDataPoint> chartData = [];
-    
-    // Convert to sorted list
-    final entries = timeSeries.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-      
-    // Get the last 30 days or less
-    final dataPoints = entries.length > 30 ? entries.sublist(entries.length - 30) : entries;
-    
-    for (var entry in dataPoints) {
-      chartData.add(ChartDataPoint(
-        timestamp: DateTime.parse(entry.key),
-        value: double.parse(entry.value['4. close']),
-      ));
-    }
-    
-    return chartData;
-  }
-  
-  // Create MarketIndex from API response
-  MarketIndex _createMarketIndexFromResponse(
-      String name, String symbol, Map<String, dynamic> quoteData, List<ChartDataPoint> historicalData) {
-    final double currentValue = double.parse(quoteData['05. price']);
-    final double change = double.parse(quoteData['09. change']);
-    final double changePercentage = double.parse(quoteData['10. change percent'].replaceAll('%', ''));
-    
-    return MarketIndex(
-      name: name,
-      symbol: symbol,
-      currentValue: currentValue,
-      change: change,
-      changePercentage: changePercentage,
-      historicalData: historicalData,
-    );
-  }
-  
-  // Create Stock from API response
-  Stock _createStockFromResponse(
-      String symbol, Map<String, dynamic> quoteData, List<ChartDataPoint> historicalData, 
-      {String? name, String? type, String? region}) {
-    final double currentPrice = double.parse(quoteData['05. price']);
-    final double change = double.parse(quoteData['09. change']);
-    final double changePercentage = double.parse(quoteData['10. change percent'].replaceAll('%', ''));
-    
-    // Extract just the stock name from the symbol
-    final stockName = name ?? _getStockNameFromSymbol(symbol);
-    
-    return Stock(
-      name: stockName,
-      symbol: symbol,
-      companyLogo: _getCompanyLogoUrl(symbol),
-      currentPrice: currentPrice,
-      change: change,
-      changePercentage: changePercentage,
-      // Since we can't get this from Global Quote, use estimates or mock data
-      marketCap: _estimateMarketCap(symbol, currentPrice),
-      peRatio: _estimatePERatio(symbol),
-      eps: _estimateEPS(symbol),
-      sector: _getStockSector(symbol),
-      historicalData: historicalData,
-    );
-  }
-  
-  // Helper methods for data that isn't available in the free API tier
-  
-  String _getStockNameFromSymbol(String symbol) {
-    final symbolMap = {
-      'RELIANCE.BSE': 'Reliance Industries',
-      'TCS.BSE': 'Tata Consultancy Services',
-      'HDFCBANK.BSE': 'HDFC Bank',
-      'INFY.BSE': 'Infosys',
-      'ICICIBANK.BSE': 'ICICI Bank',
-    };
-    
-    return symbolMap[symbol] ?? symbol.split('.')[0];
-  }
-  
-  String _getCompanyLogoUrl(String symbol) {
-    final logoMap = {
-      'RELIANCE.BSE': 'https://companieslogo.com/img/orig/RELIANCE.NS-c28acd1c.png',
-      'TCS.BSE': 'https://companieslogo.com/img/orig/TCS.NS-7401f1bd.png',
-      'HDFCBANK.BSE': 'https://companieslogo.com/img/orig/HDB-bb6241fe.png',
-      'INFY.BSE': 'https://companieslogo.com/img/orig/INFY-7401e672.png',
-      'ICICIBANK.BSE': 'https://companieslogo.com/img/orig/IBN-af163749.png',
-    };
-    
-    return logoMap[symbol] ?? '';
-  }
-  
-  double _estimateMarketCap(String symbol, double price) {
-    final marketCapMap = {
-      'RELIANCE.BSE': 1986432000000.0,
-      'TCS.BSE': 1420000000000.0,
-      'HDFCBANK.BSE': 1280000000000.0,
-      'INFY.BSE': 645000000000.0,
-      'ICICIBANK.BSE': 735000000000.0,
-      'BTC': 124505343292565.0,
-      'ETH': 40292332842479.0,
-      'USDT': 10732727757734.0,
-    };
-    
-    return marketCapMap[symbol] ?? (price * 1000000000);
-  }
-  
-  double _estimatePERatio(String symbol) {
-    final peRatioMap = {
-      'RELIANCE.BSE': 32.56,
-      'TCS.BSE': 29.14,
-      'HDFCBANK.BSE': 23.86,
-      'INFY.BSE': 25.23,
-      'ICICIBANK.BSE': 22.15,
-    };
-    
-    return peRatioMap[symbol] ?? 20.0;
-  }
-  
-  double _estimateEPS(String symbol) {
-    final epsMap = {
-      'RELIANCE.BSE': 90.13,
-      'TCS.BSE': 133.02,
-      'HDFCBANK.BSE': 70.51,
-      'INFY.BSE': 61.86,
-      'ICICIBANK.BSE': 47.54,
-    };
-    
-    return epsMap[symbol] ?? 5.0;
-  }
-  
-  String _getStockSector(String symbol) {
-    final sectorMap = {
-      'RELIANCE.BSE': 'Oil & Gas',
-      'TCS.BSE': 'IT Services',
-      'HDFCBANK.BSE': 'Banking',
-      'INFY.BSE': 'IT Services',
-      'ICICIBANK.BSE': 'Banking',
-    };
-    
-    return sectorMap[symbol] ?? 'Others';
-  }
-  
-  String _getCryptoName(String symbol) {
-    final nameMap = {
-      'BTC': 'Bitcoin',
-      'ETH': 'Ethereum',
-      'USDT': 'Tether',
-    };
-    
-    return nameMap[symbol] ?? symbol;
-  }
-  
-  String _getCryptoImage(String symbol) {
-    final imageMap = {
-      'BTC': 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-      'ETH': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-      'USDT': 'https://assets.coingecko.com/coins/images/325/large/Tether.png',
-    };
-    
-    return imageMap[symbol] ?? '';
-  }
-  
-  double _getCirculatingSupply(String symbol) {
-    final supplyMap = {
-      'BTC': 19747587.0,
-      'ETH': 120307495.0,
-      'USDT': 128750000000.0,
-    };
-    
-    return supplyMap[symbol] ?? 0.0;
-  }
-  
-  // Cache methods
-  
-  Future<void> _cacheData(String key, dynamic data) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cacheItem = {
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'data': data,
-      };
-      await prefs.setString(key, json.encode(cacheItem));
-    } catch (e) {
-      _logger.e('Error caching data: $e');
-    }
-  }
-  
-  Future<dynamic> _getCachedData(String key) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? cachedItemStr = prefs.getString(key);
-      
-      if (cachedItemStr != null) {
-        final cachedItem = json.decode(cachedItemStr);
-        final timestamp = cachedItem['timestamp'] as int;
-        final now = DateTime.now().millisecondsSinceEpoch;
+    for (var cryptoInfo in _cryptoCurrencies) {
+      try {
+        final symbol = cryptoInfo['symbol']!;
+        final name = cryptoInfo['name']!;
         
-        // Check if cache is still valid (less than 5 minutes old)
-        if (now - timestamp < _cacheTimeoutMinutes * 60 * 1000) {
-          return cachedItem['data'];
+        // Use CURRENCY_EXCHANGE_RATE for real-time crypto price
+        final response = await _get('CURRENCY_EXCHANGE_RATE', {
+          'from_currency': symbol,
+          'to_currency': 'USD'
+        });
+        
+        if (response.containsKey('Realtime Currency Exchange Rate') &&
+            response['Realtime Currency Exchange Rate'] != null &&
+            response['Realtime Currency Exchange Rate'].isNotEmpty) {
+            
+          final exchangeRate = response['Realtime Currency Exchange Rate'];
+          final rate = double.tryParse(exchangeRate['5. Exchange Rate'] ?? '0') ?? 0;
+          
+          // For demo purposes, using a simple formula to generate change values
+          // In a real app, you'd compare to historical data
+          final change = rate * 0.01 * (symbol.hashCode % 2 == 0 ? 1 : -1);
+          final changePercentage = 1.0 * (symbol.hashCode % 2 == 0 ? 1 : -1);
+          
+          cryptos.add(Cryptocurrency(
+            symbol: symbol,
+            name: name,
+            currentValue: rate,
+            change: change,
+            changePercentage: changePercentage,
+            image: '', // Alpha Vantage doesn't provide images
+            marketCap: rate * 1000000000, // Simplified value
+            volume24h: rate * 10000000, // Simplified value
+            circulatingSupply: 1000000 + symbol.hashCode % 100000000, // Simplified value
+          ));
+        } else {
+          throw Exception('Invalid or empty response for crypto $symbol');
+        }
+      } catch (e) {
+        _logger.e('Error fetching cryptocurrency: $e');
+        // Continue with the next crypto
+      }
+    }
+    
+    if (cryptos.isEmpty) {
+      throw Exception('Failed to fetch cryptocurrency data');
+    }
+    
+    return cryptos;
+  }
+  
+  static Future<List<Commodity>> getCommodities() async {
+    final commodities = <Commodity>[];
+    
+    for (var entry in _commodities.entries) {
+      try {
+        final symbol = entry.key;
+        final info = entry.value;
+        
+        // Use CURRENCY_EXCHANGE_RATE for commodity prices (typically quoted in USD)
+        final response = await _get('CURRENCY_EXCHANGE_RATE', {
+          'from_currency': symbol,
+          'to_currency': 'USD'
+        });
+        
+        if (response.containsKey('Realtime Currency Exchange Rate') &&
+            response['Realtime Currency Exchange Rate'] != null &&
+            response['Realtime Currency Exchange Rate'].isNotEmpty) {
+            
+          final exchangeRate = response['Realtime Currency Exchange Rate'];
+          final rate = double.tryParse(exchangeRate['5. Exchange Rate'] ?? '0') ?? 0;
+          
+          // For demo purposes, using simple change values
+          final change = rate * 0.01 * (symbol.hashCode % 2 == 0 ? 1 : -1);
+          final changePercentage = 0.8 * (symbol.hashCode % 2 == 0 ? 1 : -1);
+          
+          commodities.add(Commodity(
+            symbol: symbol,
+            name: info['name']!,
+            currentValue: rate,
+            change: change,
+            changePercentage: changePercentage,
+            unit: info['unit']!,
+          ));
+        } else {
+          throw Exception('Invalid or empty response for commodity $symbol');
+        }
+      } catch (e) {
+        _logger.e('Error fetching commodity: $e');
+        // Continue with the next commodity
+      }
+    }
+    
+    if (commodities.isEmpty) {
+      throw Exception('Failed to fetch commodity data');
+    }
+    
+    return commodities;
+  }
+  
+  static Future<List<ChartDataPoint>> getChartData(String symbol, TimeRange range) async {
+    final chartData = <ChartDataPoint>[];
+    
+    try {
+      Map<String, String> params = {'symbol': symbol};
+      
+      // Set the right interval for intraday data
+      if (range.interval != null) {
+        params['interval'] = range.interval!;
+      }
+      
+      final response = await _get(range.functionName, params);
+      
+      // Determine which key contains the time series data
+      String? timeSeriesKey;
+      for (var key in response.keys) {
+        if (key.contains('Time Series') || key.contains('Weekly') || key.contains('Monthly')) {
+          timeSeriesKey = key;
+          break;
         }
       }
-      return null;
+      
+      if (timeSeriesKey == null) {
+        throw Exception('No time series data found for $symbol with range ${range.name}');
+      }
+      
+      // Get time series data
+      final timeSeries = response[timeSeriesKey] as Map<String, dynamic>;
+      
+      // Filter entries based on the date range
+      final now = DateTime.now();
+      final startDate = DateTime(now.year, now.month, now.day - range.days);
+      
+      // Convert to list and sort by date (newest first)
+      final entries = timeSeries.entries.toList()
+        ..sort((a, b) => DateTime.parse(b.key).compareTo(DateTime.parse(a.key)));
+      
+      for (var entry in entries) {
+        final date = DateTime.parse(entry.key);
+        
+        // Skip if before our start date
+        if (date.isBefore(startDate)) continue;
+        
+        final dataPoint = ChartDataPoint.fromAlphaVantage(entry.key, entry.value);
+        chartData.add(dataPoint);
+      }
+      
+      // If we have too many points, sample them
+      if (chartData.length > 100) {
+        return _sampleChartData(chartData, 100);
+      }
+      
+      return chartData;
     } catch (e) {
-      _logger.e('Error reading cache: $e');
-      return null;
+      _logger.e('Error fetching chart data for $symbol: $e');
+      throw Exception('Failed to load chart data: $e');
     }
   }
   
-  // Parse cached data back to objects
-  
-  List<MarketIndex> _parseIndicesFromCache(List<dynamic> cachedData) {
-    return cachedData.map((item) {
-      final historicalData = (item['historicalData'] as List).map((point) => ChartDataPoint(
-        timestamp: DateTime.parse(point['timestamp']),
-        value: point['value'],
-      )).toList();
-      
-      return MarketIndex(
-        name: item['name'],
-        symbol: item['symbol'],
-        currentValue: item['currentValue'],
-        change: item['change'],
-        changePercentage: item['changePercentage'],
-        historicalData: historicalData,
-      );
-    }).toList();
-  }
-  
-  List<Stock> _parseStocksFromCache(List<dynamic> cachedData) {
-    return cachedData.map((item) {
-      final historicalData = (item['historicalData'] as List).map((point) => ChartDataPoint(
-        timestamp: DateTime.parse(point['timestamp']),
-        value: point['value'],
-      )).toList();
-      
-      return Stock(
-        name: item['name'],
-        symbol: item['symbol'],
-        companyLogo: item['companyLogo'] ?? '',
-        currentPrice: item['currentPrice'],
-        change: item['change'],
-        changePercentage: item['changePercentage'],
-        marketCap: item['marketCap'],
-        peRatio: item['peRatio'],
-        eps: item['eps'],
-        sector: item['sector'],
-        historicalData: historicalData,
-      );
-    }).toList();
-  }
-  
-  List<Cryptocurrency> _parseCryptosFromCache(List<dynamic> cachedData) {
-    return cachedData.map((item) {
-      final historicalData = (item['historicalData'] as List).map((point) => ChartDataPoint(
-        timestamp: DateTime.parse(point['timestamp']),
-        value: point['value'],
-      )).toList();
-      
-      return Cryptocurrency(
-        name: item['name'],
-        symbol: item['symbol'],
-        image: item['image'] ?? '',
-        currentPrice: item['currentPrice'],
-        change: item['change'],
-        changePercentage: item['changePercentage'],
-        marketCap: item['marketCap'],
-        volume24h: item['volume24h'],
-        circulatingSupply: item['circulatingSupply'],
-        historicalData: historicalData,
-      );
-    }).toList();
-  }
-  
-  List<Commodity> _parseCommoditiesFromCache(List<dynamic> cachedData) {
-    return cachedData.map((item) {
-      final historicalData = (item['historicalData'] as List).map((point) => ChartDataPoint(
-        timestamp: DateTime.parse(point['timestamp']),
-        value: point['value'],
-      )).toList();
-      
-      return Commodity(
-        name: item['name'],
-        symbol: item['symbol'],
-        currentPrice: item['currentPrice'],
-        change: item['change'],
-        changePercentage: item['changePercentage'],
-        unit: item['unit'],
-        historicalData: historicalData,
-      );
-    }).toList();
-  }
-  
-  // Mock data for fallbacks
-  
-  List<Cryptocurrency> _getMockCryptos() {
-    return [
-      Cryptocurrency(
-        name: 'Bitcoin',
-        symbol: 'BTC',
-        image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-        currentPrice: 6296256.28, // INR value
-        change: 6645.24,
-        changePercentage: 0.11,
-        marketCap: 124505343292565,
-        volume24h: 3160628460644,
-        circulatingSupply: 19747587,
-        historicalData: _generateMockHistoricalData(6280000, 6300000),
-      ),
-      Cryptocurrency(
-        name: 'Ethereum',
-        symbol: 'ETH',
-        image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-        currentPrice: 334913.95, // INR value
-        change: 478.68,
-        changePercentage: 0.14,
-        marketCap: 40292332842479,
-        volume24h: 1148867259025,
-        circulatingSupply: 120307495,
-        historicalData: _generateMockHistoricalData(334000, 335000),
-      ),
-      Cryptocurrency(
-        name: 'Tether',
-        symbol: 'USDT',
-        image: 'https://assets.coingecko.com/coins/images/325/large/Tether.png',
-        currentPrice: 83.36, // INR value
-        change: -0.05,
-        changePercentage: -0.06,
-        marketCap: 10732727757734,
-        volume24h: 3424451689685,
-        circulatingSupply: 128750000000,
-        historicalData: _generateMockHistoricalData(83.30, 83.40),
-      ),
-    ];
-  }
-  
-  List<Commodity> _getMockCommodities() {
-    return [
-      Commodity(
-        name: 'Gold',
-        symbol: 'XAU',
-        currentPrice: 71892.00, // INR per 10 grams
-        change: 305.00,
-        changePercentage: 0.43,
-        unit: '10 grams',
-        historicalData: _generateMockHistoricalData(71500, 72000),
-      ),
-      Commodity(
-        name: 'Silver',
-        symbol: 'XAG',
-        currentPrice: 94435.00, // INR per kg
-        change: -294.00,
-        changePercentage: -0.31,
-        unit: '1 kg',
-        historicalData: _generateMockHistoricalData(94300, 94600),
-      ),
-      Commodity(
-        name: 'Crude Oil',
-        symbol: 'CL',
-        currentPrice: 6654.19, // INR per barrel
-        change: 23.50,
-        changePercentage: 0.35,
-        unit: '1 barrel',
-        historicalData: _generateMockHistoricalData(6630, 6670),
-      ),
-    ];
-  }
-  
-  // Generate mock historical data
-  List<ChartDataPoint> _generateMockHistoricalData(double min, double max) {
-    final now = DateTime.now();
-    final random = DateTime.now().millisecondsSinceEpoch % 1000 / 1000;
-    List<ChartDataPoint> data = [];
-
-    for (int i = 30; i >= 0; i--) {
-      final point = ChartDataPoint(
-        timestamp: now.subtract(Duration(days: i)),
-        value: min + (max - min) * ((random * i / 30 + 0.5) % 1.0),
-      );
-      data.add(point);
-    }
-    return data;
-  }
-
-  // Generate more detailed mock data based on time range
-  List<ChartDataPoint> _generateDetailedMockData(TimeRange timeRange) {
-    final now = DateTime.now();
-    final random = DateTime.now().millisecondsSinceEpoch % 1000 / 1000;
-    final baseValue = 1000.0 + random * 1000;
-    final List<ChartDataPoint> data = [];
+  // Sample chart data to reduce points
+  static List<ChartDataPoint> _sampleChartData(List<ChartDataPoint> data, int targetPoints) {
+    if (data.length <= targetPoints) return data;
     
-    int dataPoints;
-    Duration interval;
+    final List<ChartDataPoint> sampledData = [];
+    final int step = (data.length / targetPoints).ceil();
     
-    switch (timeRange) {
-      case TimeRange.day:
-        dataPoints = 24;
-        interval = const Duration(hours: 1);
-        break;
-      case TimeRange.week:
-        dataPoints = 7;
-        interval = const Duration(days: 1);
-        break;
-      case TimeRange.month:
-        dataPoints = 30;
-        interval = const Duration(days: 1);
-        break;
-      case TimeRange.threeMonths:
-        dataPoints = 12;
-        interval = const Duration(days: 7);
-        break;
-      case TimeRange.sixMonths:
-        dataPoints = 24;
-        interval = const Duration(days: 7);
-        break;
-      case TimeRange.year:
-        dataPoints = 12;
-        interval = const Duration(days: 30);
-        break;
-      case TimeRange.fiveYears:
-        dataPoints = 20;
-        interval = const Duration(days: 90);
-        break;
+    for (int i = 0; i < data.length; i += step) {
+      if (i < data.length) {
+        sampledData.add(data[i]);
+      }
     }
     
-    for (int i = dataPoints - 1; i >= 0; i--) {
-      final point = ChartDataPoint(
-        timestamp: now.subtract(interval * i),
-        value: baseValue * (1 + 0.2 * (random - 0.5) * (dataPoints - i) / dataPoints),
-      );
-      data.add(point);
+    // Always ensure the most recent data point is included
+    if (sampledData.isEmpty || sampledData.first != data.first) {
+      sampledData.insert(0, data.first);
     }
     
-    return data;
+    return sampledData;
+  }
+  
+  // Search for market symbols
+  static Future<List<MarketSearchResult>> searchMarket(String query) async {
+    if (query.isEmpty) {
+      return [];
+    }
+    
+    try {
+      final response = await _get('SYMBOL_SEARCH', {'keywords': query});
+      
+      if (!response.containsKey('bestMatches') || 
+          response['bestMatches'] == null ||
+          (response['bestMatches'] as List).isEmpty) {
+        throw Exception('No search results found for "$query"');  
+      }
+      
+      final List<dynamic> matches = response['bestMatches'];
+      return matches.map((match) => 
+        MarketSearchResult.fromAlphaVantageSearch(match)).toList();
+    } catch (e) {
+      _logger.e('Error searching market: $e');
+      throw Exception('Failed to search market: $e');
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:finmate/screens/ai_assistant/ai_chat_screen.dart';
 
 class InvestmentsScreen extends ConsumerStatefulWidget {
   const InvestmentsScreen({super.key});
@@ -131,10 +132,7 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
             icon: const Icon(Icons.smart_toy_outlined, color: color3),
             tooltip: 'AI Assistant',
             onPressed: () {
-              // TODO: Implement navigation or action for AI Chat
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('AI Chat button pressed')),
-              );
+              Navigate().push(const AIChatScreen());
             },
           ),
           IconButton(
@@ -266,6 +264,24 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
               ),
             ),
             child: const Text("Add Investment"),
+          ),
+          sbh10,
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigate().push(const AIChatScreen());
+            },
+            icon: const Icon(Icons.smart_toy, color: Colors.white),
+            label: const Text(
+              "AI Assistant",
+              style: TextStyle(color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
           ),
         ],
       ),

@@ -71,7 +71,6 @@ dependencies:
   flutter_expandable_fab: ^2.3.0
   floating_expandable_menu: ^0.0.2
   carousel_slider: ^5.0.0
-  #
   fl_chart: ^0.70.2
   syncfusion_flutter_charts: ^29.1.33
   syncfusion_flutter_gauges: ^29.1.35
@@ -81,6 +80,8 @@ dependencies:
   percent_indicator: ^4.2.5
   intl: ^0.19.0
   uuid: ^4.5.1
+  shimmer: ^3.0.0
+  flutter_markdown: ^0.7.7
 
 dev_dependencies:
   flutter_test:

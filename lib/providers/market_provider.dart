@@ -1,53 +1,105 @@
 import 'package:finmate/models/market_data.dart';
 import 'package:finmate/services/market_api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
-final marketApiServiceProvider = Provider<MarketApiService>((ref) {
-  return MarketApiService();
-});
+final _logger = Logger();
 
-// Market Indices
+// Provider for selected time range
+final selectedTimeRangeProvider = StateProvider<TimeRange>(
+  (ref) => TimeRange.daily,
+);
+
+// Provider for search query
+final searchQueryProvider = StateProvider<String>(
+  (ref) => '',
+);
+
+// Provider for market indices with auto-refresh
 final marketIndicesProvider = FutureProvider<List<MarketIndex>>((ref) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  return apiService.getMarketIndices();
+  _logger.i('Fetching market indices...');
+  try {
+    return await MarketApiService.getMarketIndices();
+  } catch (e) {
+    _logger.e('Error in marketIndicesProvider: $e');
+    // Don't return empty list anymore, let the error propagate
+    throw e;
+  }
 });
 
-// Popular Stocks
+// Provider for popular stocks with auto-refresh
 final popularStocksProvider = FutureProvider<List<Stock>>((ref) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  return apiService.getPopularStocks();
+  _logger.i('Fetching popular stocks...');
+  try {
+    return await MarketApiService.getPopularStocks();
+  } catch (e) {
+    _logger.e('Error in popularStocksProvider: $e');
+    throw e;
+  }
 });
 
-// Search Stocks Query
-final stockSearchQueryProvider = StateProvider<String>((ref) => '');
-
-// Search Results
-final stockSearchResultsProvider = FutureProvider<List<Stock>>((ref) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  final query = ref.watch(stockSearchQueryProvider);
-  
-  if (query.isEmpty) return [];
-  return apiService.searchStocks(query);
-});
-
-// Cryptocurrencies
+// Provider for cryptocurrencies with auto-refresh
 final cryptocurrenciesProvider = FutureProvider<List<Cryptocurrency>>((ref) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  return apiService.getCryptocurrencies();
+  _logger.i('Fetching cryptocurrencies...');
+  try {
+    return await MarketApiService.getCryptocurrencies();
+  } catch (e) {
+    _logger.e('Error in cryptocurrenciesProvider: $e');
+    throw e;
+  }
 });
 
-// Commodities
+// Provider for commodities with auto-refresh
 final commoditiesProvider = FutureProvider<List<Commodity>>((ref) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  return apiService.getCommodities();
+  _logger.i('Fetching commodities...');
+  try {
+    return await MarketApiService.getCommodities();
+  } catch (e) {
+    _logger.e('Error in commoditiesProvider: $e');
+    throw e;
+  }
 });
 
-// Selected Time Range for charts
-final selectedTimeRangeProvider = StateProvider<TimeRange>((ref) => TimeRange.month);
-
-// Detailed Stock Data Provider with parameters
-final detailedStockDataProvider = FutureProvider.family<List<ChartDataPoint>, String>((ref, symbol) async {
-  final apiService = ref.watch(marketApiServiceProvider);
-  final timeRange = ref.watch(selectedTimeRangeProvider);
-  return apiService.getDetailedStockData(symbol, timeRange);
+// Provider for chart data with auto-refresh
+final chartDataProvider = FutureProvider.family<List<ChartDataPoint>, ChartDataRequest>((ref, request) async {
+  _logger.i('Fetching chart data for ${request.symbol}...');
+  try {
+    return await MarketApiService.getChartData(request.symbol, request.timeRange);
+  } catch (e) {
+    _logger.e('Error in chartDataProvider: $e');
+    throw e;
+  }
 });
+
+// Provider for market search results
+final marketSearchProvider = FutureProvider.family<List<MarketSearchResult>, String>((ref, query) async {
+  if (query.isEmpty) {
+    return [];
+  }
+  _logger.i('Searching market for: $query');
+  try {
+    return await MarketApiService.searchMarket(query);
+  } catch (e) {
+    _logger.e('Error in marketSearchProvider: $e');
+    throw e;
+  }
+});
+
+// Class to hold chart data requests
+class ChartDataRequest {
+  final String symbol;
+  final TimeRange timeRange;
+  
+  ChartDataRequest({required this.symbol, required this.timeRange});
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChartDataRequest &&
+          runtimeType == other.runtimeType &&
+          symbol == other.symbol &&
+          timeRange == other.timeRange;
+
+  @override
+  int get hashCode => symbol.hashCode ^ timeRange.hashCode;
+}
