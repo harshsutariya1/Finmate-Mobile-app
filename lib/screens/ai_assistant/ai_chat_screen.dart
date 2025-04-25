@@ -1,10 +1,6 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
-import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat_message.dart';
-import 'package:finmate/models/investment.dart';
-import 'package:finmate/models/user.dart';
-import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/ai_chat_provider.dart';
 import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/investment_provider.dart';
