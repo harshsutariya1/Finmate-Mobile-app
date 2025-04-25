@@ -1,4 +1,8 @@
+import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat_message.dart';
+import 'package:finmate/models/investment.dart';
+import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/services/ai_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -50,18 +54,31 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
     initializeChat();
   }
 
-  // Send user message to AI service and get response with error handling
-  Future<void> sendMessageAndGetResponse(String userMessage, String selectedModel) async {
+  // Enhanced method to send message with all user finance data
+  Future<void> sendMessageAndGetResponse(
+    String userMessage, 
+    String selectedModel, 
+    {
+      UserData? userData,
+      UserFinanceData? userFinanceData,
+      List<Budget>? budgets,
+      List<Investment>? investments,
+    }
+  ) async {
     if (userMessage.trim().isEmpty) return;
     
     // Add user message to chat
     addUserMessage(userMessage);
     
     try {
-      // Send message to OpenAI API
+      // Send message to OpenAI API with comprehensive user data
       final aiResponse = await AIService.sendMessage(
         messages: state,
         selectedModel: selectedModel,
+        userData: userData,
+        userFinanceData: userFinanceData,
+        budgets: budgets,
+        investments: investments,
       );
       
       if (aiResponse != null) {
@@ -93,8 +110,8 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
 
 // Provider for storing currently selected model
 final selectedModelProvider = StateProvider<String>((ref) {
-  // Default to GPT-3.5 Turbo
-  return 'gpt-3.5-turbo';
+  // Change default to GPT-4.1 Nano
+  return 'gpt-4.1-nano';
 });
 
 // Provider for tracking loading state
