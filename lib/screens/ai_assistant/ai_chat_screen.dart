@@ -177,7 +177,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     return Scaffold(
       backgroundColor: color4,
       appBar: AppBar(
-        title: Text("FinMate AI Assistant"),
         backgroundColor: color4,
         actions: [
           // Data privacy toggle
@@ -263,7 +262,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withAlpha(13), // was .withOpacity(0.05)
                 blurRadius: 5,
                 spreadRadius: 1,
               ),
@@ -352,7 +351,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(26), // was .withOpacity(0.1)
             blurRadius: 5,
             spreadRadius: 1,
           ),
@@ -478,7 +477,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   Widget _buildDataPrivacyBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-      color: color3.withOpacity(0.1),
+      color: color3.withAlpha(26), // was .withOpacity(0.1)
       child: Row(
         children: [
           Icon(Icons.info_outline, size: 16, color: color3),
