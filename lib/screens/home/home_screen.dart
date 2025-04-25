@@ -135,12 +135,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               style: TextTheme.of(context).titleLarge,
             ),
             Spacer(),
-            // IconButton(
-            //   onPressed: () {
-            //     Navigate().push(NotificationScreen());
-            //   },
-            //   icon: Icon(Icons.notifications_none_rounded),
-            // ),
             IconButton(
               onPressed: () {
                 Navigate().push(SettingsScreen());
