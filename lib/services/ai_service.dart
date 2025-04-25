@@ -8,12 +8,16 @@ import 'package:finmate/models/user_finance_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 
 class AIService {
   static final Logger _logger = Logger();
-  // API key is now properly set
-  static const String _apiKey =
-      "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";
+  // Remove the hardcoded key
+  // static const String _apiKey = "YOUR_OLD_HARDCODED_KEY";
+
+  // Get API key from environment variables
+  static String get _apiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
+
   static const String _baseUrl = "https://api.openai.com/v1/chat/completions";
 
   // Available OpenAI models
@@ -276,16 +280,17 @@ For example, write "Rs.10,000" instead of "₹10,000".
     }
   }
 
-  // Get API key from shared preferences, falling back to default if not found
+  // Modify getApiKey to use the environment variable if SharedPreferences fails or is empty
   static Future<String> getApiKey() async {
+    String? savedKey;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedKey = prefs.getString('openai_api_key');
-      return savedKey ?? _apiKey; // Fall back to default key if not found
+      savedKey = prefs.getString('openai_api_key');
     } catch (e) {
-      _logger.e('Error retrieving API key: $e');
-      return _apiKey; // Return default key on error
+      _logger.e('Error retrieving API key from SharedPreferences: $e');
     }
+    // Use saved key, or fallback to environment key, or empty string
+    return savedKey ?? _apiKey;
   }
 
   // Send a message to the OpenAI API and get a response
@@ -298,8 +303,17 @@ For example, write "Rs.10,000" instead of "₹10,000".
     List<Investment>? investments,
   }) async {
     try {
-      // Get saved API key or use default
+      // Get API key (will check SharedPreferences first, then .env)
       final apiKey = await getApiKey();
+
+      if (apiKey.isEmpty) {
+         _logger.e('OpenAI API Key is missing. Please configure it in settings or .env file.');
+         return ChatMessage(
+           content: "API Key is missing. Please configure it in the settings.",
+           isUser: false,
+           timestamp: DateTime.now(),
+         );
+      }
 
       // Add system prompt to the beginning of the conversation
       List<Map<String, String>> formattedMessages = [
