@@ -1,6 +1,6 @@
 # Finmate - Personal Finance Management App
 
-<img src="assets/icons/logo-light.png" alt="App Logo" style="border: 5px solid #000; border-radius: 15px; width: 200px; height: auto;">
+<img src="assets/icons/logo-light.png" alt="App Logo" style=" border-radius: 15px; width: 200px; height: auto;">
 
 ## Overview
 
