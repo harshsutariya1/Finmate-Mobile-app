@@ -290,7 +290,9 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       // Update budget if this is an expense transaction
       if (transactionData.transactionType ==
               TransactionType.expense.displayName &&
-          !transactionData.isGroupTransaction) {
+          !transactionData.isGroupTransaction &&
+          SystemCategory.goalContribution.displayName !=
+              transactionData.category) {
         await _updateBudgetWithTransaction(uid, transactionData, ref);
       }
 
