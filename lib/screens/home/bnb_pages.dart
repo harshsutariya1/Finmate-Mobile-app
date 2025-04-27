@@ -25,8 +25,7 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     Icons.home,
     Icons.analytics,
     Icons.add,
-    Icons.attach_money_rounded,
-    // Icons.flag_rounded,
+    Icons.stacked_line_chart_rounded,
     Icons.group,
   ];
 
@@ -35,7 +34,6 @@ class _BnbPagesState extends ConsumerState<BnbPages> {
     'Analytics',
     'Add',
     'Investments',
-    'Budgets',
     'Groups',
   ];
 

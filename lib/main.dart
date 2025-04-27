@@ -4,6 +4,7 @@ import 'package:finmate/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setup().then((_) {
@@ -18,6 +19,8 @@ void main() {
 Future<void> setup() async {
   await setupFirebase();
   await registerServices();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  print("hasSeenIntro: ${prefs.getBool('hasSeenIntro')}");
 }
 
 class MyApp extends StatelessWidget {
@@ -25,7 +28,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return MaterialApp(
       navigatorKey: Navigate().navigatorKey,
       debugShowCheckedModeBanner: false,

@@ -12,8 +12,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 
 class AIService {
   static final Logger _logger = Logger();
-  // Remove the hardcoded key
-  // static const String _apiKey = "YOUR_OLD_HARDCODED_KEY";
 
   // Get API key from environment variables
   static String get _apiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
