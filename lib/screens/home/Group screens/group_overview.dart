@@ -9,7 +9,7 @@ import 'package:finmate/screens/home/Group%20screens/group_members.dart';
 import 'package:finmate/screens/home/Group%20screens/group_settings.dart';
 import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
-import 'package:finmate/widgets/fullscreen_image_viewer.dart';  // Add this import
+import 'package:finmate/widgets/fullscreen_image_viewer.dart'; // Add this import
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +51,7 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final UserData userData = ref.watch(userDataNotifierProvider);
     return AppBar(
       backgroundColor: color4,
       centerTitle: true,
@@ -80,10 +81,14 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () => Navigate().push(GroupSettings(group: widget.group)),
-          icon: Icon(Icons.settings, color: color3),
-          tooltip: 'Group Settings',
+        Visibility(
+          visible: widget.group.creatorId == userData.uid,
+          child: IconButton(
+            onPressed: () =>
+                Navigate().push(GroupSettings(group: widget.group)),
+            icon: Icon(Icons.settings, color: color3),
+            tooltip: 'Group Settings',
+          ),
         ),
         sbw10,
       ],

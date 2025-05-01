@@ -98,28 +98,88 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   }
 
   Widget _searchField() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15, left: 30, right: 30),
-      child: TextField(
-        controller: searchController,
-        onChanged: (value) {
-          setState(() {
-            searchQuery = value; // Update the search query
-          });
-        },
-        decoration: InputDecoration(
-          hintText: "Search groups...",
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: color3),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          filled: true,
-          fillColor: Colors.white,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: color2),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: TextField(
+          controller: searchController,
+          textAlignVertical: TextAlignVertical.center,
+          onChanged: (value) {
+            setState(() {
+              searchQuery = value;
+            });
+          },
+          style: TextStyle(
+            color: color1,
+            fontSize: 16,
           ),
-          prefixIcon: Icon(Icons.search, color: color3),
+          decoration: InputDecoration(
+            hintText: "Search groups...",
+            hintStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 16,
+            ),
+            prefixIcon: Container(
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                Icons.search_rounded,
+                color: color3,
+                size: 22,
+              ),
+            ),
+            suffixIcon: searchQuery.isNotEmpty
+                ? GestureDetector(
+                    onTap: () {
+                      searchController.clear();
+                      setState(() {
+                        searchQuery = '';
+                      });
+                      FocusScope.of(context).unfocus();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.cancel,
+                        color: Colors.grey.shade400,
+                        size: 20,
+                      ),
+                    ),
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: color3.withAlpha(100),
+                width: 1.5,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -127,16 +187,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
 
   Widget _groupsList(List<Group> groupsList, UserData userData) {
     return (groupsList.isEmpty)
-        ? Center(
-            child: Text(
-              "No groups found",
-              style: TextStyle(
-                color: color3,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          )
+        ? _buildEmptyGroupsState()
         : Expanded(
             child: ListView.separated(
               itemCount: groupsList.length,
@@ -146,6 +197,107 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               separatorBuilder: (context, index) => sbh15,
             ),
           );
+  }
+
+  Widget _buildEmptyGroupsState() {
+    return Expanded(
+      child: Center(
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon with background
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: color3.withAlpha(20),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.group_rounded,
+                    size: 60,
+                    color: color3,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Main title
+                Text(
+                  searchQuery.isNotEmpty
+                      ? "No matching groups"
+                      : "No groups yet",
+                  style: TextStyle(
+                    color: color1,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Description text
+                Text(
+                  searchQuery.isNotEmpty
+                      ? "We couldn't find any groups matching '$searchQuery'"
+                      : "Create your first group to start tracking expenses with friends and family",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Create group button
+                if (searchQuery.isEmpty)
+                  ElevatedButton.icon(
+                    onPressed: () => Navigate().push(AddGroupDetails()),
+                    icon: Icon(Icons.add_circle_outline, color: Colors.white),
+                    label: Text(
+                      "Create a Group",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color3,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
+                // Clear search button
+                if (searchQuery.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () {
+                      searchController.clear();
+                      setState(() {
+                        searchQuery = '';
+                      });
+                    },
+                    icon: Icon(Icons.search_off, color: color3),
+                    label: Text(
+                      "Clear Search",
+                      style: TextStyle(
+                        color: color3,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _groupTile(Group group, UserData userData) {
