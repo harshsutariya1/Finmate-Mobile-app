@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/budget.dart';
-import 'package:finmate/models/chat.dart';
+import 'package:finmate/models/group_chat.dart';
 import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart' as transaction_model;

@@ -251,7 +251,8 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       final Group? group =
           state.listOfGroups?.firstWhere((group) => group.gid == gid);
       if (group != null) {
-        final updatedGroup = group.copyWith(listOfMembers: groupMembersList);
+        final updatedGroup = group.copyWith(listOfMembers: groupMembersList,
+            memberIds: groupMembersList.map((member) => member.uid).whereType<String>().toList());
         final updatedGroupsList = state.listOfGroups
             ?.map((oldGroup) => oldGroup.gid == gid ? updatedGroup : oldGroup)
             .toList();
@@ -304,7 +305,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     }
   }
 
-  /// Updates any budget associated with this transaction
   Future<void> _updateBudgetWithTransaction(
       String uid, Transaction transaction, WidgetRef ref) async {
     try {
@@ -576,6 +576,65 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return true;
     } catch (e) {
       logger.w("❗Error while removing Group: ${group.name}: $e");
+      return false;
+    }
+  }
+
+  /// Removes a member from a group
+  Future<bool> removeGroupMember({
+    required String gid, 
+    required String memberUid,
+  }) async {
+    try {
+      // Find the group in the state
+      final group = state.listOfGroups?.firstWhere(
+        (g) => g.gid == gid,
+        orElse: () => throw Exception("Group not found"),
+      );
+      
+      if (group == null) {
+        logger.w("❗Group with ID $gid not found");
+        return false;
+      }
+
+      // Check if memberUid exists in the group
+      if (!(group.memberIds?.contains(memberUid) ?? false)) {
+        logger.w("❗Member with ID $memberUid not found in group");
+        return false;
+      }
+
+      // Create updated lists
+      final updatedMemberIds = group.memberIds?.where((id) => id != memberUid).toList() ?? [];
+      final updatedMembers = group.listOfMembers?.where((member) => member.uid != memberUid).toList() ?? [];
+      
+      // Remove the member from the membersBalance map
+      final updatedMembersBalance = Map<String, String>.from(group.membersBalance ?? {});
+      updatedMembersBalance.remove(memberUid);
+
+      // Update Firestore
+      await groupsCollection.doc(gid).update({
+        'memberIds': updatedMemberIds,
+        'membersBalance': updatedMembersBalance,
+      });
+
+      // Update the state
+      final updatedGroups = state.listOfGroups?.map((g) {
+        if (g.gid == gid) {
+          return g.copyWith(
+            memberIds: updatedMemberIds,
+            listOfMembers: updatedMembers,
+            membersBalance: updatedMembersBalance,
+          );
+        }
+        return g;
+      }).toList();
+
+      state = state.copyWith(listOfGroups: updatedGroups);
+      
+      logger.i("✅ Member removed from group successfully");
+      return true;
+    } catch (e) {
+      logger.w("❗Error removing member from group: $e");
       return false;
     }
   }

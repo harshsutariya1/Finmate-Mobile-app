@@ -17,22 +17,36 @@ Widget userProfilePicInCircle({
       radius: innerRadius,
       backgroundColor: color4,
       child: (isNumber)
-          ? Text(textNumber)
-          : CachedNetworkImage(
-              imageUrl: imageUrl,
-              imageBuilder: (context, imageProvider) => CircleAvatar(
-                radius: innerRadius,
-                backgroundImage: imageProvider,
+          ? Text(
+              textNumber,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: innerRadius * 0.7,
+                color: color2,
               ),
-              errorWidget: (context, url, error) => CircleAvatar(
-                radius: innerRadius,
-                backgroundImage: AssetImage(blankProfileImage),
-              ),
-              placeholder: (context, url) => Padding(
-                padding: const EdgeInsets.all(3),
-                child: CircularProgressIndicator.adaptive(),
-              ),
-            ),
+            )
+          : (imageUrl.isNotEmpty)
+              ? CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  imageBuilder: (context, imageProvider) => CircleAvatar(
+                    radius: innerRadius,
+                    backgroundImage: imageProvider,
+                  ),
+                  errorWidget: (context, url, error) => CircleAvatar(
+                    radius: innerRadius,
+                    backgroundImage: AssetImage(blankProfileImage),
+                  ),
+                  placeholder: (context, url) => Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: CircularProgressIndicator.adaptive(
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : CircleAvatar(
+                  radius: innerRadius,
+                  backgroundImage: AssetImage(blankProfileImage),
+                ),
     ),
   );
 }

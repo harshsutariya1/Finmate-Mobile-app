@@ -7,11 +7,14 @@ import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/Group%20screens/group_chats.dart';
 import 'package:finmate/screens/home/Group%20screens/group_members.dart';
 import 'package:finmate/screens/home/Group%20screens/group_settings.dart';
+import 'package:finmate/screens/home/Transaction%20screens/all_transactions_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
+import 'package:finmate/widgets/fullscreen_image_viewer.dart';  // Add this import
 import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:percent_indicator/linear_percent_indicator.dart';
 
 class GroupOverview extends ConsumerStatefulWidget {
   const GroupOverview({super.key, required this.group});
@@ -24,7 +27,7 @@ class GroupOverview extends ConsumerStatefulWidget {
 class _GroupOverviewState extends ConsumerState<GroupOverview> {
   int _selectedIndex = 0;
   late PageController _pageController;
-  List<String> tabTitles = ["Overview", "Chats", "Members"];
+  final List<String> tabTitles = ["Overview", "Chats", "Members"];
 
   @override
   void initState() {
@@ -42,16 +45,23 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color4,
-      appBar: _appBar(),
-      body: _body(),
+      appBar: _buildAppBar(),
+      body: _buildBody(),
     );
   }
 
-  PreferredSizeWidget _appBar() {
+  PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: color4,
       centerTitle: true,
-      title: Text(widget.group.name ?? "Group Overview"),
+      title: Text(
+        widget.group.name ?? "Group Overview",
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: color1,
+          fontSize: 20,
+        ),
+      ),
       bottom: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: CustomTabBar(
@@ -71,17 +81,16 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
       ),
       actions: [
         IconButton(
-          onPressed: () {
-            Navigate().push(GroupSettings(group: widget.group));
-          },
-          icon: Icon(Icons.settings),
+          onPressed: () => Navigate().push(GroupSettings(group: widget.group)),
+          icon: Icon(Icons.settings, color: color3),
+          tooltip: 'Group Settings',
         ),
         sbw10,
       ],
     );
   }
 
-  Widget _body() {
+  Widget _buildBody() {
     return PageView(
       controller: _pageController,
       physics: const BouncingScrollPhysics(),
@@ -101,149 +110,177 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
 
 // __________________________________________________________________________ //
 
-class GrpOverview extends ConsumerStatefulWidget {
+class GrpOverview extends ConsumerWidget {
   const GrpOverview({super.key, required this.group});
   final Group group;
 
   @override
-  ConsumerState<GrpOverview> createState() => _GrpOverviewState();
-}
-
-class _GrpOverviewState extends ConsumerState<GrpOverview> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final UserData userData = ref.watch(userDataNotifierProvider);
-    final List<UserData>? groupMembersData = widget.group.listOfMembers;
+    final List<UserData>? groupMembersData = group.listOfMembers;
 
     return Scaffold(
       backgroundColor: color4,
       body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            showBalanceContainer(widget.group, userData, groupMembersData),
-            groupTransactionsBox(widget.group),
+            _buildBalanceCard(context, userData, groupMembersData),
+            const SizedBox(height: 24),
+            _buildTransactionsSection(context, ref),
           ],
         ),
       ),
     );
   }
 
-  Widget showBalanceContainer(
-    Group groupData,
-    UserData userData,
-    List<UserData>? groupMembersData,
-  ) {
-    rightMarginAmount(UserData member) {
-      return (1 -
-              (double.parse(groupData.membersBalance?[member.uid] ?? "0.0") /
-                  double.parse(groupData.totalAmount ?? "0.0"))) *
-          (MediaQuery.of(context).size.width * .8);
-    }
+  /// Builds the card showing group balance and member contributions
+  Widget _buildBalanceCard(BuildContext context, UserData userData,
+      List<UserData>? groupMembersData) {
+    final double totalAmount =
+        double.tryParse(group.totalAmount ?? "0.0") ?? 0.0;
 
     return Container(
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(
-        vertical: 25,
-        horizontal: 20,
-      ),
-      padding: EdgeInsets.all(15),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: color2.withAlpha(180),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Total Balance',
-                style: TextStyle(
-                  color: color4,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              Text(
-                '${groupData.totalAmount} ₹',
-                style: TextStyle(
-                  color: color4,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 25,
-                ),
-              ),
-            ],
+        color: color2.withAlpha(220),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            offset: Offset(0, 2),
           ),
-          Container(
-            margin: EdgeInsets.only(top: 10),
-            width: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 10,
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Balance Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ...groupMembersData!.map((member) {
-                  final memberBalance =
-                      groupData.membersBalance?[member.uid] ?? "0.0";
-                  // member horizontal bars
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Container(
-                      height: 60,
-                      width: double.infinity,
-                      padding: EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: groupMemberBarColor.withAlpha(104),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                            color: (double.parse(memberBalance) <= 0)
-                                ? Colors.red
-                                : color4),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // balance bar
-                          Container(
-                            height: double.infinity,
-                            width: double.infinity,
-                            alignment: Alignment.centerLeft,
-                            margin: EdgeInsets.only(
-                              right: rightMarginAmount(member),
-                              left: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: groupMemberBarColor,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          // member image
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: userProfilePicInCircle(
-                              imageUrl: member.pfpURL ?? '',
-                              outerRadius: 28,
-                              innerRadius: 25,
-                            ),
-                          ),
-                          // member balance
-                          Text(
-                            "$memberBalance ₹",
-                            style: TextStyle(
-                              color: (double.parse(memberBalance) <= 0)
-                                  ? Colors.red
-                                  : Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                Text(
+                  'Total Balance',
+                  style: TextStyle(
+                    color: color4,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Text(
+                  '${group.totalAmount} ₹',
+                  style: TextStyle(
+                    color: color4,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Member Balances
+            if (groupMembersData != null && groupMembersData.isNotEmpty)
+              ...groupMembersData.map((member) =>
+                  _buildMemberBalanceRow(context, member, totalAmount)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a row showing a member's balance with a progress indicator
+  Widget _buildMemberBalanceRow(
+      BuildContext context, UserData member, double totalAmount) {
+    // Get member balance and calculate percentage
+    final double memberBalance =
+        double.tryParse(group.membersBalance?[member.uid] ?? "0.0") ?? 0.0;
+
+    // Calculate percentage (with safety checks)
+    final double percentage = (totalAmount > 0 && memberBalance > 0)
+        ? (memberBalance / totalAmount).clamp(0.0, 1.0)
+        : 0.0;
+
+    final bool isNegative = memberBalance < 0;
+    final Color progressColor = isNegative ? Colors.red.shade400 : color4;
+    final Color textColor = isNegative ? Colors.red.shade300 : Colors.white;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          // Member Avatar - Make it tappable to view profile picture in fullscreen
+          GestureDetector(
+            onTap: () {
+              if (member.pfpURL != null && member.pfpURL!.isNotEmpty) {
+                Navigate().push(
+                  FullScreenImageViewer(
+                    imageUrl: member.pfpURL!,
+                    heroTag: 'profile_${member.uid}',
+                  ),
+                );
+              }
+            },
+            child: Hero(
+              tag: 'profile_${member.uid}',
+              child: userProfilePicInCircle(
+                imageUrl: member.pfpURL ?? '',
+                outerRadius: 22,
+                innerRadius: 20,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Progress Bar and Balance
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Member Name
+                Text(
+                  member.name ?? 'Member',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 6),
+
+                // Linear Progress Indicator
+                LinearPercentIndicator(
+                  lineHeight: 12.0,
+                  percent: percentage,
+                  backgroundColor: Colors.white24,
+                  progressColor: progressColor,
+                  barRadius: const Radius.circular(6),
+                  padding: EdgeInsets.zero,
+                  animation: true,
+                  animationDuration: 800,
+                ),
+
+                const SizedBox(height: 4),
+
+                // Balance Amount
+                Text(
+                  '$memberBalance ₹',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ),
@@ -252,66 +289,111 @@ class _GrpOverviewState extends ConsumerState<GrpOverview> {
     );
   }
 
-  Widget groupTransactionsBox(Group group) {
-    List<Transaction>? listOfTransactions = group.listOfTransactions;
-    // Sort transactions by date and time in descending order
-    listOfTransactions?.sort((a, b) {
+  /// Builds the recent transactions section
+  Widget _buildTransactionsSection(BuildContext context, WidgetRef ref) {
+    // Get and sort transactions
+    List<Transaction>? transactions = group.listOfTransactions ?? [];
+
+    // Sort by date and time (newest first)
+    transactions.sort((a, b) {
       int dateComparison = b.date!.compareTo(a.date!);
-      if (dateComparison != 0) {
-        return dateComparison;
-      } else {
-        return b.time!.format(context).compareTo(a.time!.format(context));
-      }
+      if (dateComparison != 0) return dateComparison;
+      return b.time!.format(context).compareTo(a.time!.format(context));
     });
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 25),
-      child: Stack(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            alignment: Alignment.center,
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-            margin: EdgeInsets.symmetric(
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: group.listOfTransactions!.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Transactions',
+                  style: TextStyle(
+                    color: color3,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                if (transactions.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      Navigate().push(AllTransactionsScreen(
+                          transactionsList: transactions));
+                    },
                     child: Text(
-                      "No Transactions Found ❗",
+                      'See All',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: color3,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  )
-                : Column(
-                    spacing: 10,
-                    children: [
-                      ...listOfTransactions!.take(4).map((transaction) =>
-                          transactionTile(context, transaction, ref)),
-                    ],
                   ),
+              ],
+            ),
           ),
-          Container(
-            color: color4,
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            margin: EdgeInsets.only(left: 15),
-            child: Text(
-              "Recent Transactions",
-              style: TextStyle(
-                color: color3,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+          // const SizedBox(height: 8),
+          transactions.isEmpty
+              ? _buildEmptyTransactions()
+              : _buildTransactionsList(context, transactions, ref),
+        ],
+      ),
+    );
+  }
+
+  /// Builds an empty state for when there are no transactions
+  Widget _buildEmptyTransactions() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 48,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No Transactions Yet",
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Group transactions will appear here",
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Builds the list of recent transactions
+  Widget _buildTransactionsList(
+      BuildContext context, List<Transaction> transactions, WidgetRef ref) {
+    // Take at most 4 recent transactions
+    final recentTransactions = transactions.take(4).toList();
+
+    return Column(
+      children: recentTransactions
+          .map((transaction) => transactionTile(context, transaction, ref))
+          .toList(),
     );
   }
 }

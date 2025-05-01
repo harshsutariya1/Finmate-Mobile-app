@@ -27,6 +27,12 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   String searchQuery = ""; // Store the search query
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final UserData userData = ref.watch(userDataNotifierProvider);
     final UserFinanceData userFinanceData =
@@ -142,9 +148,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
 
   Widget _groupTile(Group group, UserData userData) {
     final List<UserData>? groupMembers = group.listOfMembers;
-    final List<String> memberPfpics =
-        groupMembers?.map((member) => member.pfpURL ?? '').toList() ?? [];
-    final sortMembersPfpics = memberPfpics.take(5).toList();
+    
     return InkWell(
       onTap: () {
         Navigate().push(GroupOverview(group: group));
@@ -167,14 +171,19 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Group Name
-                Text(
-                  group.name ?? "Group Name",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                Expanded(
+                  child: Text(
+                    group.name ?? "Group Name",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                sbw10,
                 // Delete Button
                 (userData.uid == group.creatorId)
                     ? InkWell(
@@ -236,46 +245,100 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Stack(
-                  alignment: Alignment.centerRight,
-                  children: [
-                    for (var memberPfp in (sortMembersPfpics.reversed))
-                      Padding(
-                        padding: EdgeInsets.only(
-                          right: 30.0 * memberPfpics.indexOf(memberPfp),
-                        ),
-                        child: userProfilePicInCircle(
-                          imageUrl: memberPfp.toString(),
-                          outerRadius: 23,
-                          innerRadius: 20,
-                        ),
-                      ),
-                    (sortMembersPfpics.length > 4)
-                        ? userProfilePicInCircle(
-                            outerRadius: 23,
-                            innerRadius: 20,
-                            isNumber: true,
-                            textNumber: "+${sortMembersPfpics.length - 3}",
-                          )
-                        : SizedBox(),
-                  ],
-                ),
+                _buildMemberAvatars(groupMembers),
                 IconButton(
-                    onPressed: () {
-                      snackbarToast(
-                          context: context,
-                          text: "This functionality is in development!",
-                          icon: Icons.developer_mode_rounded);
-                    },
-                    icon: Icon(
-                      Icons.add_circle_outline_rounded,
-                      color: color3,
-                      size: 35,
-                    ))
+                  onPressed: () {
+                    snackbarToast(
+                      context: context,
+                      text: "This functionality is in development!",
+                      icon: Icons.developer_mode_rounded,
+                    );
+                  },
+                  icon: Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: color3,
+                    size: 35,
+                  ),
+                )
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Builds a row of overlapping member avatars
+  Widget _buildMemberAvatars(List<UserData>? members) {
+    if (members == null || members.isEmpty) {
+      return SizedBox(height: 46, width: 46);
+    }
+
+    const double avatarSize = 46.0; // Full avatar diameter
+    const double overlap = 18.0; // How much each avatar overlaps
+    const double maxWidth = 200.0; // Maximum width for avatars row
+
+    // Limit number of visible avatars
+    final int maxVisibleAvatars = 4;
+    final int totalMembers = members.length;
+    final int displayCount = totalMembers > maxVisibleAvatars 
+        ? maxVisibleAvatars 
+        : totalMembers;
+
+    // Calculate width based on number of avatars
+    final double totalWidth = displayCount * (avatarSize - overlap) + overlap*3;
+    
+    return Container(
+      width: totalWidth.clamp(0, maxWidth),
+      height: avatarSize,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        // border: Border.all(color: color1.withAlpha(200), width: 2),
+      ),
+      child: Stack(
+        children: [
+          // Display visible avatars
+          for (int i = 0; i < displayCount; i++)
+            Positioned(
+              left: i * (avatarSize - overlap),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  // border: Border.all(color: color1.withAlpha(200), width: 2),
+                ),
+                child: userProfilePicInCircle(
+                  imageUrl: members[i].pfpURL ?? '',
+                  outerRadius: avatarSize/2 - 2, // Account for border
+                  innerRadius: avatarSize/2 - 4,
+                ),
+              ),
+            ),
+          
+          // Display "+X" indicator if there are more members
+          if (totalMembers > maxVisibleAvatars)
+            Positioned(
+              left: (maxVisibleAvatars - 0.5) * (avatarSize - overlap) +15,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color1.withAlpha(200), width: 2),
+                  color: color3,
+                ),
+                width: avatarSize,
+                height: avatarSize,
+                child: Center(
+                  child: Text(
+                    "+${totalMembers - maxVisibleAvatars }",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

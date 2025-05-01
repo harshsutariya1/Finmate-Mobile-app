@@ -41,6 +41,25 @@ class _AIChatSettingsScreenState extends ConsumerState<AIChatSettingsScreen> {
                 color: Colors.grey,
               ),
             ),
+            const SizedBox(height: 20),
+            _buildSectionHeader("Chat History"),
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.red.withAlpha(50),
+                child: const Icon(Icons.delete_forever, color: Colors.red),
+              ),
+              title: const Text(
+                "Clear Chat History",
+                style: TextStyle(color: Colors.red),
+              ),
+              subtitle: const Text("Removes all messages from the chat."),
+              onTap: _showClearChatDialog,
+              ),
+            ),
           ],
         ),
       ),
@@ -100,7 +119,7 @@ class _AIChatSettingsScreenState extends ConsumerState<AIChatSettingsScreen> {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Clear"),
+            child: const Text("Clear",style: TextStyle(color: whiteColor),),
           ),
         ],
       ),

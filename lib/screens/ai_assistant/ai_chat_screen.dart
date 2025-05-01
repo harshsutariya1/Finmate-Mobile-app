@@ -1,7 +1,7 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/ai_model.dart';
-import 'package:finmate/models/chat_message.dart';
+import 'package:finmate/models/ai_chat.dart';
 import 'package:finmate/providers/ai_chat_provider.dart';
 import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/goals_provider.dart';
@@ -9,7 +9,6 @@ import 'package:finmate/providers/investment_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/ai_assistant/ai_chat_settings_screen.dart';
-import 'package:finmate/services/ai_service.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +34,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // _checkApiKey();
-      // _checkDataPrivacyConsent();
       ref.read(chatHistoryProvider.notifier).initializeChat();
       _scrollToBottom();
     });
@@ -114,21 +111,24 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     return Scaffold(
       backgroundColor: color4,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         backgroundColor: color4,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("AI Assistant"),
-            Text(
-              AIModel.getModelName(),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
-                color: Colors.grey[300],
-              ),
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [color3, Colors.blueAccent], // Example gradient colors
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: const Text(
+            "FinMate AI Assistant",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
+          ),
         ),
         actions: [
           IconButton(
@@ -137,13 +137,13 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               Navigate().push(const AIChatSettingsScreen());
             },
           ),
+          sbw10,
         ],
       ),
       body: Column(
         children: [
           // Enhanced financial data access indicator
           if (_dataPrivacyAccepted) _buildDataPrivacyBanner(),
-
           // Chat history
           Expanded(
             child: ListView.builder(

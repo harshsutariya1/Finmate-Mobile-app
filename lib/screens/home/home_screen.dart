@@ -19,6 +19,7 @@ import 'package:finmate/widgets/transaction_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:finmate/screens/ai_assistant/ai_chat_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -73,7 +74,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       backgroundColor: color4_120,
       floatingActionButton: floatingUserImage(userData),
       floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      body: _body(userData, userFinanceData, transactionsList),
+      body: Stack(
+        children: [
+          _body(userData, userFinanceData, transactionsList),
+          aiFloatingButton(),
+        ],
+      ),
       resizeToAvoidBottomInset: false,
     );
   }
@@ -676,6 +682,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
 // __________________________________________________________________________ //
+
+  Widget aiFloatingButton() {
+    return Positioned(
+      right: 20,
+      bottom: 20,
+      child: Container(
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: whiteColor,
+          border: Border.all(
+            color: color3.withAlpha(100),width: 3
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: IconButton(
+            onPressed: () {
+              Navigate().push(AIChatScreen());
+            },
+            icon: Icon(
+              Icons.auto_awesome_rounded,
+              color: color3,
+              size: 35,
+            )),
+      ),
+    );
+  }
 
   Widget floatingUserImage(UserData userData) {
     final Size size = MediaQuery.sizeOf(context);

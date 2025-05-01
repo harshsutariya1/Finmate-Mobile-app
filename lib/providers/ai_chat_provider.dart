@@ -1,5 +1,5 @@
 import 'package:finmate/models/budget.dart';
-import 'package:finmate/models/chat_message.dart';
+import 'package:finmate/models/ai_chat.dart';
 import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/investment.dart';
 import 'package:finmate/models/user.dart';
