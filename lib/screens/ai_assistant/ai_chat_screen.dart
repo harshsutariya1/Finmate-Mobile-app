@@ -1,12 +1,16 @@
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
+import 'package:finmate/models/ai_model.dart';
 import 'package:finmate/models/chat_message.dart';
 import 'package:finmate/providers/ai_chat_provider.dart';
 import 'package:finmate/providers/budget_provider.dart';
+import 'package:finmate/providers/goals_provider.dart';
 import 'package:finmate/providers/investment_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/ai_assistant/ai_chat_settings_screen.dart';
 import 'package:finmate/services/ai_service.dart';
+import 'package:finmate/services/navigation_services.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,20 +30,17 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   bool _isTyping = false;
-  bool _showApiKeyDialog = false;
-  bool _dataPrivacyAccepted = false;
-
+  final bool _dataPrivacyAccepted = true; 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkApiKey();
-      _checkDataPrivacyConsent();
+      // _checkApiKey();
+      // _checkDataPrivacyConsent();
       ref.read(chatHistoryProvider.notifier).initializeChat();
       _scrollToBottom();
     });
   }
-  
 
   @override
   void dispose() {
@@ -47,61 +48,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  // Check if API key is configured
-  Future<void> _checkApiKey() async {
-    final apiKey = await AIService.getApiKey();
-    if (apiKey.isEmpty) {
-      setState(() {
-        _showApiKeyDialog = true;
-      });
-    }
-  }
-
-  // Check if user has consented to data privacy
-  Future<void> _checkDataPrivacyConsent() async {
-    // This could be stored in shared preferences in a real implementation
-    if (!_dataPrivacyAccepted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showDataPrivacyDialog();
-      });
-    }
-  }
-
-  // Show data privacy consent dialog
-  void _showDataPrivacyDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("Financial Data Access"),
-        content: const Text(
-          "FinMate AI can provide personalized financial advice by accessing your account details, transactions, and other financial data stored in the app. Your data will only be used to provide personalized advice and will not be stored or shared outside this app.\n\nDo you want to allow FinMate AI to access your financial data?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _dataPrivacyAccepted = false;
-              });
-              Navigator.of(context).pop();
-            },
-            child: const Text("No, Keep Private"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _dataPrivacyAccepted = true;
-              });
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: color3),
-            child: const Text("Yes, Allow Access", style: TextStyle(color: whiteColor),),
-          ),
-        ],
-      ),
-    );
   }
 
   // Scroll to bottom of chat
@@ -126,27 +72,29 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     _messageController.clear();
     _focusNode.requestFocus();
 
-    final selectedModel = ref.read(selectedModelProvider);
+    final selectedModel = AIModel.getModelId();
     ref.read(isLoadingResponseProvider.notifier).state = true;
 
     // Get comprehensive user data from all providers
     final userData = ref.read(userDataNotifierProvider);
     final userFinanceData = ref.read(userFinanceDataNotifierProvider);
     final budgets = ref.read(budgetNotifierProvider);
+    final goals = ref.read(goalsNotifierProvider);
     final investments = ref.read(investmentNotifierProvider);
 
     // Wait a moment before showing typing indicator
     await Future.delayed(const Duration(milliseconds: 300));
-    
+
     await ref.read(chatHistoryProvider.notifier).sendMessageAndGetResponse(
-      message,
-      selectedModel,
-      // Only pass user data if consent was given
-      userData: _dataPrivacyAccepted ? userData : null,
-      userFinanceData: _dataPrivacyAccepted ? userFinanceData : null,
-      budgets: _dataPrivacyAccepted ? budgets : null,
-      investments: _dataPrivacyAccepted ? investments : null,
-    );
+          message,
+          selectedModel,
+          // Only pass user data if consent was given
+          userData: _dataPrivacyAccepted ? userData : null,
+          userFinanceData: _dataPrivacyAccepted ? userFinanceData : null,
+          budgets: _dataPrivacyAccepted ? budgets : null,
+          goals: _dataPrivacyAccepted ? goals : null,
+          investments: _dataPrivacyAccepted ? investments : null,
+        );
 
     ref.read(isLoadingResponseProvider.notifier).state = false;
     setState(() => _isTyping = false);
@@ -157,73 +105,45 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   Widget build(BuildContext context) {
     final chatHistory = ref.watch(chatHistoryProvider);
     final isLoadingResponse = ref.watch(isLoadingResponseProvider);
-    final selectedModel = ref.watch(selectedModelProvider);
 
     // Trigger scroll to bottom whenever chatHistory changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
 
-    // Show API key dialog if needed
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_showApiKeyDialog) {
-        _showApiKeyConfigDialog();
-        setState(() {
-          _showApiKeyDialog = false;
-        });
-      }
-    });
-
     return Scaffold(
       backgroundColor: color4,
       appBar: AppBar(
         backgroundColor: color4,
-        actions: [
-          // Data privacy toggle
-          IconButton(
-            icon: Icon(
-              _dataPrivacyAccepted ? Icons.visibility : Icons.visibility_off,
-              color: _dataPrivacyAccepted ? color3 : Colors.grey,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("AI Assistant"),
+            Text(
+              AIModel.getModelName(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                color: Colors.grey[300],
+              ),
             ),
-            tooltip: _dataPrivacyAccepted ? "Financial data access enabled" : "Financial data access disabled",
-            onPressed: () => _showDataPrivacyDialog(),
-          ),
-          // Model selection dropdown
-          DropdownButton<String>(
-            value: selectedModel,
-            underline: Container(),
-            icon: const Icon(Icons.keyboard_arrow_down, color: color3),
-            items: AIService.models.entries.map((entry) {
-              return DropdownMenuItem<String>(
-                value: entry.key,
-                child: Text(entry.value),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(selectedModelProvider.notifier).state = value;
-              }
-            },
-          ),
-          // API key configuration
+          ],
+        ),
+        actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: _showApiKeyConfigDialog,
+            onPressed: () {
+              Navigate().push(const AIChatSettingsScreen());
+            },
           ),
-          // Clear chat history
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: _showClearChatDialog,
-          ),
-          sbw10,
         ],
       ),
       body: Column(
         children: [
           // Enhanced financial data access indicator
-          if (_dataPrivacyAccepted)
-            _buildDataPrivacyBanner(),
-          
+          if (_dataPrivacyAccepted) _buildDataPrivacyBanner(),
+
           // Chat history
           Expanded(
             child: ListView.builder(
@@ -293,26 +213,27 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                     ),
               // Timestamp
               const SizedBox(height: 4),
-          Text(
-            DateFormat('h:mm a').format(message.timestamp),
-            style: TextStyle(
-              color: message.isUser ? Colors.white70 : Colors.grey,
-              fontSize: 12,
-            ),
+              Text(
+                DateFormat('h:mm a').format(message.timestamp),
+                style: TextStyle(
+                  color: message.isUser ? Colors.white70 : Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
-          
-        ],
-            ),
         ),
       ),
     );
   }
 
-  
   // New method to copy message content to clipboard
   void _copyMessageToClipboard(String content) async {
     await Clipboard.setData(ClipboardData(text: content));
-    snackbarToast(context: context, text: "Message copied to clipboard !", icon: Icons.copy_all_outlined);
+    snackbarToast(
+        context: context,
+        text: "Message copied to clipboard !",
+        icon: Icons.copy_all_outlined);
   }
 
   Widget _buildTypingIndicator() {
@@ -393,80 +314,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               _isTyping ? Icons.hourglass_empty : Icons.send,
               color: Colors.white,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Show dialog to configure API key
-  void _showApiKeyConfigDialog() {
-    final TextEditingController apiKeyController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Configure OpenAI API Key"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Enter your OpenAI API key to enable the AI Assistant feature. You can get an API key from openai.com.",
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: apiKeyController,
-              decoration: const InputDecoration(
-                labelText: "API Key",
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (apiKeyController.text.trim().isNotEmpty) {
-                await AIService.saveApiKey(apiKeyController.text.trim());
-                if (context.mounted) Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: color3),
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Show dialog to confirm clearing chat history
-  void _showClearChatDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Clear Chat History"),
-        content: const Text("Are you sure you want to clear the chat history?"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(chatHistoryProvider.notifier).clearChat();
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Clear"),
           ),
         ],
       ),

@@ -1,4 +1,3 @@
-import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/transaction_category.dart';

@@ -1,37 +1,112 @@
 import 'dart:convert';
 import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat_message.dart';
+import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/investment.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
+import 'package:finmate/models/ai_model.dart';
 
 class AIService {
-  static final Logger _logger = Logger();
+  // static final AIService _instance = AIService._internal();/
+  final Logger _logger = Logger();
+  final String _apiUrl = 'https://ai-models-api-eight.vercel.app/openai_api';
+  final String _apiAccessKey = "123456789123456789";
 
-  // Get API key from environment variables
-  static String get _apiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
+  // Convert list of messages to the format expected by the API
+  List<Map<String, String>> _formatMessages(List<ChatMessage> messages) {
+    return messages
+        .map((msg) => {
+              'role': msg.isUser ? 'user' : 'assistant',
+              'content': msg.content,
+            })
+        .toList();
+  }
 
-  static const String _baseUrl = "https://api.openai.com/v1/chat/completions";
-
-  // Available OpenAI models
-  static const Map<String, String> models = {
-    'gpt-4.1-nano': 'GPT-4.1 Nano',
-    'gpt-3.5-turbo': 'GPT-3.5 Turbo',
-    'gpt-4-turbo': 'GPT-4 Turbo',
-    "gpt-4.1-mini": "GPT-4.1 Mini",
-    'gpt-4': 'GPT-4',
-  };
-
-  // Get the system prompt that defines the AI's behavior with enhanced user financial data
-  static String getSystemPrompt({
+  // Send a message to the AI API
+  Future<String> sendMessage({
+    required String userMessage,
+    required String selectedModel,
+    required List<ChatMessage> messages,
     UserData? userData,
     UserFinanceData? userFinanceData,
     List<Budget>? budgets,
+    List<Goal>? goals,
+    List<Investment>? investments,
+  }) async {
+    try {
+      // Get the model ID to use
+      final modelId = AIModel.getModelId();
+      _logger.i("Using AI model: $modelId");
+
+      // Format the messages
+      final formattedMessages = _formatMessages(messages);
+
+      // Prepare the request body
+      final Map<String, dynamic> requestBody = {
+        'model': modelId,
+        'prompt': userMessage,
+        'messages': formattedMessages,
+        'system_prompt': getSystemPrompt(
+          userData: userData,
+          userFinanceData: userFinanceData,
+          budgets: budgets,
+          investments: investments,
+        ),
+        'temperature': 0.7,
+        'max_tokens': 1000,
+        'stream': false,
+      };
+
+      // Send the request to the API
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': _apiAccessKey,
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      // Handle response
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final String content = responseData['choices'][0]['message']['content'];
+        return content;
+      } else {
+        _logger.e(
+            "⛔ Error from AI API: ${response.statusCode} - ${response.body}");
+
+        if (response.statusCode == 401) {
+          return "Authentication error. Please check your API configuration.";
+        } else if (response.statusCode == 429) {
+          return "Rate limit exceeded. Please try again after a few moments.";
+        } else if (response.statusCode >= 500) {
+          return "Server error. Please try again later.";
+        } else {
+          return "An error occurred while communicating with the AI service. Please try again later.";
+        }
+      }
+    } catch (e) {
+      _logger.e("⛔ Error sending message to AI API: $e");
+      return "An error occurred while communicating with the AI service. Please try again later.";
+    }
+  }
+
+  // Helper method to convert ChatMessage objects to the format needed by the API
+  List<Map<String, String>> convertMessages(List<ChatMessage> messages) {
+    return _formatMessages(messages);
+  }
+
+  // Get the system prompt that defines the AI's behavior with enhanced user financial data
+  String getSystemPrompt({
+    UserData? userData,
+    UserFinanceData? userFinanceData,
+    List<Budget>? budgets,
+    List<Goal>? goals,
     List<Investment>? investments,
   }) {
     String basePrompt =
@@ -45,6 +120,7 @@ Use a friendly but professional tone, and provide specific action steps when pos
 
 Always use "Rs." instead of the Rupee symbol (₹) when displaying currency values to avoid encoding issues.
 For example, write "Rs.10,000" instead of "₹10,000".
+Give responses in a clear and structured format, using bullet points or numbered lists when appropriate.
 """;
 
     // Add user-specific information if available
@@ -112,6 +188,16 @@ For example, write "Rs.10,000" instead of "₹10,000".
           }
         } else {
           basePrompt += "No budget set for the current month.\n";
+        }
+      }
+
+      // Add goal information
+      if (goals != null && goals.isNotEmpty) {
+        basePrompt += "\n### GOALS ###\n";
+        for (var goal in goals) {
+          basePrompt += "Goal: ${goal.name}\n";
+          basePrompt +=
+              "Target Amount: Rs.${goal.targetAmount}\nCurrent Amount: Rs.${goal.currentAmount}\n";
         }
       }
 
@@ -265,138 +351,5 @@ For example, write "Rs.10,000" instead of "₹10,000".
   // Simple token estimation - roughly 4 characters per token
   static int estimateTokenCount(String text) {
     return (text.length / 4).ceil();
-  }
-
-  // Save API key to shared preferences
-  static Future<void> saveApiKey(String apiKey) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('openai_api_key', apiKey);
-      _logger.i('API key saved successfully');
-    } catch (e) {
-      _logger.e('Error saving API key: $e');
-    }
-  }
-
-  // Modify getApiKey to use the environment variable if SharedPreferences fails or is empty
-  static Future<String> getApiKey() async {
-    String? savedKey;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      savedKey = prefs.getString('openai_api_key');
-    } catch (e) {
-      _logger.e('Error retrieving API key from SharedPreferences: $e');
-    }
-    // Use saved key, or fallback to environment key, or empty string
-    return savedKey ?? _apiKey;
-  }
-
-  // Send a message to the OpenAI API and get a response
-  static Future<ChatMessage?> sendMessage({
-    required List<ChatMessage> messages,
-    required String selectedModel,
-    UserData? userData,
-    UserFinanceData? userFinanceData,
-    List<Budget>? budgets,
-    List<Investment>? investments,
-  }) async {
-    try {
-      // Get API key (will check SharedPreferences first, then .env)
-      final apiKey = await getApiKey();
-
-      if (apiKey.isEmpty) {
-         _logger.e('OpenAI API Key is missing. Please configure it in settings or .env file.');
-         return ChatMessage(
-           content: "API Key is missing. Please configure it in the settings.",
-           isUser: false,
-           timestamp: DateTime.now(),
-         );
-      }
-
-      // Add system prompt to the beginning of the conversation
-      List<Map<String, String>> formattedMessages = [
-        {
-          "role": "system",
-          "content": getSystemPrompt(
-            userData: userData,
-            userFinanceData: userFinanceData,
-            budgets: budgets,
-            investments: investments,
-          )
-        },
-      ];
-
-      // Add user messages
-      formattedMessages.addAll(
-        messages.map((msg) => {
-              "role": msg.isUser ? "user" : "assistant",
-              "content": msg.content,
-            }),
-      );
-
-      _logger.i('Sending request to OpenAI API with model: $selectedModel');
-
-      // Make API request with timeout
-      final response = await http
-          .post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode({
-          'model': selectedModel,
-          'messages': formattedMessages,
-          'temperature': 0.7,
-          'max_tokens': 1000,
-        }),
-      )
-          .timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Request timed out after 30 seconds');
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-
-        // Optional: Process content to fix any encoding issues
-        final processedContent = content.toString();
-
-        return ChatMessage(
-          content: processedContent,
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-      } else {
-        _logger.e('API Error: ${response.statusCode} - ${response.body}');
-
-        // Parse error message if available
-        String errorMessage = 'Failed to get response: ${response.statusCode}';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData.containsKey('error')) {
-            errorMessage = errorData['error']['message'] ?? errorMessage;
-          }
-        } catch (_) {}
-
-        return ChatMessage(
-          content:
-              "I encountered an error: $errorMessage. Please try again later.",
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-      }
-    } catch (e) {
-      _logger.e('Error sending message to OpenAI: $e');
-      return ChatMessage(
-        content:
-            "Sorry, I'm having trouble connecting to my services. Please check your internet connection or try again later. Error: ${e.toString()}",
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-    }
   }
 }

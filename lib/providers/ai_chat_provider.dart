@@ -1,5 +1,6 @@
 import 'package:finmate/models/budget.dart';
 import 'package:finmate/models/chat_message.dart';
+import 'package:finmate/models/goal.dart';
 import 'package:finmate/models/investment.dart';
 import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
@@ -8,7 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
 // Provider for storing conversation history
-final chatHistoryProvider = StateNotifierProvider<ChatHistoryNotifier, List<ChatMessage>>((ref) {
+final chatHistoryProvider =
+    StateNotifierProvider<ChatHistoryNotifier, List<ChatMessage>>((ref) {
   return ChatHistoryNotifier();
 });
 
@@ -21,7 +23,8 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
     if (state.isEmpty) {
       state = [
         ChatMessage(
-          content: "Hello! I'm FinMate AI, your personal finance assistant. I can help you with budgeting, investments, financial planning, and more. How can I help you today?",
+          content:
+              "Hello! I'm FinMate AI, your personal finance assistant. I can help you with budgeting, investments, financial planning, and more. How can I help you today?",
           isUser: false,
           timestamp: DateTime.now(),
         )
@@ -32,7 +35,7 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
   // Add a new user message to the conversation
   void addUserMessage(String content) {
     if (content.trim().isEmpty) return;
-    
+
     state = [
       ...state,
       ChatMessage(
@@ -56,39 +59,47 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
 
   // Enhanced method to send message with all user finance data
   Future<void> sendMessageAndGetResponse(
-    String userMessage, 
-    String selectedModel, 
-    {
-      UserData? userData,
-      UserFinanceData? userFinanceData,
-      List<Budget>? budgets,
-      List<Investment>? investments,
-    }
-  ) async {
+    String userMessage,
+    String selectedModel, {
+    UserData? userData,
+    UserFinanceData? userFinanceData,
+    List<Budget>? budgets,
+    List<Goal>? goals,
+    List<Investment>? investments,
+  }) async {
     if (userMessage.trim().isEmpty) return;
-    
+
     // Add user message to chat
     addUserMessage(userMessage);
-    
+
     try {
       // Send message to OpenAI API with comprehensive user data
-      final aiResponse = await AIService.sendMessage(
+      final aiResponse = await AIService().sendMessage(
+        userMessage: userMessage,
         messages: state,
         selectedModel: selectedModel,
         userData: userData,
         userFinanceData: userFinanceData,
         budgets: budgets,
+        goals: goals,
         investments: investments,
       );
-      
-      if (aiResponse != null) {
+
+      final ChatMessage aiMessage = ChatMessage(
+        content: aiResponse,
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+
+      if (aiResponse.isNotEmpty) {
         // Add AI response to chat
-        addAIMessage(aiResponse);
+        addAIMessage(aiMessage);
       } else {
         // Add fallback message if response is null
         addAIMessage(
           ChatMessage(
-            content: "I couldn't generate a response at the moment. Please try again later.",
+            content:
+                "I couldn't generate a response at the moment. Please try again later.",
             isUser: false,
             timestamp: DateTime.now(),
           ),
@@ -99,7 +110,8 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatMessage>> {
       // Add error message
       addAIMessage(
         ChatMessage(
-          content: "Sorry, I encountered an unexpected error. Please try again or check your connection.",
+          content:
+              "Sorry, I encountered an unexpected error. Please try again or check your connection.",
           isUser: false,
           timestamp: DateTime.now(),
         ),
