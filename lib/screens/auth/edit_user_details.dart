@@ -12,6 +12,7 @@ import 'package:finmate/widgets/auth_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 class EditUserDetails extends ConsumerStatefulWidget {
@@ -31,6 +32,8 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
   // State variables
   bool _isEditing = false;
   bool _imageLoading = false;
+  String? _selectedGender;
+  DateTime? _selectedDate;
 
   // Text controllers
   late TextEditingController _nameController;
@@ -41,6 +44,8 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
     super.initState();
     _nameController = TextEditingController(text: widget.userData.name);
     _usernameController = TextEditingController(text: widget.userData.userName);
+    _selectedGender = widget.userData.gender;
+    _selectedDate = widget.userData.dob;
   }
 
   @override
@@ -292,8 +297,27 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
         
         const SizedBox(height: 8),
         
-        // You can add more fields here in similar fashion
-        // For example: Date of Birth, Gender, etc.
+        // Add Gender form card
+        _buildFormCard(
+          title: "Gender",
+          subtitle: userData.gender?.isNotEmpty == true ? userData.gender! : "Not specified",
+          icon: Icons.people,
+          onEdit: () => _showGenderEditDialog(userData),
+          controller: null,
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // Add Date of Birth form card
+        _buildFormCard(
+          title: "Date of Birth",
+          subtitle: userData.dob != null 
+              ? DateFormat('MMM dd, yyyy').format(userData.dob!) 
+              : "Not specified",
+          icon: Icons.cake,
+          onEdit: () => _showDatePickerDialog(userData),
+          controller: null,
+        ),
       ],
     );
   }
@@ -303,7 +327,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
     required String subtitle,
     required IconData icon,
     required VoidCallback onEdit,
-    required TextEditingController controller,
+    required TextEditingController? controller,
   }) {
     return Card(
       elevation: 2,
@@ -440,8 +464,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                            color: Colors.white),
                         ),
                       ),
                     ),
@@ -617,6 +640,171 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
     } catch (e) {
       _logger.e("Error updating name: $e");
       _showErrorMessage("Error updating name: $e");
+    } finally {
+      setState(() {
+        _isEditing = false;
+      });
+    }
+  }
+
+  // Add method to show gender selection dialog
+  void _showGenderEditDialog(UserData userData) {
+    final List<String> genderOptions = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
+    String selectedGender = _selectedGender ?? '';
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(
+                "Select Gender",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: color1,
+                ),
+              ),
+              content: Container(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: genderOptions.map((gender) {
+                    return RadioListTile<String>(
+                      title: Text(gender),
+                      value: gender,
+                      groupValue: selectedGender,
+                      activeColor: color3,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGender = value!;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedGender = selectedGender;
+                    });
+                    _updateGender(userData, selectedGender);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    "Save",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
+  // Add method to show date picker for DOB
+  void _showDatePickerDialog(UserData userData) {
+    showDatePicker(
+      context: context,
+      initialDate: userData.dob ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: color3,
+              onPrimary: Colors.white,
+              onSurface: color1,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: color3,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    ).then((selectedDate) {
+      if (selectedDate != null) {
+        setState(() {
+          _selectedDate = selectedDate;
+        });
+        _updateDOB(userData, selectedDate);
+      }
+    });
+  }
+  
+  // Add method to update gender
+  Future<void> _updateGender(UserData userData, String gender) async {
+    if (gender.isEmpty) {
+      return;
+    }
+    
+    setState(() {
+      _isEditing = true;
+    });
+    
+    try {
+      final bool success = await ref
+          .read(userDataNotifierProvider.notifier)
+          .updateCurrentUserData(gender: gender);
+      
+      if (success) {
+        _showSuccessMessage("Gender updated successfully");
+      } else {
+        _showErrorMessage("Failed to update gender");
+      }
+    } catch (e) {
+      _logger.e("Error updating gender: $e");
+      _showErrorMessage("Error updating gender: $e");
+    } finally {
+      setState(() {
+        _isEditing = false;
+      });
+    }
+  }
+  
+  // Add method to update date of birth
+  Future<void> _updateDOB(UserData userData, DateTime dob) async {
+    setState(() {
+      _isEditing = true;
+    });
+    
+    try {
+      final bool success = await ref
+          .read(userDataNotifierProvider.notifier)
+          .updateCurrentUserData(dob: dob);
+      
+      if (success) {
+        _showSuccessMessage("Date of birth updated successfully");
+      } else {
+        _showErrorMessage("Failed to update date of birth");
+      }
+    } catch (e) {
+      _logger.e("Error updating date of birth: $e");
+      _showErrorMessage("Error updating date of birth: $e");
     } finally {
       setState(() {
         _isEditing = false;
