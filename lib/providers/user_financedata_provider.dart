@@ -74,7 +74,6 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
           listOfGroups: groups,
           listOfUserTransactions: transactions,
           listOfBankAccounts: bankAccounts,
-          // listOfWallets: wallets,
           cash: cash,
         );
         logger.i(

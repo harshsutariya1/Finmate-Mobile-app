@@ -5,6 +5,7 @@ import 'package:finmate/models/user.dart';
 import 'package:finmate/models/user_finance_data.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
+import 'package:finmate/screens/home/Group%20screens/add_members.dart';
 import 'package:finmate/screens/home/Group%20screens/create_group.dart';
 import 'package:finmate/screens/home/Group%20screens/group_overview.dart';
 import 'package:finmate/services/navigation_services.dart';
@@ -13,6 +14,7 @@ import 'package:finmate/widgets/other_widgets.dart';
 import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 class GroupsScreen extends ConsumerStatefulWidget {
   const GroupsScreen({super.key});
@@ -148,153 +150,332 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
 
   Widget _groupTile(Group group, UserData userData) {
     final List<UserData>? groupMembers = group.listOfMembers;
-    
-    return InkWell(
-      onTap: () {
-        Navigate().push(GroupOverview(group: group));
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-        margin: const EdgeInsets.symmetric(horizontal: 30),
-        decoration: BoxDecoration(
-          color: color1.withAlpha(200),
-          border: Border.all(color: color1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Group Name & Delete Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Group Name
-                Expanded(
-                  child: Text(
-                    group.name ?? "Group Name",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+    final bool isCreator = userData.uid == group.creatorId;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      elevation: 3,
+      shadowColor: color1.withAlpha(77), // Changed from withOpacity(0.3)
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () => Navigate().push(GroupOverview(group: group)),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color1.withAlpha(230), // Changed from withOpacity(0.9)
+                color1.withAlpha(179), // Changed from withOpacity(0.7)
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header with name and delete button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 16, 10),
+                child: Row(
+                  children: [
+                    // Group icon with indicator
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white
+                            .withAlpha(51), // Changed from withOpacity(0.2)
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.group_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                sbw10,
-                // Delete Button
-                (userData.uid == group.creatorId)
-                    ? InkWell(
-                        onTap: () {
-                          showYesNoDialog(
-                            context,
-                            title: "Delete Group?",
-                            contentWidget: SizedBox(),
-                            onTapYes: () async {
-                              await ref
-                                  .read(
-                                      userFinanceDataNotifierProvider.notifier)
-                                  .deleteGroupProfile(group: group)
-                                  .then((value) {
-                                if (value) {
-                                  snackbarToast(
-                                    context: context,
-                                    text: "Group deleted successfully!",
-                                    icon: Icons.check_circle_outline_rounded,
-                                  );
-                                  Navigate().goBack();
-                                } else {
-                                  snackbarToast(
-                                    context: context,
-                                    text: "Failed to delete group!",
-                                    icon: Icons.error_outline_rounded,
-                                  );
-                                }
-                              });
-                            },
-                            onTapNo: () {
-                              Navigate().goBack();
-                            },
-                          );
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: color4,
+
+                    const SizedBox(width: 12),
+
+                    // Group name with admin badge
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  group.name ?? "Group Name",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isCreator)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: color4.withAlpha(
+                                        77), // Changed from withOpacity(0.3)
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'Admin',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          Text(
+                            "${groupMembers?.length ?? 0} members",
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(
+                                  179), // Changed from withOpacity(0.7)
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Delete button (if creator)
+                    if (isCreator)
+                      InkWell(
+                        onTap: () => _showDeleteDialog(context, group),
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white
+                                .withAlpha(51), // Changed from withOpacity(0.2)
+                            shape: BoxShape.circle,
+                          ),
                           child: Icon(
                             Icons.delete_outline_rounded,
-                            color: Colors.red,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
-                      )
-                    : SizedBox(),
-              ],
-            ),
-            sbh20,
-            // Group Amount
-            Text(
-              "${group.totalAmount ?? 0.0} ₹",
-              style: TextStyle(
-                color: color4,
-                fontWeight: FontWeight.bold,
-                fontSize: 25,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            sbh20,
-            // Group Members
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildMemberAvatars(groupMembers),
-                IconButton(
-                  onPressed: () {
-                    snackbarToast(
-                      context: context,
-                      text: "This functionality is in development!",
-                      icon: Icons.developer_mode_rounded,
-                    );
-                  },
-                  icon: Icon(
-                    Icons.add_circle_outline_rounded,
-                    color: color3,
-                    size: 35,
-                  ),
-                )
-              ],
-            ),
-          ],
+
+              // Divider
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: Colors.white
+                    .withAlpha(38), // Changed from withOpacity(0.15)
+              ),
+
+              // Amount section
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Total Balance",
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(
+                                  179), // Changed from withOpacity(0.7)
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${group.totalAmount ?? 0.0} ₹",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color4
+                            .withAlpha(77), // Changed from withOpacity(0.3)
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            group.date != null
+                                ? "${group.date!.day}/${group.date!.month}/${group.date!.year}"
+                                : "Created Today",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Members section
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildMemberAvatars(groupMembers),
+                    if (isCreator)
+                      Material(
+                        color: color3,
+                        borderRadius: BorderRadius.circular(50),
+                        child: InkWell(
+                          onTap: () {
+                            _addNewMembers(group);
+                          },
+                          borderRadius: BorderRadius.circular(50),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.person_add_alt_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Future<void> _addNewMembers(Group group) async {
+    try {
+      final currentMembers = group.listOfMembers ?? [];
+      final List<UserData> selectedMembers =
+          await Navigate().push(AddMembers(selectedUsers: currentMembers));
+
+      if (selectedMembers.isNotEmpty) {
+        currentMembers.addAll(selectedMembers);
+
+        await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .updateGroupMembers(
+                gid: group.gid ?? '', groupMembersList: currentMembers);
+
+        successToast(context: context, text: "Members added successfully");
+      }
+    } catch (e) {
+      Logger().e("Error adding members: $e");
+    }
+  }
+
+  /// Shows delete confirmation dialog
+  void _showDeleteDialog(BuildContext context, Group group) {
+    showYesNoDialog(
+      context,
+      title: "Delete Group?",
+      contentWidget: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          "Are you sure you want to delete '${group.name}'? This action cannot be undone.",
+          style: TextStyle(fontSize: 15),
+        ),
+      ),
+      onTapYes: () async {
+        Navigator.pop(context); // Close dialog
+
+        setState(() {
+          isLoading = true;
+        });
+
+        final success = await ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .deleteGroupProfile(group: group);
+
+        setState(() {
+          isLoading = false;
+        });
+
+        if (success) {
+          snackbarToast(
+            context: context,
+            text: "Group deleted successfully!",
+            icon: Icons.check_circle_outline_rounded,
+          );
+        } else {
+          snackbarToast(
+            context: context,
+            text: "Failed to delete group!",
+            icon: Icons.error_outline_rounded,
+          );
+        }
+      },
+      onTapNo: () => Navigator.pop(context),
     );
   }
 
   /// Builds a row of overlapping member avatars
   Widget _buildMemberAvatars(List<UserData>? members) {
     if (members == null || members.isEmpty) {
-      return SizedBox(height: 46, width: 46);
+      return const SizedBox(height: 35, width: 35);
     }
 
-    const double avatarSize = 46.0; // Full avatar diameter
-    const double overlap = 18.0; // How much each avatar overlaps
+    const double avatarSize = 35.0; // Full avatar diameter
+    const double overlap = 14.0; // How much each avatar overlaps
     const double maxWidth = 200.0; // Maximum width for avatars row
 
     // Limit number of visible avatars
     final int maxVisibleAvatars = 4;
     final int totalMembers = members.length;
-    final int displayCount = totalMembers > maxVisibleAvatars 
-        ? maxVisibleAvatars 
-        : totalMembers;
+    final int displayCount =
+        totalMembers > maxVisibleAvatars ? maxVisibleAvatars : totalMembers;
 
     // Calculate width based on number of avatars
-    final double totalWidth = displayCount * (avatarSize - overlap) + overlap*3;
-    
-    return Container(
+    final double totalWidth =
+        displayCount * (avatarSize - overlap) + overlap * 3;
+
+    return SizedBox(
       width: totalWidth.clamp(0, maxWidth),
       height: avatarSize,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        // border: Border.all(color: color1.withAlpha(200), width: 2),
-      ),
       child: Stack(
         children: [
           // Display visible avatars
@@ -304,35 +485,35 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  // border: Border.all(color: color1.withAlpha(200), width: 2),
+                  border: Border.all(color: color1, width: 2),
                 ),
                 child: userProfilePicInCircle(
                   imageUrl: members[i].pfpURL ?? '',
-                  outerRadius: avatarSize/2 - 2, // Account for border
-                  innerRadius: avatarSize/2 - 4,
+                  outerRadius: avatarSize / 2 - 2,
+                  innerRadius: avatarSize / 2 - 4,
                 ),
               ),
             ),
-          
+
           // Display "+X" indicator if there are more members
           if (totalMembers > maxVisibleAvatars)
             Positioned(
-              left: (maxVisibleAvatars - 0.5) * (avatarSize - overlap) +15,
+              left: displayCount * (avatarSize - overlap),
               child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: color1.withAlpha(200), width: 2),
-                  color: color3,
-                ),
                 width: avatarSize,
                 height: avatarSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color1, width: 2),
+                  color: color3,
+                ),
                 child: Center(
                   child: Text(
-                    "+${totalMembers - maxVisibleAvatars }",
-                    style: TextStyle(
+                    "+${totalMembers - maxVisibleAvatars}",
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
                 ),

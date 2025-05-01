@@ -52,12 +52,14 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
     return Scaffold(
       backgroundColor: color4,
       body: _buildMembersBody(adminUser, regularMembers, userData),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addNewMembers(groupMembersData),
-        backgroundColor: color3,
-        tooltip: 'Add Members',
-        child: Icon(Icons.person_add, color: Colors.white),
-      ),
+      floatingActionButton: (widget.group.creatorId == userData.uid)
+          ? FloatingActionButton(
+              onPressed: () => _addNewMembers(groupMembersData),
+              backgroundColor: color3,
+              tooltip: 'Add Members',
+              child: Icon(Icons.person_add, color: Colors.white),
+            )
+          : null,
     );
   }
 
