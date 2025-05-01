@@ -250,8 +250,12 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       final Group? group =
           state.listOfGroups?.firstWhere((group) => group.gid == gid);
       if (group != null) {
-        final updatedGroup = group.copyWith(listOfMembers: groupMembersList,
-            memberIds: groupMembersList.map((member) => member.uid).whereType<String>().toList());
+        final updatedGroup = group.copyWith(
+            listOfMembers: groupMembersList,
+            memberIds: groupMembersList
+                .map((member) => member.uid)
+                .whereType<String>()
+                .toList());
         final updatedGroupsList = state.listOfGroups
             ?.map((oldGroup) => oldGroup.gid == gid ? updatedGroup : oldGroup)
             .toList();
@@ -581,7 +585,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
   /// Removes a member from a group
   Future<bool> removeGroupMember({
-    required String gid, 
+    required String gid,
     required String memberUid,
   }) async {
     try {
@@ -590,7 +594,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
         (g) => g.gid == gid,
         orElse: () => throw Exception("Group not found"),
       );
-      
+
       if (group == null) {
         logger.w("❗Group with ID $gid not found");
         return false;
@@ -603,11 +607,16 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       }
 
       // Create updated lists
-      final updatedMemberIds = group.memberIds?.where((id) => id != memberUid).toList() ?? [];
-      final updatedMembers = group.listOfMembers?.where((member) => member.uid != memberUid).toList() ?? [];
-      
+      final updatedMemberIds =
+          group.memberIds?.where((id) => id != memberUid).toList() ?? [];
+      final updatedMembers = group.listOfMembers
+              ?.where((member) => member.uid != memberUid)
+              .toList() ??
+          [];
+
       // Remove the member from the membersBalance map
-      final updatedMembersBalance = Map<String, String>.from(group.membersBalance ?? {});
+      final updatedMembersBalance =
+          Map<String, String>.from(group.membersBalance ?? {});
       updatedMembersBalance.remove(memberUid);
 
       // Update Firestore
@@ -629,7 +638,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       }).toList();
 
       state = state.copyWith(listOfGroups: updatedGroups);
-      
+
       logger.i("✅ Member removed from group successfully");
       return true;
     } catch (e) {
@@ -870,6 +879,97 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
   }
 
 // __________________________________________________________________________ //
+
+  Future<bool> refetchAllGroupData(String uid) async {
+    try {
+      final List<Group> updatedGroups = [];
+
+      await groupsCollection.get().then((value) async {
+        for (var group in value.docs) {
+          if (group.data().memberIds?.contains(uid) ?? false) {
+            final currentGroup = group.data();
+            // fetch group transactions
+            await groupTansactionCollection(currentGroup.gid!)
+                .get()
+                .then((transactionSnapshot) async {
+              for (var transaction in transactionSnapshot.docs) {
+                currentGroup.listOfTransactions?.add(transaction.data());
+              }
+              // fetch group members data
+              final List<String>? groupMembersIds = currentGroup.memberIds;
+              List<UserData> appUsers = await getAllAppUsers();
+              currentGroup.listOfMembers?.addAll(
+                appUsers
+                    .where((user) => groupMembersIds!.contains(user.uid))
+                    .toList(),
+              );
+            });
+            updatedGroups.add(currentGroup);
+          }
+        }
+      });
+
+      // Update the state with the new list of groups
+      state = state.copyWith(listOfGroups: updatedGroups);
+
+      logger.i("✅ All group data refetched successfully.\n"
+          "Groups Found: ${state.listOfGroups?.length}");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error while refetching all group data: $e");
+      return false;
+    }
+  }
+
+  Future<bool> refetchUserTransactions(String uid) async {
+    try {
+      final List<Transaction> updatedTransactions = [];
+
+      await userTransactionsCollection(uid).get().then((value) {
+        for (var transaction in value.docs) {
+          updatedTransactions.add(transaction.data());
+        }
+      });
+
+      // Update the state with the new list of transactions
+      state = state.copyWith(listOfUserTransactions: updatedTransactions);
+
+      logger.i("✅ User transactions refetched successfully.\n"
+          "Transactions Found: ${state.listOfUserTransactions?.length}");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error while refetching user transactions: $e");
+      return false;
+    }
+  }
+
+  Future<bool> refetchUserAccounts(String uid) async {
+    try {
+      final List<BankAccount> updatedBankAccounts = [];
+      Cash? updatedCash = Cash();
+
+      await bankAccountsCollectionReference(uid).get().then((value) {
+        for (var account in value.docs) {
+          updatedBankAccounts.add(account.data());
+        }
+      });
+      // fetch cash data
+      await userCashDocument(uid).get().then((value) {
+        updatedCash = value.data();
+      });
+
+      // Update the state with the new list of bank accounts
+      state = state.copyWith(
+          listOfBankAccounts: updatedBankAccounts, cash: updatedCash);
+
+      logger.i("✅ User bank accounts refetched successfully.\n"
+          "Bank Accounts Found: ${state.listOfBankAccounts?.length}");
+      return true;
+    } catch (e) {
+      logger.w("❌ Error while refetching user bank accounts: $e");
+      return false;
+    }
+  }
 
   void reset() {
     state = UserFinanceData();

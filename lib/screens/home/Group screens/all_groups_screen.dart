@@ -51,7 +51,17 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
     return Scaffold(
       backgroundColor: color4,
       appBar: _appBar(userData),
-      body: _body(userData, filteredGroupsList),
+      body: RefreshIndicator.adaptive(
+        child: _body(userData, filteredGroupsList),
+        onRefresh: () async {
+          await ref
+              .read(userFinanceDataNotifierProvider.notifier)
+              .refetchAllGroupData(userData.uid!);
+          userFinanceData.listOfGroups?.map((group){
+            Logger().i(group.name);
+          });
+        },
+      ),
     );
   }
 

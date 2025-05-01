@@ -1,8 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:finmate/constants/colors.dart';
 import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/user.dart';
+import 'package:finmate/models/user_finance_data.dart';
+import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/Group%20screens/group_chats.dart';
 import 'package:finmate/screens/home/Group%20screens/group_members.dart';
@@ -96,6 +99,11 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
   }
 
   Widget _buildBody() {
+    final UserFinanceData userFinanceData =
+        ref.watch(userFinanceDataNotifierProvider);
+    final group = userFinanceData.listOfGroups
+            ?.firstWhere((g) => g.gid == widget.group.gid) ??
+        widget.group;
     return PageView(
       controller: _pageController,
       physics: const BouncingScrollPhysics(),
@@ -105,12 +113,27 @@ class _GroupOverviewState extends ConsumerState<GroupOverview> {
         });
       },
       children: [
-        GrpOverview(group: widget.group),
-        GroupChats(group: widget.group),
-        GroupMembers(group: widget.group),
+        screensWithRefreshButton(ref, GrpOverview(group: group)),
+        screensWithRefreshButton(ref, GroupChats(group: group)),
+        screensWithRefreshButton(ref, GroupMembers(group: group)),
       ],
     );
   }
+}
+
+Widget screensWithRefreshButton(
+  WidgetRef ref,
+  Widget child,
+) {
+  final String? uid = ref.watch(userDataNotifierProvider).uid;
+  return RefreshIndicator.adaptive(
+    onRefresh: () async {
+      await ref
+          .read(userFinanceDataNotifierProvider.notifier)
+          .refetchAllGroupData(uid ?? "");
+    },
+    child: child,
+  );
 }
 
 // __________________________________________________________________________ //
@@ -128,16 +151,204 @@ class GrpOverview extends ConsumerWidget {
       backgroundColor: color4,
       body: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.only(bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildGroupDetailsCard(context, userData),
+            const SizedBox(height: 16),
             _buildBalanceCard(context, userData, groupMembersData),
             const SizedBox(height: 24),
             _buildTransactionsSection(context, ref),
           ],
         ),
       ),
+    );
+  }
+
+  /// Builds the unified group details card with profile picture and description
+  Widget _buildGroupDetailsCard(BuildContext context, UserData userData) {
+    final bool isCreator = userData.uid == group.creatorId;
+    final bool hasImage = group.image != null && group.image!.isNotEmpty;
+    final bool hasDescription = 
+        group.description != null && group.description!.isNotEmpty;
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Group image and basic info
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Group Profile Picture
+                GestureDetector(
+                  onTap: hasImage 
+                      ? () => Navigate().push(
+                          FullScreenImageViewer(
+                            imageUrl: group.image!,
+                            heroTag: 'group_image_${group.gid}',
+                          ),
+                        )
+                      : null,
+                  child: Hero(
+                    tag: 'group_image_${group.gid}',
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: color2.withAlpha(50),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: color3.withAlpha(100),
+                          width: 2,
+                        ),
+                        image: hasImage
+                            ? DecorationImage(
+                                image: CachedNetworkImageProvider(group.image!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: !hasImage
+                          ? Center(
+                              child: Icon(
+                                Icons.groups_rounded,
+                                size: 40,
+                                color: color2,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                
+                // Group info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Group Name and Admin Badge
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              group.name ?? "Group",
+                              style: TextStyle(
+                                color: color2,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isCreator)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: color3.withAlpha(30),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "Admin",
+                                style: TextStyle(
+                                  color: color3,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Creation Date
+                      _buildInfoRow(
+                        Icons.calendar_today_outlined,
+                        group.date != null
+                            ? "Created on ${group.date!.day}/${group.date!.month}/${group.date!.year}"
+                            : "Created Today",
+                      ),
+                      
+                      const SizedBox(height: 4),
+                      
+                      // Member Count
+                      _buildInfoRow(
+                        Icons.people_outline_rounded,
+                        "${group.listOfMembers?.length ?? 0} Members",
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            // Description section (only shown if there is a description)
+            if (hasDescription) ...[
+              const Divider(height: 24),
+              _buildInfoRow(
+                Icons.info_outline_rounded,
+                "About this group",
+                isTitle: true,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  group.description ?? "",
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// Helper method to build info rows with icons
+  Widget _buildInfoRow(IconData icon, String text, {bool isTitle = false}) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: isTitle ? 18 : 16,
+          color: isTitle ? color3 : Colors.grey.shade600,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isTitle ? color2 : Colors.grey.shade600,
+              fontWeight: isTitle ? FontWeight.w600 : FontWeight.normal,
+              fontSize: isTitle ? 15 : 13,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
