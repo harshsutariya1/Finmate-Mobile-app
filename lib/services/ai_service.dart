@@ -128,6 +128,13 @@ Give responses in a clear and structured format, using bullet points or numbered
       basePrompt += "\n\n### USER INFORMATION ###\n";
       basePrompt += "Name: ${userData.name}\n";
       basePrompt += "Email: ${userData.email}\n";
+      if (userData.dob != null) {
+        final age = DateTime.now().difference(userData.dob!).inDays ~/ 365;
+        basePrompt += "Age: $age years\n";
+      }
+      if (userData.gender != null && userData.gender!.isNotEmpty) {
+        basePrompt += "Gender: ${userData.gender}\n";
+      }
 
       // Add cash information
       if (userFinanceData?.cash != null) {
@@ -140,11 +147,14 @@ Give responses in a clear and structured format, using bullet points or numbered
       if (userFinanceData?.listOfBankAccounts != null &&
           userFinanceData!.listOfBankAccounts!.isNotEmpty) {
         basePrompt += "\n### BANK ACCOUNTS ###\n";
+        double totalBankBalance = 0;
         for (var account in userFinanceData.listOfBankAccounts!) {
           basePrompt += "Account: ${account.bankAccountName}\n";
           basePrompt += "Available Balance: Rs.${account.availableBalance}\n";
           basePrompt += "Total Balance: Rs.${account.totalBalance}\n\n";
+          totalBankBalance += double.parse(account.totalBalance ?? '0');
         }
+        basePrompt += "Total Bank Balance: Rs.${totalBankBalance.toStringAsFixed(2)}\n";
       }
 
       // Add budget information with the updated structure
@@ -165,8 +175,15 @@ Give responses in a clear and structured format, using bullet points or numbered
           basePrompt +=
               "Current Month's Budget: Rs.${currentBudget.totalBudget}\n";
           basePrompt += "Budget Spent: Rs.${currentBudget.spendings ?? '0'}\n";
-          basePrompt +=
-              "Budget Remaining: Rs.${double.parse(currentBudget.totalBudget ?? '0') - double.parse(currentBudget.spendings ?? '0')}\n\n";
+          
+          // Calculate remaining budget
+          final totalBudget = double.parse(currentBudget.totalBudget ?? '0');
+          final spent = double.parse(currentBudget.spendings ?? '0');
+          final remaining = totalBudget - spent;
+          final percentSpent = totalBudget > 0 ? (spent / totalBudget * 100).toStringAsFixed(1) : '0';
+          
+          basePrompt += "Budget Remaining: Rs.${remaining.toStringAsFixed(2)}\n";
+          basePrompt += "Budget Utilization: $percentSpent%\n\n";
 
           // Category-wise budget breakdown with updated structure
           if (currentBudget.categoryBudgets != null &&
@@ -193,12 +210,35 @@ Give responses in a clear and structured format, using bullet points or numbered
 
       // Add goal information
       if (goals != null && goals.isNotEmpty) {
-        basePrompt += "\n### GOALS ###\n";
+        basePrompt += "\n### FINANCIAL GOALS ###\n";
+        double totalGoalAmount = 0;
+        double totalSavedAmount = 0;
+        
         for (var goal in goals) {
           basePrompt += "Goal: ${goal.name}\n";
-          basePrompt +=
-              "Target Amount: Rs.${goal.targetAmount}\nCurrent Amount: Rs.${goal.currentAmount}\n";
+          basePrompt += "Target Amount: Rs.${goal.targetAmount.toStringAsFixed(2)}\n";
+          basePrompt += "Current Amount: Rs.${goal.currentAmount.toStringAsFixed(2)}\n";
+          basePrompt += "Progress: ${(goal.progressPercentage * 100).toStringAsFixed(1)}%\n";
+          
+          if (goal.deadline != null) {
+            final daysLeft = goal.deadline!.difference(DateTime.now()).inDays;
+            basePrompt += "Days to Deadline: $daysLeft\n";
+          }
+          
+          if (goal.notes != null && goal.notes!.isNotEmpty) {
+            basePrompt += "Notes: ${goal.notes}\n";
+          }
+          
+          basePrompt += "Status: ${goal.status.displayName}\n\n";
+          
+          totalGoalAmount += goal.targetAmount;
+          totalSavedAmount += goal.currentAmount;
         }
+        
+        final overallProgress = totalGoalAmount > 0 
+            ? (totalSavedAmount / totalGoalAmount * 100).toStringAsFixed(1) 
+            : '0';
+        basePrompt += "Overall Goal Progress: $overallProgress% (Rs.${totalSavedAmount.toStringAsFixed(2)} of Rs.${totalGoalAmount.toStringAsFixed(2)})\n";
       }
 
       // Add investment information
@@ -242,7 +282,17 @@ Give responses in a clear and structured format, using bullet points or numbered
             typeAmount += investment.initialAmount; // Use initialAmount
 
             basePrompt +=
-                "- ${investment.name}: (current amount: Rs.${investment.currentAmount}) (invested: Rs.${investment.initialAmount})\n"; // Use correct fields
+                "- ${investment.name}: (current amount: Rs.${investment.currentAmount}) (invested: Rs.${investment.initialAmount})";
+            
+            // Add performance data if available
+            if (investment.valueHistory.isNotEmpty && investment.valueHistory.length > 1) {
+              final oldestValue = investment.valueHistory.first['value'] ?? investment.initialAmount;
+              final latestValue = investment.currentAmount;
+              final performancePercent = ((latestValue - oldestValue) / oldestValue * 100).toStringAsFixed(2);
+              basePrompt += " (performance: $performancePercent%)";
+            }
+            
+            basePrompt += "\n";
           }
 
           final typeProfit = typeValue - typeAmount;
@@ -263,64 +313,173 @@ Give responses in a clear and structured format, using bullet points or numbered
         double totalExpenses = 0;
         final currentMonth = DateTime.now().month;
         final currentYear = DateTime.now().year;
+        
+        // Monthly statistics
+        Map<int, Map<String, double>> monthlyStats = {};
+        
+        // Category statistics for current month
+        Map<String, double> categorySpending = {};
+        Map<String, double> categoryIncome = {};
 
         for (var transaction in userFinanceData.listOfUserTransactions!) {
-          if (transaction.date?.month == currentMonth &&
-              transaction.date?.year == currentYear) {
-            if (transaction.transactionType ==
-                TransactionType.income.displayName) {
-              totalIncome += double.parse(transaction.amount ?? '0');
-            } else if (transaction.transactionType ==
-                TransactionType.expense.displayName) {
-              totalExpenses +=
-                  double.parse(transaction.amount?.replaceAll('-', '') ?? '0');
+          // Skip null dates
+          if (transaction.date == null) continue;
+          
+          // Get transaction month and year
+          final transMonth = transaction.date!.month;
+          final transYear = transaction.date!.year;
+          
+          // Create entry for this month if it doesn't exist
+          if (!monthlyStats.containsKey(transMonth)) {
+            monthlyStats[transMonth] = {'income': 0, 'expense': 0};
+          }
+          
+          // Process by transaction type
+          if (transaction.transactionType == TransactionType.income.displayName) {
+            final amount = double.parse(transaction.amount ?? '0');
+            
+            // Add to monthly stats
+            monthlyStats[transMonth]!['income'] = (monthlyStats[transMonth]!['income'] ?? 0) + amount;
+            
+            // Add to current month totals
+            if (transMonth == currentMonth && transYear == currentYear) {
+              totalIncome += amount;
+              
+              // Add to category income
+              final category = transaction.category ?? 'Uncategorized';
+              categoryIncome[category] = (categoryIncome[category] ?? 0) + amount;
+            }
+          } else if (transaction.transactionType == TransactionType.expense.displayName) {
+            final amount = double.parse(transaction.amount?.replaceAll('-', '') ?? '0');
+            
+            // Add to monthly stats
+            monthlyStats[transMonth]!['expense'] = (monthlyStats[transMonth]!['expense'] ?? 0) + amount;
+            
+            // Add to current month totals
+            if (transMonth == currentMonth && transYear == currentYear) {
+              totalExpenses += amount;
+              
+              // Add to category spending
+              final category = transaction.category ?? 'Uncategorized';
+              categorySpending[category] = (categorySpending[category] ?? 0) + amount;
             }
           }
         }
 
-        basePrompt += "Current Month Income: Rs.$totalIncome\n";
-        basePrompt += "Current Month Expenses: Rs.$totalExpenses\n";
-        basePrompt += "Net Balance: Rs.${totalIncome - totalExpenses}\n";
-
-        // Get top 3 spending categories
-        Map<String, double> categorySpending = {};
-        for (var transaction in userFinanceData.listOfUserTransactions!) {
-          if (transaction.transactionType ==
-              TransactionType.expense.displayName) {
-            final category = transaction.category ?? 'Uncategorized';
-            final amount =
-                double.parse(transaction.amount?.replaceAll('-', '') ?? '0');
-            categorySpending[category] =
-                (categorySpending[category] ?? 0) + amount;
-          }
+        basePrompt += "Current Month Income: Rs.${totalIncome.toStringAsFixed(2)}\n";
+        basePrompt += "Current Month Expenses: Rs.${totalExpenses.toStringAsFixed(2)}\n";
+        basePrompt += "Net Balance: Rs.${(totalIncome - totalExpenses).toStringAsFixed(2)}\n\n";
+        
+        // Monthly trend (last 3 months)
+        basePrompt += "Monthly Trends (Last 3 Months):\n";
+        final lastMonths = monthlyStats.keys.toList()..sort((a, b) => b.compareTo(a));
+        final last3Months = lastMonths.take(3).toList();
+        
+        for (var month in last3Months) {
+          final income = monthlyStats[month]!['income'] ?? 0;
+          final expense = monthlyStats[month]!['expense'] ?? 0;
+          final monthName = _getMonthName(month);
+          
+          basePrompt += "- $monthName: Income Rs.${income.toStringAsFixed(2)}, Expenses Rs.${expense.toStringAsFixed(2)}, Net Rs.${(income - expense).toStringAsFixed(2)}\n";
         }
+        basePrompt += "\n";
 
-        var sortedCategories = categorySpending.entries.toList()
+        // Get top spending categories for current month
+        var sortedSpendingCategories = categorySpending.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
 
-        if (sortedCategories.isNotEmpty) {
-          basePrompt += "\nTop Spending Categories:\n";
-          final topCategories = sortedCategories.take(3);
+        if (sortedSpendingCategories.isNotEmpty) {
+          basePrompt += "Top Spending Categories (Current Month):\n";
+          final topCategories = sortedSpendingCategories.take(5);
           for (var entry in topCategories) {
+            final percentage = totalExpenses > 0 
+                ? (entry.value / totalExpenses * 100).toStringAsFixed(1) 
+                : '0';
             basePrompt +=
-                "- ${entry.key}: Rs.${entry.value.toStringAsFixed(2)}\n";
+                "- ${entry.key}: Rs.${entry.value.toStringAsFixed(2)} ($percentage% of total)\n";
           }
+          basePrompt += "\n";
         }
 
-        // Add a small samples of recent transactions
-        basePrompt += "\nRecent Transactions:\n";
+        // Get top income categories for current month
+        var sortedIncomeCategories = categoryIncome.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+        if (sortedIncomeCategories.isNotEmpty) {
+          basePrompt += "Top Income Categories (Current Month):\n";
+          final topIncomeCategories = sortedIncomeCategories.take(3);
+          for (var entry in topIncomeCategories) {
+            final percentage = totalIncome > 0 
+                ? (entry.value / totalIncome * 100).toStringAsFixed(1) 
+                : '0';
+            basePrompt +=
+                "- ${entry.key}: Rs.${entry.value.toStringAsFixed(2)} ($percentage% of total)\n";
+          }
+          basePrompt += "\n";
+        }
+
+        // Add detailed list of last 50 transactions
+        basePrompt += "### DETAILED TRANSACTION HISTORY (LAST 50 TRANSACTIONS) ###\n";
         final recentTransactions = userFinanceData.listOfUserTransactions!
             .where((t) => t.date != null)
             .toList()
           ..sort((a, b) =>
               (b.date ?? DateTime.now()).compareTo(a.date ?? DateTime.now()));
 
-        for (var i = 0; i < 5 && i < recentTransactions.length; i++) {
-          final t = recentTransactions[i];
-          final date = t.date != null
-              ? "${t.date!.day}/${t.date!.month}/${t.date!.year}"
-              : "Unknown date";
-          basePrompt += "- $date: ${t.category} - Rs.${t.amount}\n";
+        final last50Transactions = recentTransactions.take(50).toList();
+        
+        // Group transactions by date
+        Map<String, List<Transaction>> transactionsByDate = {};
+        for (var transaction in last50Transactions) {
+          final date = transaction.date!;
+          final dateStr = "${date.day}/${date.month}/${date.year}";
+          
+          if (!transactionsByDate.containsKey(dateStr)) {
+            transactionsByDate[dateStr] = [];
+          }
+          transactionsByDate[dateStr]!.add(transaction);
+        }
+        
+        // List transactions by date
+        final sortedDates = transactionsByDate.keys.toList()
+          ..sort((a, b) {
+            // Convert to DateTime for comparison (DD/MM/YYYY format)
+            final partsA = a.split('/').map(int.parse).toList();
+            final partsB = b.split('/').map(int.parse).toList();
+            final dateA = DateTime(partsA[2], partsA[1], partsA[0]);
+            final dateB = DateTime(partsB[2], partsB[1], partsB[0]);
+            return dateB.compareTo(dateA);
+          });
+        
+        for (var dateStr in sortedDates) {
+          basePrompt += "\nDate: $dateStr\n";
+          
+          for (var transaction in transactionsByDate[dateStr]!) {
+            final type = transaction.transactionType == TransactionType.income.displayName 
+                ? "Income" 
+                : (transaction.transactionType == TransactionType.expense.displayName 
+                    ? "Expense" 
+                    : "Transfer");
+            
+            final amount = transaction.amount?.replaceAll('-', '') ?? '0';
+            final category = transaction.category ?? 'Uncategorized';
+            final paymentMethod = transaction.methodOfPayment ?? 'Unknown';
+            final description = transaction.description?.isNotEmpty == true 
+                ? transaction.description 
+                : "(No description)";
+            
+            basePrompt += "- [$type] Rs.$amount | Category: $category | Method: $paymentMethod";
+            
+            if (transaction.payee != null && transaction.payee!.isNotEmpty) {
+              basePrompt += " | Payee: ${transaction.payee}";
+            }
+            
+            if (transaction.bankAccountName != null && transaction.bankAccountName!.isNotEmpty) {
+              basePrompt += " | Account: ${transaction.bankAccountName}";
+            }
+            
+            basePrompt += " | $description\n";
+          }
         }
       }
 
@@ -331,8 +490,17 @@ Give responses in a clear and structured format, using bullet points or numbered
         for (var group in userFinanceData.listOfGroups!) {
           basePrompt += "Group: ${group.name}\n";
           basePrompt += "Total Amount: Rs.${group.totalAmount}\n";
-          basePrompt +=
-              "Your Balance: Rs.${group.membersBalance?[userData.uid] ?? '0'}\n\n";
+          basePrompt += "Your Balance: Rs.${group.membersBalance?[userData.uid]?['currentAmount'] ?? '0'}\n";
+          
+          if (group.listOfMembers != null && group.listOfMembers!.isNotEmpty) {
+            basePrompt += "Members: ${group.listOfMembers!.length}\n";
+          }
+          
+          if (group.listOfTransactions != null && group.listOfTransactions!.isNotEmpty) {
+            basePrompt += "Recent Activity: ${group.listOfTransactions!.length} transactions\n";
+          }
+          
+          basePrompt += "\n";
         }
       }
 
@@ -346,6 +514,15 @@ Give responses in a clear and structured format, using bullet points or numbered
     _logger.d('Estimated token count for system prompt: $tokenCount');
 
     return basePrompt;
+  }
+  
+  // Helper method to get month name from month number
+  String _getMonthName(int month) {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return monthNames[month - 1];
   }
 
   // Simple token estimation - roughly 4 characters per token

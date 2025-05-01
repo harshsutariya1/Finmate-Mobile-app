@@ -13,6 +13,7 @@ import 'package:finmate/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:fl_chart/fl_chart.dart'; // Import FL Chart for pie chart
 
 class GroupMembers extends ConsumerStatefulWidget {
   const GroupMembers({super.key, required this.group});
@@ -25,6 +26,8 @@ class GroupMembers extends ConsumerStatefulWidget {
 class _GroupMembersState extends ConsumerState<GroupMembers> {
   bool _isAdminExpanded = false;
   bool _isRemovingMember = false;
+  bool _showContributionsChart = true; // New state to toggle chart visibility
+  int _touchedIndex = -1; // Track touched section in pie chart
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +107,7 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
 
   Widget _buildMembersBody(
       UserData adminUser, List<UserData> regularMembers, UserData currentUser) {
+    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -122,11 +126,279 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
             ),
           ),
 
+          // Member Contributions Chart
+          if (_showContributionsChart) 
+            _buildContributionsChart(adminUser, regularMembers),
+            
+          const SizedBox(height: 16),
+
           // Admin section with dropdown containing all members
           _buildAdminSection(adminUser, regularMembers, currentUser),
         ],
       ),
     );
+  }
+
+  // New method to build the contributions chart
+  Widget _buildContributionsChart(UserData admin, List<UserData> members) {
+    // Combine admin and members
+    final allMembers = [admin, ...members];
+    
+    // Calculate member balances and contributions
+    final Map<String, double> memberBalances = {};
+    double totalGroupBalance = 0;
+    
+    for (var member in allMembers) {
+      if (member.uid != null) {
+        final balance = double.tryParse(
+          widget.group.membersBalance?[member.uid]?['currentAmount'] ?? '0'
+        ) ?? 0.0;
+        
+        memberBalances[member.uid!] = balance;
+        totalGroupBalance += balance;
+      }
+    }
+    
+    // Sort members by balance (highest to lowest)
+    allMembers.sort((a, b) {
+      final balanceA = memberBalances[a.uid] ?? 0;
+      final balanceB = memberBalances[b.uid] ?? 0;
+      return balanceB.compareTo(balanceA);
+    });
+    
+    // Skip if total balance is zero
+    if (totalGroupBalance <= 0) {
+      return const SizedBox.shrink();
+    }
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Chart header with toggle button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Member Contributions",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color3,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.info_outline, size: 20, color: color3),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  tooltip: "Shows each member's contribution to the group balance",
+                  onPressed: () {},
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Pie chart
+            SizedBox(
+              height: 200,
+              child: Row(
+                children: [
+                  // Pie chart
+                  Expanded(
+                    flex: 5,
+                    child: PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  pieTouchResponse == null ||
+                                  pieTouchResponse.touchedSection == null) {
+                                _touchedIndex = -1;
+                                return;
+                              }
+                              _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                            });
+                          },
+                        ),
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 40,
+                        sections: _generatePieChartSections(allMembers, memberBalances, totalGroupBalance),
+                      ),
+                    ),
+                  ),
+                  
+                  // Legends
+                  Expanded(
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: allMembers.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final member = entry.value;
+                          
+                          if (member.uid == null) return const SizedBox.shrink();
+                          
+                          final balance = memberBalances[member.uid] ?? 0;
+                          final double percentage = totalGroupBalance > 0
+                              ? (balance / totalGroupBalance * 100)
+                              : 0;
+                          
+                          return _buildLegendItem(
+                            index,
+                            member,
+                            balance,
+                            percentage,
+                            member.uid == admin.uid,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Generate pie chart sections for each member
+  List<PieChartSectionData> _generatePieChartSections(
+      List<UserData> members, Map<String, double> balances, double total) {
+    return members.asMap().entries.map((entry) {
+      final index = entry.key;
+      final member = entry.value;
+      
+      if (member.uid == null) {
+        return PieChartSectionData(
+          color: Colors.grey,
+          value: 0,
+          title: '',
+          radius: 50,
+          titleStyle: TextStyle(color: Colors.white, fontSize: 0),
+        );
+      }
+      
+      final isAdmin = member.uid == widget.group.creatorId;
+      final balance = balances[member.uid] ?? 0;
+      final percentage = total > 0 ? (balance / total * 100) : 0;
+      
+      final Color sectionColor = _getMemberColor(index, isAdmin);
+      final bool isTouched = index == _touchedIndex;
+      
+      return PieChartSectionData(
+        color: sectionColor,
+        value: balance,
+        title: percentage >= 10 ? '${percentage.toStringAsFixed(0)}%' : '',
+        radius: isTouched ? 60 : 50,
+        titleStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+  }
+
+  // Build legend item for each member
+  Widget _buildLegendItem(int index, UserData member, double balance, 
+                          double percentage, bool isAdmin) {
+    final color = _getMemberColor(index, isAdmin);
+    final isTouched = index == _touchedIndex;
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isTouched ? color.withOpacity(0.15) : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isTouched ? color : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        member.name?.split(' ').first ?? "Member",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          color: color1,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${percentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '$balance ₹',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: color2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Get a consistent color for a member
+  Color _getMemberColor(int index, bool isAdmin) {
+    final colors = [
+      color3,                     // Primary app color for admin
+      const Color(0xFF2196F3),    // Blue
+      const Color(0xFF4CAF50),    // Green
+      const Color(0xFFFF9800),    // Orange
+      const Color(0xFFE91E63),    // Pink
+      const Color(0xFF9C27B0),    // Purple
+      const Color(0xFF009688),    // Teal
+      const Color(0xFFFF5722),    // Deep Orange
+      const Color(0xFF795548),    // Brown
+      const Color(0xFF607D8B),    // Blue Grey
+    ];
+    
+    // Use the primary color for admin, otherwise cycle through the colors list
+    if (isAdmin) return colors[0];
+    
+    return colors[(index % (colors.length - 1)) + 1];
   }
 
   Widget _buildAdminSection(
@@ -242,39 +514,10 @@ class _GroupMembersState extends ConsumerState<GroupMembers> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Admin Powers Section
-                  Text(
-                    "Admin Powers",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color3,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildAdminPowerRow(
-                    Icons.delete_outline,
-                    "Delete group",
-                    "Remove this group and all its data",
-                  ),
-                  _buildAdminPowerRow(
-                    Icons.person_remove_outlined,
-                    "Remove members",
-                    "Remove members from the group",
-                  ),
-                  _buildAdminPowerRow(
-                    Icons.edit_outlined,
-                    "Edit group details",
-                    "Change group name, description, etc.",
-                  ),
 
                   // Divider between sections
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child:
                         Divider(height: 1, color: Colors.grey.withOpacity(0.3)),
-                  ),
-
+                 
                   // Members Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -26,7 +26,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   bool _isSearching = false;
 
   // Add filter state variables
-  String? _selectedCategory;
+  Set<String> _selectedCategories = {}; // Changed from String? to Set<String>
   String? _selectedBankAccount;
   String? _sortOption;
   bool _hasActiveFilters = false;
@@ -171,9 +171,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     });
 
     // Apply category and bank account filters
-    if (_selectedCategory != null) {
+    if (_selectedCategories.isNotEmpty) {
       monthlyTransactions = monthlyTransactions
-          .where((transaction) => transaction.category == _selectedCategory)
+          .where((transaction) => 
+              _selectedCategories.contains(transaction.category))
           .toList();
     }
 
@@ -252,7 +253,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           GestureDetector(
                             onTap: () {
                               setState(() {
-                                _selectedCategory = null;
+                                _selectedCategories = {};
                                 _selectedBankAccount = null;
                                 _sortOption = null;
                                 _hasActiveFilters = false;
@@ -650,7 +651,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final sortedCategories = categories.toList()..sort();
 
     // Local variables to track selections in the dialog
-    String? tempCategory = _selectedCategory;
+    Set<String> tempCategories = Set.from(_selectedCategories); // Create a copy of the selected categories
     String? tempBankAccount = _selectedBankAccount;
     String? tempSortOption = _sortOption;
 
@@ -728,10 +729,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             child: _buildCategorySelector(
                               sortedCategories,
-                              tempCategory,
-                              (newValue) {
+                              tempCategories,
+                              (newCategories) {
                                 setDialogState(() {
-                                  tempCategory = newValue;
+                                  tempCategories = newCategories;
                                 });
                               },
                             ),
@@ -826,7 +827,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                         TextButton(
                           onPressed: () {
                             setDialogState(() {
-                              tempCategory = null;
+                              tempCategories = {};
                               tempBankAccount = null;
                               tempSortOption = null;
                             });
@@ -846,10 +847,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           ),
                           onPressed: () {
                             setState(() {
-                              _selectedCategory = tempCategory;
+                              _selectedCategories = tempCategories;
                               _selectedBankAccount = tempBankAccount;
                               _sortOption = tempSortOption;
-                              _hasActiveFilters = tempCategory != null ||
+                              _hasActiveFilters = tempCategories.isNotEmpty ||
                                   tempBankAccount != null ||
                                   tempSortOption != null;
                             });
@@ -941,12 +942,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   // Replace the dropdown with a button that opens a searchable category selector
   Widget _buildCategorySelector(
     List<String> categories,
-    String? selectedCategory,
-    Function(String?) onCategorySelected,
+    Set<String> selectedCategories,
+    Function(Set<String>) onCategoriesSelected,
   ) {
     return InkWell(
       onTap: () {
-        _showCategorySearchDialog(categories, selectedCategory, onCategorySelected);
+        _showCategoryMultiSelectDialog(categories, selectedCategories, onCategoriesSelected);
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -959,10 +960,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           children: [
             Expanded(
               child: Text(
-                selectedCategory ?? 'All Categories',
+                selectedCategories.isEmpty 
+                    ? 'All Categories' 
+                    : selectedCategories.length == 1
+                        ? selectedCategories.first
+                        : '${selectedCategories.length} Categories Selected',
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: selectedCategory != null ? color2 : Colors.grey[600],
+                  color: selectedCategories.isNotEmpty ? color2 : Colors.grey[600],
                   fontSize: 16,
                 ),
               ),
@@ -974,11 +979,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     );
   }
 
-  // Add a new method to show the category search dialog
-  void _showCategorySearchDialog(
+  // Add a new method to show the multi-select category dialog
+  void _showCategoryMultiSelectDialog(
     List<String> categories,
-    String? selectedCategory,
-    Function(String?) onCategorySelected,
+    Set<String> selectedCategories,
+    Function(Set<String>) onCategoriesSelected,
   ) {
     // Create a unique key for this dialog instance
     final String dialogKey = DateTime.now().millisecondsSinceEpoch.toString();
@@ -990,6 +995,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final searchController = _categorySearchControllers[dialogKey]!;
     
     List<String> filteredCategories = List.from(categories);
+    Set<String> tempSelectedCategories = Set.from(selectedCategories);
     
     showDialog(
       context: context,
@@ -1008,17 +1014,38 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      'Select Category',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: color1,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Categories',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: color1,
+                        ),
                       ),
-                    ),
+                      // Show selected count
+                      if (tempSelectedCategories.isNotEmpty)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color3.withAlpha(30),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${tempSelectedCategories.length} selected',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: color3,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                  
+                  const SizedBox(height: 16),
                   
                   // Search box
                   Container(
@@ -1050,48 +1077,35 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                     ),
                   ),
                   
-                  // "All Categories" option
-                  InkWell(
-                    onTap: () {
-                      onCategorySelected(null);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                  // "Select All" and "Clear All" buttons
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              tempSelectedCategories = Set.from(filteredCategories);
+                            });
+                          },
+                          icon: Icon(Icons.select_all, size: 18, color: color3),
+                          label: Text('Select All', style: TextStyle(color: color3)),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color3.withAlpha(26),
-                            ),
-                            child: Icon(Icons.category, color: color3, size: 18),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              'All Categories',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: selectedCategory == null ? FontWeight.bold : FontWeight.normal,
-                                color: color1,
-                              ),
-                            ),
-                          ),
-                          if (selectedCategory == null)
-                            Icon(Icons.check_circle, color: color3),
-                        ],
-                      ),
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              tempSelectedCategories = {};
+                            });
+                          },
+                          icon: Icon(Icons.clear_all, size: 18, color: color3),
+                          label: Text('Clear All', style: TextStyle(color: color3)),
+                        ),
+                      ],
                     ),
                   ),
                   
-                  // Fix overflow issues with the category list
+                  // Category list with checkboxes
                   Flexible(
                     child: filteredCategories.isEmpty
                         ? Center(
@@ -1109,52 +1123,45 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             itemCount: filteredCategories.length,
                             itemBuilder: (context, index) {
                               final category = filteredCategories[index];
-                              final isSelected = category == selectedCategory;
+                              final isSelected = tempSelectedCategories.contains(category);
                               
-                              // Create a unique key for each list item
-                              return InkWell(
+                              return CheckboxListTile(
                                 key: ValueKey('category_${category}_$index'),
-                                onTap: () {
-                                  onCategorySelected(category);
-                                  Navigator.pop(context);
+                                value: isSelected,
+                                onChanged: (value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      tempSelectedCategories.add(category);
+                                    } else {
+                                      tempSelectedCategories.remove(category);
+                                    }
+                                  });
                                 },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(color: Colors.grey[200]!),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: _getCategoryColor(category).withAlpha(26), // 0.1 opacity = 25.5 alpha, rounded to 26
-                                        ),
-                                        child: Icon(
-                                          _getCategoryIcon(category), 
-                                          color: _getCategoryColor(category), 
-                                          size: 18
-                                        ),
-                                      ),
-                                      SizedBox(width: 16),
-                                      Expanded(
-                                        child: Text(
-                                          category,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: color1,
-                                          ),
-                                        ),
-                                      ),
-                                      if (isSelected)
-                                        Icon(Icons.check_circle, color: color3),
-                                    ],
+                                title: Text(
+                                  category,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: color1,
                                   ),
                                 ),
+                                secondary: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _getCategoryColor(category).withAlpha(26),
+                                  ),
+                                  child: Icon(
+                                    _getCategoryIcon(category), 
+                                    color: _getCategoryColor(category), 
+                                    size: 18
+                                  ),
+                                ),
+                                activeColor: color3,
+                                checkColor: Colors.white,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                dense: true,
+                                controlAffinity: ListTileControlAffinity.trailing,
                               );
                             },
                           ),
@@ -1164,11 +1171,24 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   Padding(
                     padding: EdgeInsets.only(top: 16),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: Text('Close', style: TextStyle(color: color3)),
+                          child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            onCategoriesSelected(tempSelectedCategories);
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text('Apply', style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),
@@ -1180,7 +1200,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         },
       ),
     ).then((_) {
-      // Do not dispose the controller here - it will be disposed in the dispose() method
       searchController.clear();
     });
   }
@@ -1253,7 +1272,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _selectedCategory = null;
+                  _selectedCategories = {};
                   _selectedBankAccount = null;
                   _sortOption = null;
                   _hasActiveFilters = false;
@@ -1277,8 +1296,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   String _getActiveFiltersText() {
     List<String> activeFilters = [];
 
-    if (_selectedCategory != null) {
-      activeFilters.add('Category: $_selectedCategory');
+    if (_selectedCategories.isNotEmpty) {
+      if (_selectedCategories.length == 1) {
+        activeFilters.add('Category: ${_selectedCategories.first}');
+      } else {
+        activeFilters.add('Categories: ${_selectedCategories.length} selected');
+      }
     }
 
     if (_selectedBankAccount != null) {

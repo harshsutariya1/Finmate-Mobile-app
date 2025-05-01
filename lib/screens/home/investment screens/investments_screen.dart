@@ -121,13 +121,13 @@ class _InvestmentsScreenState extends ConsumerState<InvestmentsScreen> with Sing
           style: TextStyle(fontWeight: FontWeight.bold, color: color1),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.trending_up, color: color3),
-            tooltip: 'Market Overview',
-            onPressed: () {
-              Navigate().push(const MarketOverviewScreen());
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.trending_up, color: color3),
+          //   tooltip: 'Market Overview',
+          //   onPressed: () {
+          //     Navigate().push(const MarketOverviewScreen());
+          //   },
+          // ),
           IconButton(
             icon: const Icon(Icons.smart_toy_outlined, color: color3),
             tooltip: 'AI Assistant',
