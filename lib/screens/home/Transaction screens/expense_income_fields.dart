@@ -176,7 +176,7 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
             readOnly: true,
             sufixIconData: Icons.arrow_drop_down_circle_outlined,
             onTap: () {
-              showAccountSelection(userFinanceData);
+              showAccountSelection();
             },
           ),
           if (selectedBank != null)
@@ -381,7 +381,9 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     );
   }
 
-  void showAccountSelection(UserFinanceData userFinanceData) {
+  void showAccountSelection() {
+    UserFinanceData userFinanceData =
+        ref.read(userFinanceDataNotifierProvider);
     // show modal bottom sheet to select payment mode
     showModalBottomSheet(
       isScrollControlled: true,
@@ -523,11 +525,19 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
                                 (entry) {
                                   final key = entry.key;
                                   final value = entry.value;
+                                  
+                                  // Find the group safely
+                                  final Group? foundGroup = userFinanceData.listOfGroups?.where(
+                                    (group) => group.gid == key
+                                  ).firstOrNull;
+                                  
+                                  final String groupName = foundGroup?.name ?? "Unknown Group";
+                                  
                                   return Row(
                                     spacing: 10,
                                     children: [
                                       Text(
-                                        "◗ ${userFinanceData.listOfGroups?.firstWhere((group) => group.gid == key).name}:",
+                                        "◗ $groupName:",
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,

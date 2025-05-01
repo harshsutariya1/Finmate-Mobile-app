@@ -412,11 +412,19 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
                                 (entry) {
                                   final key = entry.key;
                                   final value = entry.value;
+                                  
+                                  // Find the group safely
+                                  final Group? foundGroup = userFinanceData.listOfGroups?.where(
+                                    (group) => group.gid == key
+                                  ).firstOrNull;
+                                  
+                                  final String groupName = foundGroup?.name ?? "Unknown Group";
+                                  
                                   return Row(
                                     spacing: 10,
                                     children: [
                                       Text(
-                                        "◗ ${userFinanceData.listOfGroups?.firstWhere((group) => group.gid == key).name}:",
+                                        "◗ $groupName:",
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -432,6 +440,7 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
                                   );
                                 },
                               ),
+                              
                           ],
                         ),
                       ),

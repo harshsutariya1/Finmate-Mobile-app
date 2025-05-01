@@ -158,13 +158,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ref.watch(userFinanceDataNotifierProvider);
     final List<BankAccount> bankAccounts =
         List.from(userFinanceData.listOfBankAccounts ?? []);
-    final String cashAmount = "${userFinanceData.cash?.amount ?? 0.0}";
-    final double additionOfBankBalanceAndCash = bankAccounts.fold(
-          0.0,
-          (previousValue, account) =>
-              previousValue + (double.parse(account.totalBalance ?? '0')),
-        ) +
-        double.parse(cashAmount);
+    
+    // Safely parse cash amount
+    final String cashAmountString = userFinanceData.cash?.amount ?? "0.0";
+    final double cashAmount = _safeParseDouble(cashAmountString);
+    
+    // Safely calculate total from all bank accounts
+    final double totalBankBalance = bankAccounts.fold(
+      0.0,
+      (previousValue, account) => 
+        previousValue + _safeParseDouble(account.totalBalance ?? '0')
+    );
+    
+    final double additionOfBankBalanceAndCash = totalBankBalance + cashAmount;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -209,6 +215,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
       ),
     );
+  }
+
+  double _safeParseDouble(String value) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0;
+    }
   }
 
   Widget _accounts() {

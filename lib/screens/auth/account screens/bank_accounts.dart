@@ -53,14 +53,21 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
     UserData userData,
     UserFinanceData userFinanceData,
   ) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          addNewButton(userData, userFinanceData),
-          accountsCrouselSlider(userData, userFinanceData),
-          accountDetails(userData, userFinanceData),
-          accountTransactions(userData, userFinanceData),
-        ],
+    return RefreshIndicator.adaptive(
+      onRefresh: () {
+        return ref
+            .read(userFinanceDataNotifierProvider.notifier)
+            .refetchUserAccounts(userData.uid!);
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            addNewButton(userData, userFinanceData),
+            accountsCrouselSlider(userData, userFinanceData),
+            accountDetails(userData, userFinanceData),
+            accountTransactions(userData, userFinanceData),
+          ],
+        ),
       ),
     );
   }
@@ -417,13 +424,22 @@ class _BankAccountsState extends ConsumerState<BankAccounts> {
                     else
                       ...selectedBankAccount!.groupsBalance!.entries.map(
                         (entry) {
-                          final key = entry.key;
-                          final value = entry.value;
+                          final String key = entry.key;
+                          final String value = entry.value;
+
+                          // Find the group safely
+                          final Group? foundGroup = listOfGroups
+                              ?.where((group) => group.gid == key)
+                              .firstOrNull;
+
+                          final String groupName =
+                              foundGroup?.name ?? "Unknown Group";
+
                           return Row(
                             spacing: 10,
                             children: [
                               Text(
-                                "◗ ${listOfGroups?.firstWhere((group) => group.gid == key).name}:",
+                                "◗ $groupName:",
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
