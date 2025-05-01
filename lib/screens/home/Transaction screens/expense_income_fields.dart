@@ -53,287 +53,642 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     UserFinanceData userFinanceData =
         ref.watch(userFinanceDataNotifierProvider);
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: color4,
+      
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _floatingButton(userData, userFinanceData),
-      body: Container(
-        padding: EdgeInsets.only(
-          top: 30,
-          right: 20,
-          left: 20,
-          bottom: 0,
-        ),
-        child: _bodyForm(
-          userData: userData,
-          userFinanceData: userFinanceData,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 80),
+          child: _bodyForm(
+            userData: userData,
+            userFinanceData: userFinanceData,
+          ),
         ),
       ),
     );
   }
 
-  Widget _bodyForm(
-      {required UserData userData, required UserFinanceData userFinanceData}) {
+  Widget _bodyForm({
+    required UserData userData,
+    required UserFinanceData userFinanceData,
+  }) {
     return SingleChildScrollView(
+      physics: BouncingScrollPhysics(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        spacing: 20,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _dateTimePicker(),
-          Row(
-            children: [
-              // income / expense button
-              Padding(
-                padding: const EdgeInsets.only(right: 10, left: 10),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    backgroundColor:
-                        (isIncomeSelected) ? Colors.green : Colors.redAccent,
-                    minimumSize:
-                        Size(double.minPositive, 50), // Set width and height
-                  ),
-                  child: Text(
-                    (isIncomeSelected) ? "Income" : "Expense",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color4,
-                    ),
-                  ),
-                  onPressed: () => setState(() {
-                    isIncomeSelected = !isIncomeSelected;
-                  }),
-                ),
-              ),
-              Expanded(
-                child: textfield(
-                  controller: _amountController,
-                  hintText: "00.00",
-                  lableText: "Amount",
-                  prefixIconData: Icons.currency_rupee_sharp,
-                ),
-              ),
-            ],
-          ),
-          textfield(
-            controller: _payeeController, // Added Payee Textfield
-            hintText: (isIncomeSelected) ? "From Payeer" : "To Payee",
-            lableText: (isIncomeSelected) ? "From Payeer" : "To Payee",
-            prefixIconData: Icons.person_outline,
-          ),
-          textfield(
-            controller: _descriptionController,
-            hintText: "Description",
-            lableText: "Description",
-            prefixIconData: Icons.description_outlined,
-          ),
-          textfield(
-              controller: _categoryController,
-              prefixIconData: Icons.category_rounded,
-              hintText: "Select Category",
-              lableText: "Category",
-              readOnly: true,
-              sufixIconData: Icons.arrow_drop_down_circle_outlined,
-              onTap: () {
-                // show modal bottom sheet to select category
-                showModalBottomSheet(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (context) {
-                    return Container(
-                      height: MediaQuery.sizeOf(context).height * 0.7,
-                      width: double.infinity,
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: color4,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                      ),
-                      child: SelectCategory(
-                        isIncome: isIncomeSelected,
-                        onTap: (selectedCategory) {
-                          setState(() {
-                            _categoryController.text = selectedCategory;
-                          });
-                          Navigator.pop(context);
-                        },
-                        selectedCategory: _categoryController.text,
-                      ),
-                    );
-                  },
-                );
-              }),
-          textfield(
-            controller: _paymentModeController,
-            prefixIconData: Icons.payments_rounded,
-            hintText: "Select Payment Mode",
-            lableText: "Payment Mode",
-            readOnly: true,
-            sufixIconData: Icons.arrow_drop_down_circle_outlined,
-            onTap: () {
-              showAccountSelection();
-            },
-          ),
-          if (selectedBank != null)
-            ListTile(
-              leading: const Icon(Icons.account_balance),
-              title: Text(selectedBank!.bankAccountName ?? "Bank Account"),
-              subtitle: Text(
-                  "Total Balance: ${selectedBank!.totalBalance ?? '0'} \nAvailable Balance: ${selectedBank!.availableBalance ?? '0'}"),
+          // Type selector and date/time
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          textfield(
-            controller: _groupController,
-            prefixIconData: Icons.group_add_rounded,
-            hintText: "Add Group Transaction",
-            lableText: "Group Transaction",
-            readOnly: true,
-            sufixIconData: Icons.arrow_drop_down_circle_outlined,
-            onTap: () {
-              // show modal bottom sheet to select payment mode
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  List<Group> groupList =
-                      userFinanceData.listOfGroups!.toList();
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 50),
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Select Group"),
-                              Text(
-                                "Your Groups = 🟢",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          sbh10,
-                          Wrap(
-                            spacing: 8.0,
-                            children: groupList.map((group) {
-                              return ChoiceChip(
-                                label: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  spacing: 20,
-                                  children: [
-                                    Text(group.name.toString()),
-                                    (group.creatorId == userData.uid)
-                                        ? Text(
-                                            "🟢",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey,
-                                            ),
-                                          )
-                                        : SizedBox.shrink(),
-                                  ],
-                                ),
-                                selected: _groupController.text ==
-                                    group.name.toString(),
-                                onSelected: (groupSelected) {
-                                  setState(() {
-                                    _groupController.text = groupSelected
-                                        ? group.name.toString()
-                                        : '';
-                                    selectedGroup =
-                                        groupSelected ? group : null;
-
-                                    // Clear payment mode selection
-                                    _paymentModeController.clear();
-                                    selectedBank = null;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          if (selectedGroup != null)
-            ListTile(
-              leading: const Icon(Icons.group),
-              title: Text(selectedGroup!.name ?? "Group"),
-              subtitle: Text(
-                  "Total Amount: ${selectedGroup!.totalAmount ?? '0'} \nYour Balance: ${selectedGroup!.membersBalance?[userData.uid] ?? '0'}"),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Transaction type switcher
+                  _buildTransactionTypeSwitcher(),
+                  const SizedBox(height: 16),
+                  _dateTimePicker(),
+                ],
+              ),
             ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Amount and basic info
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader("Basic Details"),
+                  const SizedBox(height: 12),
+                  _buildAmountField(),
+                  const SizedBox(height: 12),
+                  textfield(
+                    controller: _payeeController,
+                    hintText: isIncomeSelected ? "From Payeer" : "To Payee",
+                    lableText: isIncomeSelected ? "From Payeer" : "To Payee",
+                    prefixIconData: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 12),
+                  textfield(
+                    controller: _descriptionController,
+                    hintText: "Description",
+                    lableText: "Description",
+                    prefixIconData: Icons.description_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  textfield(
+                    controller: _categoryController,
+                    prefixIconData: Icons.category_rounded,
+                    hintText: "Select Category",
+                    lableText: "Category",
+                    readOnly: true,
+                    sufixIconData: Icons.arrow_drop_down_circle_outlined,
+                    onTap: _showCategorySelection,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Payment details
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader("Payment Details"),
+                  const SizedBox(height: 12),
+                  textfield(
+                    controller: _paymentModeController,
+                    prefixIconData: Icons.payments_rounded,
+                    hintText: "Select Payment Mode",
+                    lableText: "Payment Mode",
+                    readOnly: true,
+                    sufixIconData: Icons.arrow_drop_down_circle_outlined,
+                    onTap: () => showAccountSelection(),
+                  ),
+                  if (selectedBank != null) _buildBankDetails(),
+                  const SizedBox(height: 12),
+                  textfield(
+                    controller: _groupController,
+                    prefixIconData: Icons.group_add_rounded,
+                    hintText: "Add Group Transaction",
+                    lableText: "Group Transaction",
+                    readOnly: true,
+                    sufixIconData: Icons.arrow_drop_down_circle_outlined,
+                    onTap: () => _showGroupSelection(userFinanceData, userData),
+                  ),
+                  if (selectedGroup != null) _buildGroupDetails(userData),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-// __________________________________________________________________________ //
-
-  Widget _dateTimePicker() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      spacing: 20,
+  Widget _buildTransactionTypeSwitcher() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: textfield(
-            controller: TextEditingController(
-              text: "${_selectedDate.toLocal()}".split(' ')[0],
-            ),
-            hintText: "Select Date",
-            prefixIconData: Icons.calendar_today,
-            readOnly: true,
-            onTap: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2101),
-              );
-              if (pickedDate != null) {
-                setState(() {
-                  _selectedDate = pickedDate;
-                });
-              }
-            },
+        _buildSectionHeader("Transaction Type"),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        Expanded(
-          child: textfield(
-            controller: TextEditingController(
-              text: _selectedTime.format(context),
-            ),
-            hintText: "Select Time",
-            prefixIconData: Icons.access_time,
-            readOnly: true,
-            onTap: () async {
-              TimeOfDay? pickedTime = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.now(),
-              );
-              if (pickedTime != null) {
-                setState(() {
-                  _selectedTime = pickedTime;
-                });
-              }
-            },
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTypeButton(
+                  isSelected: !isIncomeSelected,
+                  text: "Expense",
+                  icon: Icons.arrow_upward,
+                  color: Colors.redAccent,
+                  onTap: () => setState(() => isIncomeSelected = false),
+                ),
+              ),
+              Expanded(
+                child: _buildTypeButton(
+                  isSelected: isIncomeSelected,
+                  text: "Income",
+                  icon: Icons.arrow_downward,
+                  color: Colors.green,
+                  onTap: () => setState(() => isIncomeSelected = true),
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTypeButton({
+    required bool isSelected,
+    required String text,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: color3,
+      ),
+    );
+  }
+
+  Widget _buildAmountField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color3.withOpacity(0.1),
+              borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
+            ),
+            child: Text(
+              "₹",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color3,
+              ),
+            ),
+          ),
+          Expanded(
+            child: TextFormField(
+              controller: _amountController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color1,
+              ),
+              decoration: InputDecoration(
+                hintText: "0.00",
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.normal,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showCategorySelection() {
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          height: MediaQuery.sizeOf(context).height * 0.7,
+          width: double.infinity,
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: color4,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: SelectCategory(
+            isIncome: isIncomeSelected,
+            onTap: (selectedCategory) {
+              setState(() {
+                _categoryController.text = selectedCategory;
+              });
+              Navigator.pop(context);
+            },
+            selectedCategory: _categoryController.text,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBankDetails() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color3.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color3.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.account_balance, color: color3),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedBank?.bankAccountName ?? "Bank Account",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Available: ${selectedBank?.availableBalance ?? '0'} ₹",
+                  style: TextStyle(
+                    color: color2,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupDetails(UserData userData) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color3.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color3.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.group, color: color3),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  selectedGroup?.name ?? "Group",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      "Your Balance: ",
+                      style: TextStyle(
+                        color: color2,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      "${selectedGroup?.membersBalance?[userData.uid]?['currentAmount'] ?? '0'} ₹",
+                      style: TextStyle(
+                        color: color2,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateTimePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Date & Time"),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDateTimeField(
+                icon: Icons.calendar_today,
+                text: "${_selectedDate.toLocal()}".split(' ')[0],
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      _selectedDate = pickedDate;
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildDateTimeField(
+                icon: Icons.access_time,
+                text: _selectedTime.format(context),
+                onTap: () async {
+                  TimeOfDay? pickedTime = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+                  if (pickedTime != null) {
+                    setState(() {
+                      _selectedTime = pickedTime;
+                    });
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateTimeField({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color3, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: color1,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGroupSelection(UserFinanceData userFinanceData, UserData userData) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        List<Group> groupList = userFinanceData.listOfGroups!.toList();
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Select Group",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color3,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (groupList.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      "No groups available",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: groupList.length,
+                    itemBuilder: (context, index) {
+                      final group = groupList[index];
+                      final isYourGroup = group.creatorId == userData.uid;
+                      
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _groupController.text = group.name.toString();
+                              selectedGroup = group;
+                              // Clear payment mode selection
+                              _paymentModeController.clear();
+                              selectedBank = null;
+                            });
+                            Navigator.pop(context);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: color3.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.group,
+                                    color: color3,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            group.name.toString(),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: color1,
+                                            ),
+                                          ),
+                                          if (isYourGroup)
+                                            Container(
+                                              margin: EdgeInsets.only(left: 8),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: color3.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                "Admin",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: color3,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "Balance: ${group.membersBalance?[userData.uid]?['currentAmount'] ?? '0'} ₹",
+                                        style: TextStyle(
+                                          color: color2,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -642,8 +997,6 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
     );
   }
 
-// __________________________________________________________________________ //
-
   void addTransaction(String uid, UserData userData, WidgetRef ref,
       UserFinanceData userFinanceData,
       {bool isTransferSec = false}) async {
@@ -747,9 +1100,12 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
       if (selectedGroup == null) {
         return "Invalid group selected.";
       }
+      
+      // Access the currentAmount from the nested map
       final memberBalance =
-          double.parse(selectedGroup!.membersBalance?[userData.uid] ?? '0');
+          double.parse(selectedGroup!.membersBalance?[userData.uid]?['currentAmount'] ?? '0');
       final groupBalance = double.parse(selectedGroup!.totalAmount ?? '0');
+      
       if (!isIncomeSelected &&
           memberBalance < amount &&
           (selectedGroup?.creatorId != userData.uid)) {
@@ -855,24 +1211,29 @@ class _ExpenseIncomeFieldsState extends ConsumerState<ExpenseIncomeFields> {
 
       // Update group amount if it's a group transaction
       if (transactionData.isGroupTransaction) {
+        // Access the currentAmount from the nested map
+        final String currentMemberAmount = 
+            userFinanceData.listOfGroups!
+                .where((group) => group.gid == transactionData.gid)
+                .first
+                .membersBalance?[uid]?['currentAmount'] ?? '0';
+        
         final String updatedMemberAmount =
             (double.parse(transactionData.amount ?? "0") +
-                    (double.parse(userFinanceData.listOfGroups!
-                        .where((group) => group.gid == transactionData.gid)
-                        .first
-                        .membersBalance![uid]!)))
+                    double.parse(currentMemberAmount))
                 .toString();
+        
         await ref
             .read(userFinanceDataNotifierProvider.notifier)
             .updateGroupAmount(
               gid: transactionData.gid ?? '',
               amount: (double.parse(transactionData.amount ?? "0") +
-                      (double.parse(userFinanceData.listOfGroups
+                      double.parse(userFinanceData.listOfGroups
                               ?.where(
                                   (group) => group.gid == transactionData.gid)
                               .first
                               .totalAmount ??
-                          '0')))
+                          '0'))
                   .toString(),
               uid: uid,
               memberAmount: updatedMemberAmount,

@@ -208,34 +208,48 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
     required String uid,
   }) async {
     try {
+      // Get the current group from state
+      final group = state.listOfGroups?.firstWhere((group) => group.gid == gid);
+      if (group == null) {
+        logger.w("Group not found with gid: $gid");
+        return false;
+      }
+
+      // Create a deep copy of the members balance map
+      final updatedMembersBalance =
+          Map<String, Map<String, String>>.from(group.membersBalance ?? {});
+
+      // Update the member's current amount while preserving the initial amount
+      if (updatedMembersBalance.containsKey(uid)) {
+        updatedMembersBalance[uid] = {
+          'initialAmount':
+              updatedMembersBalance[uid]?['initialAmount'] ?? memberAmount,
+          'currentAmount': memberAmount,
+        };
+      } else {
+        updatedMembersBalance[uid] = {
+          'initialAmount': memberAmount,
+          'currentAmount': memberAmount,
+        };
+      }
+
       // updating group in firestore
       await groupsCollection.doc(gid).update({
         'totalAmount': amount,
-        'membersBalance': state.listOfGroups
-            ?.firstWhere((group) => group.gid == gid)
-            .membersBalance
-            ?.map((key, value) {
-          return MapEntry(key, key == uid ? memberAmount : value);
-        }),
+        'membersBalance': updatedMembersBalance,
       }).then((value) {
         // updating group in provider state
-        final group =
-            state.listOfGroups?.firstWhere((group) => group.gid == gid);
-        if (group != null) {
-          final updatedGroup =
-              group.copyWith(totalAmount: amount, membersBalance: {
-            ...group.membersBalance!,
-            uid: memberAmount,
-          });
-          final updatedGroupsList = state.listOfGroups?.map((oldGroup) {
-            return oldGroup.gid == gid ? updatedGroup : oldGroup;
-          }).toList();
+        final updatedGroup = group.copyWith(
+            totalAmount: amount, membersBalance: updatedMembersBalance);
 
-          state = state.copyWith(
-            listOfGroups: updatedGroupsList,
-          );
-          logger.i("Group amount updated successfully.");
-        }
+        final updatedGroupsList = state.listOfGroups?.map((oldGroup) {
+          return oldGroup.gid == gid ? updatedGroup : oldGroup;
+        }).toList();
+
+        state = state.copyWith(
+          listOfGroups: updatedGroupsList,
+        );
+        logger.i("Group amount updated successfully.");
       });
       return true;
     } catch (e) {
@@ -530,23 +544,99 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
   Future<bool> createGroupProfile({required Group groupProfile}) async {
     try {
+      // Initialize a Firestore batch for atomic operations
+      final batch = firestore.FirebaseFirestore.instance.batch();
+
       if (groupProfile.creatorId != null) {
-        final result = await groupsCollection
-            .add(groupProfile.copyWith(listOfMembers: []));
-        await result.update({'gid': result.id});
+        // Add the group to Firestore
+        final groupDocRef = groupsCollection.doc();
+        final groupId = groupDocRef.id;
 
-        state = state.copyWith(
-          listOfGroups: state.listOfGroups!
-            ..add(groupProfile.copyWith(gid: result.id)),
-        );
+        // Set the group data with the generated ID
+        batch.set(
+            groupDocRef,
+            groupProfile.copyWith(
+              gid: groupId,
+              listOfMembers: [], // Clear members to avoid serialization issues
+            ));
 
-        // Add the group balance to user's bank account
+        // Check if this group is linked to a bank account
+        if (groupProfile.linkedBankAccountId != null &&
+            groupProfile.linkedBankAccountId!.isNotEmpty) {
+          // Find the bank account in the state
+          final bankAccount = state.listOfBankAccounts?.firstWhere(
+              (account) => account.bid == groupProfile.linkedBankAccountId,
+              orElse: () => throw Exception("Bank account not found"));
+
+          if (bankAccount != null) {
+            // Create updated groupsBalance map for the bank account
+            final updatedGroupsBalance = {
+              ...?bankAccount.groupsBalance,
+              groupId: groupProfile.totalAmount ?? "0",
+            };
+
+            // Calculate new total balance for the bank account
+            final updatedTotalBalance =
+                (double.parse(bankAccount.totalBalance ?? "0") +
+                        double.parse(groupProfile.totalAmount ?? "0"))
+                    .toString();
+
+            // Update the bank account in Firestore
+            final bankAccountRef =
+                bankAccountsCollectionReference(groupProfile.creatorId!)
+                    .doc(bankAccount.bid);
+
+            batch.update(bankAccountRef, {
+              'groupsBalance': updatedGroupsBalance,
+              'totalBalance': updatedTotalBalance,
+            });
+
+            // Update bank account in local state after batch commits
+            final updatedBankAccounts =
+                state.listOfBankAccounts?.map((account) {
+              if (account.bid == bankAccount.bid) {
+                return account.copyWith(
+                  groupsBalance: updatedGroupsBalance,
+                  totalBalance: updatedTotalBalance,
+                );
+              }
+              return account;
+            }).toList();
+
+            // Commit the batch
+            await batch.commit();
+
+            // Update local state with both the new group and updated bank account
+            state = state.copyWith(
+              listOfGroups: state.listOfGroups!
+                ..add(groupProfile.copyWith(gid: groupId)),
+              listOfBankAccounts: updatedBankAccounts,
+            );
+          } else {
+            // If bank account not found, just create the group
+            await batch.commit();
+
+            state = state.copyWith(
+              listOfGroups: state.listOfGroups!
+                ..add(groupProfile.copyWith(gid: groupId)),
+            );
+          }
+        } else {
+          // If no linked bank account, just create the group
+          await batch.commit();
+
+          state = state.copyWith(
+            listOfGroups: state.listOfGroups!
+              ..add(groupProfile.copyWith(gid: groupId)),
+          );
+        }
+
+        Logger().i("✅ Group profile created successfully");
+        return true;
       } else {
         Logger().w("❗groupProfile.creatorId is null");
         throw ArgumentError("❗groupProfile.creatorId cannot be null");
       }
-      Logger().i("✅Group profile created successfully");
-      return true;
     } catch (e) {
       Logger().w("❗Error creating group profile: $e");
       return false;
@@ -616,7 +706,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
 
       // Remove the member from the membersBalance map
       final updatedMembersBalance =
-          Map<String, String>.from(group.membersBalance ?? {});
+          Map<String, Map<String, String>>.from(group.membersBalance ?? {});
       updatedMembersBalance.remove(memberUid);
 
       // Update Firestore

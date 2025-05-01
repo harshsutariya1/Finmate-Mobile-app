@@ -112,14 +112,14 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                 ),
                                 tooltip: 'Reset Zoom',
                               ),
-                              IconButton(
-                                onPressed: () => _saveImage(context),
-                                icon: const Icon(
-                                  Icons.download,
-                                  color: Colors.white,
-                                ),
-                                tooltip: 'Save Image',
-                              ),
+                              // IconButton(
+                              //   onPressed: () => _saveImage(context),
+                              //   icon: const Icon(
+                              //     Icons.download,
+                              //     color: Colors.white,
+                              //   ),
+                              //   tooltip: 'Save Image',
+                              // ),
                             ],
                           ),
                         ],

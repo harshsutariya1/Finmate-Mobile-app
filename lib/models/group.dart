@@ -16,7 +16,7 @@ class Group {
   List<Transaction>? listOfTransactions;
   List<String>? memberIds;
   List<UserData>? listOfMembers;
-  Map<String, String>? membersBalance;
+  Map<String, Map<String, String>>? membersBalance;  // Updated type
   String? linkedBankAccountId;
 
   Group({
@@ -53,7 +53,7 @@ class Group {
     List<Transaction>? listOfTransactions,
     List<String>? memberIds,
     List<UserData>? listOfMembers,
-    Map<String, String>? membersBalance,
+    Map<String, Map<String, String>>? membersBalance,
     String? linkedBankAccountId,
   }) {
     return Group(
@@ -101,7 +101,14 @@ class Group {
           ? List<UserData>.from((map['listOfMembers'] ?? []))
           : [],
       membersBalance: map['membersBalance'] != null
-          ? Map<String, String>.from((map['membersBalance'] ?? {}))
+          ? Map<String, Map<String, String>>.from(
+              (map['membersBalance'] as Map).map(
+                (key, value) => MapEntry(
+                  key.toString(),
+                  Map<String, String>.from(value as Map),
+                ),
+              ),
+            )
           : {},
       linkedBankAccountId: map['linkedBankAccountId'] as String?,
     );

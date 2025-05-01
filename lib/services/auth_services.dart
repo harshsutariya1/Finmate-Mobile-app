@@ -1,5 +1,4 @@
 import 'package:finmate/models/user.dart';
-import 'package:finmate/providers/auth_provider.dart';
 import 'package:finmate/providers/budget_provider.dart';
 import 'package:finmate/providers/user_financedata_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
@@ -172,7 +171,7 @@ class AuthService {
           await createUserProfile(
               userProfile: UserData(
             uid: uid,
-            userName: email,
+            userName: uid,
             name: name,
             pfpURL: pfpicUrl,
             email: email,

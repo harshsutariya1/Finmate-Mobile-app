@@ -26,12 +26,13 @@ class EditUserDetails extends ConsumerStatefulWidget {
 }
 
 class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
-  var logger = Logger(
-    printer: PrettyPrinter(methodCount: 2),
-  );
-  bool isEditing = false;
-  bool imageLoader = false;
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 2));
+  
+  // State variables
+  bool _isEditing = false;
+  bool _imageLoading = false;
 
+  // Text controllers
   late TextEditingController _nameController;
   late TextEditingController _usernameController;
 
@@ -43,281 +44,44 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    UserData userData = ref.watch(userDataNotifierProvider);
+    final userData = ref.watch(userDataNotifierProvider);
+    final screenSize = MediaQuery.of(context).size;
+    
     return Scaffold(
       backgroundColor: color4,
-      extendBodyBehindAppBar: true,
-      appBar: customAppBar("Edit Profile", isEditProfileScreen: true),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        spacing: 20,
-        children: [
-          editImageAndUserName(userData),
-          editDetailsForm(userData),
-        ],
-      ),
-    );
-  }
-
-  Widget editImageAndUserName(UserData userData) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Container(
-              height: 260,
-              width: double.infinity,
-              margin: EdgeInsets.only(bottom: 55),
-              decoration: BoxDecoration(
-                color: color2,
-                border: Border.all(),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.zero,
-                  topRight: Radius.zero,
-                  bottomLeft: Radius.elliptical(200, 150),
-                  bottomRight: Radius.elliptical(200, 150),
-                ),
-              ),
-            ),
-            Align(
-              // Image Picker
-              alignment: Alignment.bottomCenter,
-              child: CircleAvatar(
-                backgroundColor: color1,
-                radius: 63,
-                child: CachedNetworkImage(
-                  imageUrl: userData.pfpURL.toString(),
-                  imageBuilder: (context, imageProvider) => CircleAvatar(
-                    radius: 60,
-                    backgroundImage: imageProvider,
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: FloatingActionButton.small(
-                        onPressed: () {
-                          onTapEditImage(userData);
-                        },
-                        backgroundColor: Colors.white,
-                        shape: CircleBorder(),
-                        child: (imageLoader)
-                            ? Padding(
-                                padding: const EdgeInsets.all(5),
-                                child: CircularProgressIndicator.adaptive(),
-                              )
-                            : Icon(
-                                Icons.edit_rounded,
-                                color: color3,
-                              ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) {
-                    return CircleAvatar(
-                      radius: 60,
-                      backgroundImage: AssetImage(blankProfileImage),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: FloatingActionButton.small(
-                          onPressed: () {
-                            onTapEditImage(userData);
-                          },
-                          backgroundColor: Colors.white,
-                          shape: CircleBorder(),
-                          child: Icon(
-                            Icons.edit_rounded,
-                            color: color3,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  placeholder: (context, url) =>
-                      CircularProgressIndicator.adaptive(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        sbh15,
-        Stack(
-          // Username
-          alignment: Alignment.centerRight,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: Text(
-                userData.userName == ""
-                    ? "Add username"
-                    : userData.userName ?? "",
-                textAlign: TextAlign.center,
-                style: TextTheme.of(context).headlineMedium,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 50),
-              child: editButton(onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) {
-                    return Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      child: Column(
-                        children: [
-                          customTextField(
-                            controller: _usernameController,
-                            text: "User Name",
-                            iconData: Icons.person_add_alt_1,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              showYesNoDialog(
-                                context,
-                                title: 'Edit Username ?',
-                                contentWidget: Text(
-                                  '${userData.userName ?? "username"} ➡️ ${_usernameController.text}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                onTapYes: () {
-                                  setState(() {
-                                    isEditing = true;
-                                  });
-                                  ref
-                                      .read(userDataNotifierProvider.notifier)
-                                      .updateCurrentUserData(
-                                          userName: _usernameController.text)
-                                      .then((value) {
-                                    (value)
-                                        ? snackbarToast(
-                                            context: context,
-                                            text: "Value Updated!",
-                                            icon: Icons.done_all)
-                                        : snackbarToast(
-                                            context: context,
-                                            text: "Error Updating value!",
-                                            icon: Icons.error_outline_rounded);
-                                    setState(() {
-                                      Navigate().goBack();
-                                    });
-                                    Navigate().goBack();
-                                  });
-                                  setState(() {
-                                    isEditing = false;
-                                  });
-                                },
-                                onTapNo: () {
-                                  Navigate().goBack();
-                                },
-                              );
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 20),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: color3),
-                                borderRadius: BorderRadius.circular(15),
-                                color: color4,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                spacing: 20,
-                                children: [
-                                  Text(
-                                    "Save",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                        color: color3),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
-        Text(
-          // email
-          userData.email == "" ? "No email found" : userData.email ?? "",
+      appBar: AppBar(
+        title: Text(
+          "Edit Profile",
           style: TextStyle(
-            fontSize: 18,
-            color: Colors.blueGrey,
+            fontWeight: FontWeight.bold,
+            color: color1,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget editDetailsForm(UserData userData) {
-    return Flexible(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SingleChildScrollView(
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: color1),
+          onPressed: () => Navigate().goBack(),
+        ),
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             children: [
-              sbh10,
-              textFieldWithEditButton(
-                customTextField(
-                  controller: _nameController,
-                  text: "Full Name",
-                  iconData: Icons.person,
-                ),
-                onTapEdit: () {
-                  showYesNoDialog(
-                    context,
-                    title: 'Edit Name ?',
-                    contentWidget: Text(
-                      '${userData.name ?? "Name"} ➡️ ${_nameController.text}',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                    onTapYes: () {
-                      setState(() {
-                        isEditing = true;
-                      });
-                      ref
-                          .read(userDataNotifierProvider.notifier)
-                          .updateCurrentUserData(name: _nameController.text)
-                          .then((value) {
-                        (value)
-                            ? snackbarToast(
-                                context: context,
-                                text: "Value Updated!",
-                                icon: Icons.done_all)
-                            : snackbarToast(
-                                context: context,
-                                text: "Error Updating value!",
-                                icon: Icons.error_outline_rounded);
-                        setState(() {
-                          Navigate().goBack();
-                        });
-                      });
-                      setState(() {
-                        isEditing = false;
-                      });
-                    },
-                    onTapNo: () {
-                      Navigate().goBack();
-                    },
-                  );
-                },
-              ),
+              _buildProfileHeader(userData, screenSize),
+              const SizedBox(height: 24),
+              _buildProfileForm(userData),
             ],
           ),
         ),
@@ -325,57 +89,554 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
     );
   }
 
-  Widget textFieldWithEditButton(
-    Widget textField, {
-    void Function()? onTapEdit,
-  }) {
-    return Stack(
-      alignment: Alignment.centerRight,
-      children: [
-        textField,
-        Padding(
-          padding: const EdgeInsets.only(right: 25),
-          child: editButton(
-            onTap: onTapEdit,
+  Widget _buildProfileHeader(UserData userData, Size screenSize) {
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color2.withOpacity(0.8), color3.withOpacity(0.9)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            // Profile Image
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: _buildProfileImage(userData),
+                ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _imageLoading
+                      ? Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(color3),
+                            ),
+                          ),
+                        )
+                      : _buildEditImageButton(),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // User information
+            Column(
+              children: [
+                // Username
+                GestureDetector(
+                  onTap: () => _showUsernameEditBottomSheet(userData),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          userData.userName?.isNotEmpty == true 
+                              ? "@${userData.userName}" 
+                              : "Add username",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Email
+                Text(
+                  userData.email ?? "No email",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(UserData userData) {
+    return Hero(
+      tag: 'profile-${userData.uid}',
+      child: CircleAvatar(
+        radius: 60,
+        backgroundColor: Colors.white,
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: userData.pfpURL ?? "",
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: Colors.grey[300],
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(color3),
+                  ),
+                ),
+              ),
+            ),
+            errorWidget: (context, url, error) => Image.asset(
+              blankProfileImage,
+              width: 120,
+              height: 120,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEditImageButton() {
+    return GestureDetector(
+      onTap: () => _handleImageEdit(),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color3,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 6,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Icon(
+          Icons.camera_alt,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileForm(UserData userData) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Text(
+            "Personal Information",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color3,
+            ),
+          ),
+        ),
+        
+        _buildFormCard(
+          title: "Full Name",
+          subtitle: userData.name ?? "Add your name",
+          icon: Icons.person,
+          onEdit: () => _showNameEditDialog(userData),
+          controller: _nameController,
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // You can add more fields here in similar fashion
+        // For example: Date of Birth, Gender, etc.
       ],
     );
   }
 
-  void onTapEditImage(UserData userData) async {
+  Widget _buildFormCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onEdit,
+    required TextEditingController controller,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color3.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color3),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: color1,
+          ),
+        ),
+        trailing: IconButton(
+          icon: Icon(Icons.edit, color: color3),
+          onPressed: onEdit,
+        ),
+      ),
+    );
+  }
+
+  void _showUsernameEditBottomSheet(UserData userData) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Edit Username",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: color1,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: color1),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Username field with @ prefix
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          hintText: "Enter username",
+                          prefixIcon: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              "@",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: color3,
+                              ),
+                            ),
+                          ),
+                          prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: color1,
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _updateUsername(userData);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: color3,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          "Save",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showNameEditDialog(UserData userData) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            "Edit Full Name",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color1,
+            ),
+          ),
+          content: TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              hintText: "Enter your name",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color3),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color3, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            style: TextStyle(
+              fontSize: 16,
+              color: color1,
+            ),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _updateName(userData);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                "Save",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleImageEdit() async {
     setState(() {
-      imageLoader = true;
+      _imageLoading = true;
     });
+    
     try {
-      File? imageFile = await getImageFromGallery();
-      if (imageFile != null) {
-        final imageUrl = await uploadUserPfpic(
-            file: imageFile, uid: userData.uid.toString());
-        logger.i('Image Selected: $imageUrl');
-        if (imageUrl != null) {
-          ref
-              .read(userDataNotifierProvider.notifier)
-              .updateCurrentUserData(pfpURL: imageUrl);
-        } else {
-          logger.e("Error uploading image");
-        }
-      } else {
-        logger.w("No image selected");
+      final File? imageFile = await getImageFromGallery();
+      
+      if (imageFile == null) {
+        _logger.w("No image selected");
+        setState(() {
+          _imageLoading = false;
+        });
+        return;
       }
-      setState(() {
-        imageLoader = false;
-      });
-    } catch (e) {
-      logger.e("Error while editing image: $e");
-      snackbarToast(
-        context: context,
-        text: "Error while editing image: $e",
-        icon: Icons.error_outline_rounded,
+      
+      final UserData userData = ref.read(userDataNotifierProvider);
+      final String? imageUrl = await uploadUserPfpic(
+        file: imageFile, 
+        uid: userData.uid ?? "",
       );
+      
+      if (imageUrl != null) {
+        await ref
+            .read(userDataNotifierProvider.notifier)
+            .updateCurrentUserData(pfpURL: imageUrl);
+        
+        _showSuccessMessage("Profile picture updated successfully");
+      } else {
+        _showErrorMessage("Failed to upload image");
+      }
+    } catch (e) {
+      _logger.e("Error while editing image: $e");
+      _showErrorMessage("Error updating profile picture: $e");
+    } finally {
       setState(() {
-        imageLoader = false;
+        _imageLoading = false;
       });
     }
+  }
+
+  Future<void> _updateUsername(UserData userData) async {
+    final String newUsername = _usernameController.text.trim();
+    
+    if (newUsername.isEmpty) {
+      _showErrorMessage("Username cannot be empty");
+      return;
+    }
+    
+    setState(() {
+      _isEditing = true;
+    });
+    
+    try {
+      final bool success = await ref
+          .read(userDataNotifierProvider.notifier)
+          .updateCurrentUserData(userName: newUsername);
+      
+      if (success) {
+        _showSuccessMessage("Username updated successfully");
+      } else {
+        _showErrorMessage("Failed to update username");
+      }
+    } catch (e) {
+      _logger.e("Error updating username: $e");
+      _showErrorMessage("Error updating username: $e");
+    } finally {
+      setState(() {
+        _isEditing = false;
+      });
+    }
+  }
+
+  Future<void> _updateName(UserData userData) async {
+    final String newName = _nameController.text.trim();
+    
+    if (newName.isEmpty) {
+      _showErrorMessage("Name cannot be empty");
+      return;
+    }
+    
+    setState(() {
+      _isEditing = true;
+    });
+    
+    try {
+      final bool success = await ref
+          .read(userDataNotifierProvider.notifier)
+          .updateCurrentUserData(name: newName);
+      
+      if (success) {
+        _showSuccessMessage("Name updated successfully");
+      } else {
+        _showErrorMessage("Failed to update name");
+      }
+    } catch (e) {
+      _logger.e("Error updating name: $e");
+      _showErrorMessage("Error updating name: $e");
+    } finally {
+      setState(() {
+        _isEditing = false;
+      });
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    snackbarToast(
+      context: context,
+      text: message,
+      icon: Icons.check_circle_outline,
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    snackbarToast(
+      context: context,
+      text: message,
+      icon: Icons.error_outline,
+    );
   }
 }

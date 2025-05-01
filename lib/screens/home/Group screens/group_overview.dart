@@ -170,7 +170,7 @@ class GrpOverview extends ConsumerWidget {
   Widget _buildGroupDetailsCard(BuildContext context, UserData userData) {
     final bool isCreator = userData.uid == group.creatorId;
     final bool hasImage = group.image != null && group.image!.isNotEmpty;
-    final bool hasDescription = 
+    final bool hasDescription =
         group.description != null && group.description!.isNotEmpty;
 
     return Card(
@@ -190,13 +190,13 @@ class GrpOverview extends ConsumerWidget {
               children: [
                 // Group Profile Picture
                 GestureDetector(
-                  onTap: hasImage 
+                  onTap: hasImage
                       ? () => Navigate().push(
-                          FullScreenImageViewer(
-                            imageUrl: group.image!,
-                            heroTag: 'group_image_${group.gid}',
-                          ),
-                        )
+                            FullScreenImageViewer(
+                              imageUrl: group.image!,
+                              heroTag: 'group_image_${group.gid}',
+                            ),
+                          )
                       : null,
                   child: Hero(
                     tag: 'group_image_${group.gid}',
@@ -229,9 +229,9 @@ class GrpOverview extends ConsumerWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Group info
                 Expanded(
                   child: Column(
@@ -275,9 +275,9 @@ class GrpOverview extends ConsumerWidget {
                             ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 8),
-                      
+
                       // Creation Date
                       _buildInfoRow(
                         Icons.calendar_today_outlined,
@@ -285,9 +285,9 @@ class GrpOverview extends ConsumerWidget {
                             ? "Created on ${group.date!.day}/${group.date!.month}/${group.date!.year}"
                             : "Created Today",
                       ),
-                      
+
                       const SizedBox(height: 4),
-                      
+
                       // Member Count
                       _buildInfoRow(
                         Icons.people_outline_rounded,
@@ -298,7 +298,7 @@ class GrpOverview extends ConsumerWidget {
                 ),
               ],
             ),
-            
+
             // Description section (only shown if there is a description)
             if (hasDescription) ...[
               const Divider(height: 24),
@@ -325,7 +325,7 @@ class GrpOverview extends ConsumerWidget {
       ),
     );
   }
-  
+
   /// Helper method to build info rows with icons
   Widget _buildInfoRow(IconData icon, String text, {bool isTitle = false}) {
     return Row(
@@ -415,12 +415,18 @@ class GrpOverview extends ConsumerWidget {
   Widget _buildMemberBalanceRow(
       BuildContext context, UserData member, double totalAmount) {
     // Get member balance and calculate percentage
-    final double memberBalance =
-        double.tryParse(group.membersBalance?[member.uid] ?? "0.0") ?? 0.0;
+    final double memberBalance = double.tryParse(
+            group.membersBalance?[member.uid]?['currentAmount'] ?? "0.0") ??
+        0.0;
+
+    // Get initial amount (for potential display or calculations)
+    final double initialAmount = double.tryParse(
+            group.membersBalance?[member.uid]?['initialAmount'] ?? "0.0") ??
+        0.0;
 
     // Calculate percentage (with safety checks)
-    final double percentage = (totalAmount > 0 && memberBalance > 0)
-        ? (memberBalance / totalAmount).clamp(0.0, 1.0)
+    final double percentage = (initialAmount > 0 && memberBalance > 0)
+        ? (memberBalance / initialAmount).clamp(0.0, 1.0)
         : 0.0;
 
     final bool isNegative = memberBalance < 0;
@@ -489,13 +495,30 @@ class GrpOverview extends ConsumerWidget {
                 const SizedBox(height: 4),
 
                 // Balance Amount
-                Text(
-                  '$memberBalance ₹',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '$memberBalance ₹',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    // Only show initial amount if different from current
+                    if (initialAmount != memberBalance)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          '(initial: $initialAmount ₹)',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -532,14 +555,15 @@ class GrpOverview extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recent Transactions',
-                  style: TextStyle(
-                    color: color3,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                if (transactions.isNotEmpty)
+                  Text(
+                    'Recent Transactions',
+                    style: TextStyle(
+                      color: color3,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
-                ),
                 if (transactions.isNotEmpty)
                   TextButton(
                     onPressed: () {

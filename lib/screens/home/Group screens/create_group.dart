@@ -28,13 +28,10 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _paymentModeController = TextEditingController();
   final Logger _logger = Logger();
 
   List<String> selectedUserUid = [];
   List<UserData> listOfSelectedUsers = [];
-
-  BankAccount? selectedBank;
 
   bool isLoading = false;
   bool hasAttemptedSubmit = false;
@@ -44,7 +41,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
     _nameController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
-    _paymentModeController.dispose();
     super.dispose();
   }
 
@@ -174,15 +170,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
                 ),
                 const SizedBox(height: 24),
                 
-                // Payment section header
-                _buildSectionHeader('Payment Details'),
-                const SizedBox(height: 16),
-                
-                // Payment mode field
-                _buildPaymentModeField(userData, ref),
-                if (selectedBank != null) _buildSelectedBankInfo(),
-                const SizedBox(height: 24),
-                
                 // Members section header
                 _buildSectionHeader('Group Members'),
                 const SizedBox(height: 16),
@@ -274,71 +261,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
       autovalidateMode: hasAttemptedSubmit 
           ? AutovalidateMode.onUserInteraction 
           : AutovalidateMode.disabled,
-    );
-  }
-
-  Widget _buildPaymentModeField(UserData userData, WidgetRef ref) {
-    return _buildTextField(
-      controller: _paymentModeController,
-      prefixIconData: Icons.payments_rounded,
-      hintText: "Tap to select payment mode",
-      labelText: "Payment Mode",
-      readOnly: true,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select a payment mode';
-        }
-        return null;
-      },
-      onTap: () => _showPaymentModeSelectionBottomSheet(userData, ref),
-    );
-  }
-
-  Widget _buildSelectedBankInfo() {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color3.withAlpha(70)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color3.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.account_balance, color: color3, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  selectedBank?.bankAccountName ?? "Bank Account",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Available Balance: ${selectedBank?.availableBalance ?? '0'} ₹",
-                  style: TextStyle(
-                    color: color2,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -560,233 +482,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
     );
   }
 
-  void _showPaymentModeSelectionBottomSheet(UserData userData, WidgetRef ref) {
-    final UserFinanceData userFinanceData =
-        ref.watch(userFinanceDataNotifierProvider);
-    final List<BankAccount> bankAccounts = userFinanceData.listOfBankAccounts ?? [];
-
-    if (bankAccounts.isEmpty) {
-      snackbarToast(
-        context: context,
-        text: "No bank accounts available. Please add a bank account first.",
-        icon: Icons.warning_amber_rounded,
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      isScrollControlled: true,
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Select Payment Mode",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: color1,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigate().goBack(),
-                    icon: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        color: color2,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Subheader
-              Text(
-                "Choose a bank account to link with this group",
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Divider
-              Divider(height: 1, color: Colors.grey.shade300),
-              
-              // Bank accounts list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(top: 8),
-                  itemCount: bankAccounts.length,
-                  itemBuilder: (context, index) {
-                    return _buildBankAccountItem(bankAccounts[index], userFinanceData);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBankAccountItem(BankAccount bankAccount, UserFinanceData userFinanceData) {
-    final bool isSelected = selectedBank?.bid == bankAccount.bid;
-    final hasLinkedGroups = bankAccount.groupsBalance != null && 
-                            bankAccount.groupsBalance!.isNotEmpty;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _paymentModeController.text = PaymentModes.bankAccount.displayName;
-          selectedBank = bankAccount;
-        });
-        Navigate().goBack();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? color3.withOpacity(0.05) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? color3 : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Bank account header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color3.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.account_balance,
-                      color: color3,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          bankAccount.bankAccountName ?? "Bank Account",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: color1,
-                          ),
-                        ),
-                        Text(
-                          "Available: ${bankAccount.availableBalance} ₹",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: color2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSelected)
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: color3,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                ],
-              ),
-              
-              // Linked groups section if any
-              if (hasLinkedGroups) ...[
-                const SizedBox(height: 12),
-                Divider(height: 1, color: Colors.grey.shade200),
-                const SizedBox(height: 8),
-                Text(
-                  "Linked Groups:",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: color2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: bankAccount.groupsBalance!.entries.map((entry) {
-                    // Find the group safely
-                    final Group? foundGroup = userFinanceData.listOfGroups ?? []
-                        .where((group) => group.gid == entry.key)
-                        .firstOrNull;
-                    
-                    final String groupName = foundGroup?.name ?? "Unknown Group";
-                    final String balance = entry.value;
-                    
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Text(
-                        "$groupName: $balance ₹",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: color1,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _addGroupMembers() async {
     try {
       final result = await Navigate().push(
@@ -853,7 +548,6 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
         memberIds: selectedUserUid,
         listOfMembers: listOfSelectedUsers,
         membersBalance: membersBalance,
-        linkedBankAccountId: selectedBank?.bid,
         date: DateTime.now(),
       );
 
@@ -869,6 +563,7 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
           text: "Group Created Successfully!",
           icon: Icons.check_circle_outline,
         );
+
         Navigate().goBack();
       } else {
         // Show error message
@@ -913,14 +608,19 @@ class _AddGroupDetailsState extends ConsumerState<AddGroupDetails> {
     return isFormValid && hasSufficientMembers;
   }
 
-  Map<String, String> _calculateMembersBalance() {
+  Map<String, Map<String, String>> _calculateMembersBalance() {
     final double totalAmount = double.parse(_amountController.text.trim());
     final int memberCount = listOfSelectedUsers.length;
     final double distributedAmount = totalAmount / memberCount;
+    final String formattedAmount = distributedAmount.toStringAsFixed(2);
 
     return {
       for (var user in listOfSelectedUsers)
-        if (user.uid != null) user.uid!: distributedAmount.toStringAsFixed(2),
+        if (user.uid != null) 
+          user.uid!: {
+            'initialAmount': formattedAmount,
+            'currentAmount': formattedAmount,
+          },
     };
   }
 }
