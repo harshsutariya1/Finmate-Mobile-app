@@ -72,4 +72,3 @@ Finmate follows a clean architecture approach with:
 - **UI**: Screen components organized by feature
 - **Widgets**: Reusable UI components
 
-## Project Structure
