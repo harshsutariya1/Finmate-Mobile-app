@@ -1,6 +1,6 @@
 # Finmate - Personal Finance Management App
 
-![Finmate Logo](assets/icons/LOGO.png)
+<img src="assets/icons/LOGO.png" alt="Finmate Logo" width="150">
 
 ## Overview
 
@@ -72,4 +72,3 @@ Finmate follows a clean architecture approach with:
 - **UI**: Screen components organized by feature
 - **Widgets**: Reusable UI components
 
-## Project Structure
