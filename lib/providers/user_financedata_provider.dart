@@ -736,7 +736,7 @@ class UserFinanceDataNotifier extends StateNotifier<UserFinanceData> {
       return false;
     }
   }
-
+ 
 // __________________________________________________________________________ //
 
   Future<bool> addBankAccount(

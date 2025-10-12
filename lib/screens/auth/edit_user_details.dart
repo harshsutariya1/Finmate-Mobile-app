@@ -36,7 +36,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
   DateTime? _selectedDate;
 
   // Text controllers
-  late TextEditingController _nameController;
+  late TextEditingController _nameController; 
   late TextEditingController _usernameController;
 
   @override
@@ -45,7 +45,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
     _nameController = TextEditingController(text: widget.userData.name);
     _usernameController = TextEditingController(text: widget.userData.userName);
     _selectedGender = widget.userData.gender;
-    _selectedDate = widget.userData.dob;
+    _selectedDate = widget.userData.dob; 
   }
 
   @override

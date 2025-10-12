@@ -16,7 +16,7 @@ void main() {
   });
 }
 
-Future<void> setup() async {
+Future<void> setup() async { 
   await setupFirebase();
   await registerServices();
   SharedPreferences prefs = await SharedPreferences.getInstance();
