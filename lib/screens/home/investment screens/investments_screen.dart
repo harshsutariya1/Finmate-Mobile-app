@@ -5,7 +5,6 @@ import 'package:finmate/providers/investment_provider.dart';
 import 'package:finmate/providers/userdata_provider.dart';
 import 'package:finmate/screens/home/investment%20screens/add_investment_screen.dart';
 import 'package:finmate/screens/home/investment%20screens/investment_details_screen.dart';
-import 'package:finmate/screens/home/market%20screens/market_overview_screen.dart';
 import 'package:finmate/services/navigation_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

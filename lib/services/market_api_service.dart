@@ -161,7 +161,7 @@ class MarketApiService {
     await _respectRateLimit();
     
     // Build URL with query parameters
-    final url = Uri.parse('$_baseUrl').replace(
+    final url = Uri.parse(_baseUrl).replace(
       queryParameters: queryParams,
     );
     

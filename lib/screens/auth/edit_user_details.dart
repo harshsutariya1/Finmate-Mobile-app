@@ -665,7 +665,7 @@ class _EditUserDetailsState extends ConsumerState<EditUserDetails> {
                   color: color1,
                 ),
               ),
-              content: Container(
+              content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

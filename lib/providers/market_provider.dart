@@ -23,7 +23,7 @@ final marketIndicesProvider = FutureProvider<List<MarketIndex>>((ref) async {
   } catch (e) {
     _logger.e('Error in marketIndicesProvider: $e');
     // Don't return empty list anymore, let the error propagate
-    throw e;
+    rethrow;
   }
 });
 
@@ -34,7 +34,7 @@ final popularStocksProvider = FutureProvider<List<Stock>>((ref) async {
     return await MarketApiService.getPopularStocks();
   } catch (e) {
     _logger.e('Error in popularStocksProvider: $e');
-    throw e;
+    rethrow;
   }
 });
 
@@ -45,7 +45,7 @@ final cryptocurrenciesProvider = FutureProvider<List<Cryptocurrency>>((ref) asyn
     return await MarketApiService.getCryptocurrencies();
   } catch (e) {
     _logger.e('Error in cryptocurrenciesProvider: $e');
-    throw e;
+    rethrow;
   }
 });
 
@@ -56,7 +56,7 @@ final commoditiesProvider = FutureProvider<List<Commodity>>((ref) async {
     return await MarketApiService.getCommodities();
   } catch (e) {
     _logger.e('Error in commoditiesProvider: $e');
-    throw e;
+    rethrow;
   }
 });
 
@@ -67,7 +67,7 @@ final chartDataProvider = FutureProvider.family<List<ChartDataPoint>, ChartDataR
     return await MarketApiService.getChartData(request.symbol, request.timeRange);
   } catch (e) {
     _logger.e('Error in chartDataProvider: $e');
-    throw e;
+    rethrow;
   }
 });
 
@@ -81,7 +81,7 @@ final marketSearchProvider = FutureProvider.family<List<MarketSearchResult>, Str
     return await MarketApiService.searchMarket(query);
   } catch (e) {
     _logger.e('Error in marketSearchProvider: $e');
-    throw e;
+    rethrow;
   }
 });
 

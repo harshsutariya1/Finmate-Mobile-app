@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:finmate/constants/colors.dart';
-import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/group_chat.dart';
 import 'package:finmate/models/group.dart';
 import 'package:finmate/models/user.dart';

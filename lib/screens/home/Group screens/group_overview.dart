@@ -748,7 +748,7 @@ class GrpOverview extends ConsumerWidget {
                 final percentage = (entry.value / totalExpense * 100);
                 final color = _getCategoryColor(entry.key);
                 
-                return Container(
+                return SizedBox(
                   width: MediaQuery.of(context).size.width * 0.4,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

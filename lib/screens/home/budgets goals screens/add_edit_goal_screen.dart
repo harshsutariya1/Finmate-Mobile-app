@@ -240,7 +240,7 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen>
                   borderSide: const BorderSide(color: color3, width: 2),
                 ),
               ),
-              value: _selectedBankAccount?.bid,
+              initialValue: _selectedBankAccount?.bid,
               hint: const Text('Select Bank Account'),
               items: bankAccounts.map((bank) {
                 return DropdownMenuItem<String>(
@@ -435,7 +435,7 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              value: _selectedStatus,
+              initialValue: _selectedStatus,
               items: GoalStatus.values.map((status) {
                 return DropdownMenuItem<GoalStatus>(
                   value: status,
@@ -590,7 +590,7 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen>
                   borderSide: const BorderSide(color: color3, width: 2),
                 ),
               ),
-              value: _selectedContributionBank?.bid,
+              initialValue: _selectedContributionBank?.bid,
               hint: const Text('Select Bank Account'),
               items: bankAccounts.map((bank) {
                 return DropdownMenuItem<String>(

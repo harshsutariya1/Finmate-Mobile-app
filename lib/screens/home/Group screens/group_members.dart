@@ -26,7 +26,7 @@ class GroupMembers extends ConsumerStatefulWidget {
 class _GroupMembersState extends ConsumerState<GroupMembers> {
   bool _isAdminExpanded = false;
   bool _isRemovingMember = false;
-  bool _showContributionsChart = true; // New state to toggle chart visibility
+  final bool _showContributionsChart = true; // New state to toggle chart visibility
   int _touchedIndex = -1; // Track touched section in pie chart
 
   @override

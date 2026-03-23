@@ -702,7 +702,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields>
     final bool isComplete = _paymentModeOneController.text.isNotEmpty &&
         _paymentModeTwoController.text.isNotEmpty;
 
-    return Container(
+    return SizedBox(
       height: 50,
       width: double.infinity,
       child: Stack(
@@ -1600,7 +1600,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields>
       _logger.i("Bank to bank transfer completed successfully: $amount ₹");
     } catch (e) {
       _logger.e("Error in bank to bank transfer: $e");
-      throw e;
+      rethrow;
     }
   }
 
@@ -1653,7 +1653,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields>
       _logger.i("Bank to cash transfer completed successfully: $amount ₹");
     } catch (e) {
       _logger.e("Error in bank to cash transfer: $e");
-      throw e;
+      rethrow;
     }
   }
 
@@ -1706,7 +1706,7 @@ class _TransferFieldsState extends ConsumerState<TransferFields>
       _logger.i("Cash to bank transfer completed successfully: $amount ₹");
     } catch (e) {
       _logger.e("Error in cash to bank transfer: $e");
-      throw e;
+      rethrow;
     }
   }
 

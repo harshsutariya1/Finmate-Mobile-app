@@ -1,5 +1,4 @@
 import 'package:finmate/constants/colors.dart';
-import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/market_data.dart';
 import 'package:finmate/providers/market_provider.dart';
 import 'package:finmate/screens/home/market%20screens/market_detail_screen.dart';

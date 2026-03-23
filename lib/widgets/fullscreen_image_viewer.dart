@@ -195,7 +195,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       }
 
       // Save file
-      final String filePath = '${savePath}/$fileNameWithTimestamp';
+      final String filePath = '$savePath/$fileNameWithTimestamp';
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes);
 
