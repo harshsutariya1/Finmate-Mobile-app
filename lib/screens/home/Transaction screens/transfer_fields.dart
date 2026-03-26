@@ -1,5 +1,4 @@
 import 'package:finmate/constants/colors.dart';
-import 'package:finmate/constants/const_widgets.dart';
 import 'package:finmate/models/accounts.dart';
 import 'package:finmate/models/transaction.dart';
 import 'package:finmate/models/transaction_category.dart';
